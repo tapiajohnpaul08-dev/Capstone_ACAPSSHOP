@@ -36,13 +36,13 @@
               required
             />
             <div class="text-right">
-              <button
+              <!-- <button
                 type="button"
                 @click="togglePasswordVisibility"
                 class="text-xs text-gray-500 hover:text-gray-700"
               >
                 {{ showPassword ? 'Hide' : 'Show' }}
-              </button>
+              </button> -->
             </div>
           </div>
 
@@ -124,16 +124,15 @@ export default {
     }
   },
   mounted() {
-    // Check if there's stored dummy user data
-    const storedUsers = localStorage.getItem('dummyUsers')
+    // Initialize dummy users for customer portal
+    const storedUsers = localStorage.getItem('customerUsers')
     if (!storedUsers) {
-      // Initialize dummy users if not exists
       const dummyUsers = [
         {
           id: 1,
-          email: 'user@example.com',
-          password: 'password123',
-          name: 'John Doe'
+          email: 'customer@acapshop.com',
+          password: 'customer123',
+          name: 'John Customer'
         },
         {
           id: 2,
@@ -142,12 +141,11 @@ export default {
           name: 'Demo User'
         }
       ]
-      localStorage.setItem('dummyUsers', JSON.stringify(dummyUsers))
+      localStorage.setItem('customerUsers', JSON.stringify(dummyUsers))
     }
   },
   methods: {
     async handleLogin() {
-      // Validate form
       if (!this.form.email || !this.form.password) {
         this.showError('Please fill in all fields')
         return
@@ -156,20 +154,21 @@ export default {
       this.isLoading = true
 
       try {
-        // Simulate API call with dummy data validation
         await new Promise(resolve => setTimeout(resolve, 1000))
         
         // Get dummy users from localStorage
-        const users = JSON.parse(localStorage.getItem('dummyUsers') || '[]')
+        const users = JSON.parse(localStorage.getItem('customerUsers') || '[]')
         
-        // Find user with matching email and password
         const user = users.find(u => 
           u.email === this.form.email && 
           u.password === this.form.password
         )
         
         if (user) {
-          // Store user session
+          // Store customer session
+          localStorage.setItem('customerToken', 'demo-token-' + Date.now())
+          localStorage.setItem('userName', user.name)
+          localStorage.setItem('userEmail', user.email)
           localStorage.setItem('currentUser', JSON.stringify({
             id: user.id,
             email: user.email,
@@ -180,12 +179,12 @@ export default {
           console.log('Login successful:', user)
           this.showSuccess('Login successful! Redirecting...')
           
-          // Redirect after successful login
+          // Redirect to customer dashboard
           setTimeout(() => {
-            window.location.href = '/dashboard' // Change to your dashboard route
-          }, 1500)
+            this.$router.push('/customer/dashboard')
+          }, 1000)
         } else {
-          this.showError('Invalid email or password. Try: user@example.com / password123')
+          this.showError('Invalid email or password. Try: customer@acapshop.com / customer123')
         }
       } catch (error) {
         console.error('Login failed:', error)
@@ -196,23 +195,15 @@ export default {
     },
     
     handleForgotPassword() {
-      console.log('Forgot password clicked')
-      // You can show a modal or redirect to forgot password page
       alert('Reset link would be sent to your email. (Demo feature)')
     },
     
     handleSocialLogin(provider) {
-      console.log(`Social login with ${provider}`)
-      // Implement social login logic here
       alert(`Login with ${provider} (Demo feature)`)
-      // window.location.href = `/auth/${provider}`
     },
     
     handleSignUp() {
-      console.log('Sign up clicked')
-      // Navigate to sign up page
-      // this.$router.push('/signup')
-      alert('Sign up page (Demo feature)')
+      alert('Sign up page coming soon!')
     },
     
     togglePasswordVisibility() {
@@ -220,12 +211,11 @@ export default {
     },
     
     showError(message) {
-      // Simple alert for demo - you can replace with a toast notification
       alert(message)
     },
     
     showSuccess(message) {
-      alert(message)
+      // alert(message)
     }
   }
 }

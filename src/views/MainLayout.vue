@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-col min-h-screen bg-gray-50">
-    <AppHeader 
+    <NavigationBar 
       :notif-count="notificationCount"
       :cart-count="cartCount"
       :unread-count="unreadCount"
@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import AppHeader from '@/components/AppHeader.vue'
+import NavigationBar from '@/components/NavigationBar.vue'
 
 const notificationCount = ref(2)
 const cartCount = ref(0)
