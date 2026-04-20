@@ -10,64 +10,94 @@
         <span class="px-2 py-1 rounded-md text-xs font-semibold"
           :class="orderType === 'own-cups'
             ? 'bg-purple-100 text-purple-700'
-            : 'bg-blue-100 text-blue-700'"
+            : isCartOrder && cartItems?.length > 0
+              ? 'bg-green-100 text-green-700'
+              : 'bg-blue-100 text-blue-700'"
         >
-          {{ orderType === 'own-cups' ? 'Own Cups' : 'Company Product' }}
+          {{ orderType === 'own-cups' ? 'Own Cups' : isCartOrder && cartItems?.length > 0 ? 'Multi-Item Order' : 'Company Product' }}
         </span>
         <span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 capitalize">
           {{ fulfillment || '—' }}
         </span>
       </div>
 
-      <!-- Selected product (company) -->
-      <div v-if="orderType === 'company-product' && selectedProduct" class="flex gap-3 p-3 bg-gray-50 rounded-lg">
-        <img :src="selectedProduct.image" :alt="selectedProduct.name" class="w-12 h-12 object-cover rounded-md shrink-0" />
-        <div class="min-w-0">
-          <div class="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">{{ selectedProduct.name }}</div>
-          <div class="text-xs text-gray-500 mt-0.5">{{ selectedProduct.category }}</div>
-        </div>
-      </div>
-
-      <!-- Summary rows -->
-      <div class="space-y-2.5 text-sm">
-        <div v-if="orderType === 'own-cups' && productType" class="flex justify-between">
-          <span class="text-gray-500">Product Type</span>
-          <span class="font-medium text-gray-800 text-right max-w-[55%] truncate">{{ productType }}</span>
-        </div>
-        <div v-if="quantity" class="flex justify-between">
-          <span class="text-gray-500">Quantity</span>
-          <span class="font-medium text-gray-800">{{ Number(quantity).toLocaleString() }} pcs</span>
-        </div>
-        <div v-if="sizes" class="flex justify-between">
-          <span class="text-gray-500">Sizes</span>
-          <span class="font-medium text-gray-800">{{ sizes }}</span>
-        </div>
-        <div v-if="designSource" class="flex justify-between">
-          <span class="text-gray-500">Design</span>
-          <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
-        </div>
-        <div v-if="filesCount > 0" class="flex justify-between">
-          <span class="text-gray-500">Files</span>
-          <span class="font-medium text-gray-800">{{ filesCount }} file{{ filesCount > 1 ? 's' : '' }}</span>
-        </div>
-      </div>
-
-      <!-- Pricing -->
-      <div class="border-t pt-4 space-y-2">
-        <div v-if="orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Unit price (est.)</span>
-            <span class="text-gray-700">{{ getUnitPrice() }}</span>
+      <!-- Cart Items Section (for multi-item orders) -->
+      <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+          <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
+            <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+              <img :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
+              <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity.toLocaleString() }} pcs</p>
+              <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
+            </div>
           </div>
         </div>
-        <div class="flex justify-between items-center">
-          <span class="font-semibold text-gray-900">Estimated Total</span>
-          <span class="text-xl font-bold text-blue-600">{{ estimatedTotal }}</span>
+        <div class="border-t pt-2 flex justify-between font-semibold">
+          <span>Subtotal</span>
+          <span class="text-blue-600">{{ cartSubtotal }}</span>
         </div>
-        <p class="text-xs text-gray-400 leading-snug">
-          Final price confirmed after design review and approval.
-        </p>
       </div>
+
+      <!-- Single Product Section -->
+      <div v-else>
+        <!-- Selected product (company) -->
+        <div v-if="orderType === 'company-product' && selectedProduct" class="flex gap-3 p-3 bg-gray-50 rounded-lg">
+          <img :src="selectedProduct.image" :alt="selectedProduct.name" class="w-12 h-12 object-cover rounded-md shrink-0" />
+          <div class="min-w-0">
+            <div class="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">{{ selectedProduct.name }}</div>
+            <div class="text-xs text-gray-500 mt-0.5">{{ selectedProduct.category }}</div>
+          </div>
+        </div>
+
+        <!-- Summary rows -->
+        <div class="space-y-2.5 text-sm">
+          <div v-if="orderType === 'own-cups' && productType" class="flex justify-between">
+            <span class="text-gray-500">Product Type</span>
+            <span class="font-medium text-gray-800 text-right max-w-[55%] truncate">{{ productType }}</span>
+          </div>
+          <div v-if="quantity" class="flex justify-between">
+            <span class="text-gray-500">Quantity</span>
+            <span class="font-medium text-gray-800">{{ Number(quantity).toLocaleString() }} pcs</span>
+          </div>
+          <div v-if="sizes" class="flex justify-between">
+            <span class="text-gray-500">Sizes</span>
+            <span class="font-medium text-gray-800">{{ sizes }}</span>
+          </div>
+          <div v-if="designSource" class="flex justify-between">
+            <span class="text-gray-500">Design</span>
+            <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
+          </div>
+          <div v-if="filesCount > 0" class="flex justify-between">
+            <span class="text-gray-500">Files</span>
+            <span class="font-medium text-gray-800">{{ filesCount }} file{{ filesCount > 1 ? 's' : '' }}</span>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="border-t pt-4 space-y-2">
+          <div v-if="orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Unit price (est.)</span>
+              <span class="text-gray-700">{{ getUnitPrice() }}</span>
+            </div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-900">Estimated Total</span>
+            <span class="text-xl font-bold text-blue-600">{{ singleProductTotal }}</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-400 leading-snug">
+        Final price confirmed after design review and approval.
+      </p>
 
       <!-- Validation hints -->
       <div v-if="validationHints.length > 0" class="space-y-1.5">
@@ -108,6 +138,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { getPriceForQuantity } from '@/data/catalogData'
 
 const props = defineProps({
   orderType: { type: String, required: true },
@@ -120,10 +151,26 @@ const props = defineProps({
   fulfillment: { type: String, default: '' },
   canSubmit: { type: Boolean, default: false },
   isSubmitting: { type: Boolean, default: false },
-  validationHints: { type: Array, default: () => [] }
+  validationHints: { type: Array, default: () => [] },
+  cartItems: { type: Array, default: () => [] },
+  isCartOrder: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['submit'])
+
+function calculateCartItemTotal(item) {
+  const total = getPriceForQuantity(item.productId, item.size, item.quantity)
+  return total ? `₱${total.toLocaleString()}` : '₱0'
+}
+
+const cartSubtotal = computed(() => {
+  let total = 0
+  for (const item of props.cartItems) {
+    const itemTotal = getPriceForQuantity(item.productId, item.size, item.quantity)
+    if (itemTotal) total += itemTotal
+  }
+  return `₱${total.toLocaleString()}`
+})
 
 function getUnitPrice() {
   if (!props.selectedProduct || !props.selectedProduct.sizes) return '—'
@@ -132,7 +179,7 @@ function getUnitPrice() {
   return `₱${firstSize.price.toFixed(2)}`
 }
 
-const estimatedTotal = computed(() => {
+const singleProductTotal = computed(() => {
   if (!props.quantity || isNaN(Number(props.quantity))) return '₱0'
   const qty = Number(props.quantity)
   
@@ -140,7 +187,6 @@ const estimatedTotal = computed(() => {
     const firstSize = props.selectedProduct.sizes[0]
     if (!firstSize || !firstSize.price) return '₱0'
     
-    // Check bulk pricing
     let unitPrice = firstSize.price
     if (qty >= 5000 && firstSize.bulkPrices?.[5000]) unitPrice = firstSize.bulkPrices[5000] / 5000
     else if (qty >= 2000 && firstSize.bulkPrices?.[2000]) unitPrice = firstSize.bulkPrices[2000] / 2000
@@ -148,6 +194,10 @@ const estimatedTotal = computed(() => {
     else if (qty >= 500 && firstSize.bulkPrices?.[500]) unitPrice = firstSize.bulkPrices[500] / 500
     
     return `₱${(unitPrice * qty).toLocaleString()}`
+  }
+  
+  if (props.orderType === 'own-cups' && props.quantity) {
+    return '₱0 (Price upon review)'
   }
   
   return '₱0'

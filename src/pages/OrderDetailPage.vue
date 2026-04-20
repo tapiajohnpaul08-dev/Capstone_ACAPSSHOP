@@ -114,12 +114,19 @@
 
     <!-- Action Buttons -->
     <div class="flex gap-3">
+      
       <button 
         @click="contactSupport"
         class="flex-1 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
       >
         Contact Support
       </button>
+      <button 
+       v-if="order.statusValue === 'completed'"
+        class="flex-1 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
+      >
+      Submit Feedback
+    </button>
       <button 
         v-if="order?.statusValue === 'pending'"
         @click="cancelOrder"

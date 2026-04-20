@@ -60,7 +60,7 @@
             <span class="text-sm font-medium">Products</span>
           </router-link> -->
 
-          <router-link 
+          <!-- <router-link 
             to="/customer/cart" 
             class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all relative group"
             :class="isActive('/customer/cart') 
@@ -76,7 +76,7 @@
             <span v-if="cartCount > 0" class="ml-1 min-w-[20px] h-5 flex items-center justify-center text-xs font-semibold rounded-full bg-red-500 text-white">
               {{ cartCount > 99 ? '99+' : cartCount }}
             </span>
-          </router-link>
+          </router-link> -->
 
           <router-link 
             to="/customer/messages" 

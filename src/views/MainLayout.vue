@@ -9,12 +9,14 @@
     <main class="flex-1">
       <router-view />
     </main>
+    <Footer />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import NavigationBar from '@/components/NavigationBar.vue'
+import Footer from '@/components/Footer.vue'
 
 const notificationCount = ref(2)
 const cartCount = ref(0)
