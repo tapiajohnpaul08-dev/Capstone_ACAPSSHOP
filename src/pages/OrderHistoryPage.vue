@@ -1,10 +1,7 @@
 <template>
   <div class="container mx-auto px-4 py-6">
     <div class="mb-6">
-      <button 
-        @click="goBack"
-        class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-100 h-9 px-4 py-2 mb-4"
-      >
+      <button @click="goBack" class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-100 h-9 px-4 py-2 mb-4">
         <ArrowLeft class="h-4 w-4 mr-2" />
         Back to Profile
       </button>
@@ -12,10 +9,13 @@
       <p class="text-gray-600 mt-1">View all your completed and cancelled orders</p>
     </div>
 
-    <!-- Simple display without complex components -->
-    <div v-if="orders.length > 0" class="space-y-4">
-      <div 
-        v-for="order in orders" 
+    <div v-if="isLoading" class="flex justify-center py-12">
+      <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <div v-else-if="historicOrders.length > 0" class="space-y-4">
+      <div
+        v-for="order in historicOrders"
         :key="order.id"
         class="bg-white rounded-xl border p-4 hover:shadow-lg transition-shadow cursor-pointer"
         @click="viewOrderDetails(order)"
@@ -24,87 +24,51 @@
           <div>
             <div class="font-semibold">{{ order.orderNumber }}</div>
             <div class="text-sm text-gray-600">{{ order.date }}</div>
-            <div class="text-sm mt-1">{{ order.product }} - {{ order.quantity }} pcs</div>
+            <div class="text-sm mt-1">{{ order.product }} — {{ order.quantity?.toLocaleString() }} pcs</div>
           </div>
           <div class="text-right">
-            <span 
+            <span
               class="inline-flex px-2 py-1 rounded-md text-xs font-medium"
-              :class="order.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+              :class="order.statusValue === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
             >
               {{ order.status }}
             </span>
-            <div class="font-bold text-blue-600 mt-1">₱{{ order.totalAmount.toLocaleString() }}</div>
+            <div class="font-bold text-blue-600 mt-1">₱{{ order.totalAmount?.toLocaleString() }}</div>
           </div>
         </div>
       </div>
     </div>
 
     <div v-else class="text-center py-12">
-      <p class="text-gray-500">No order history found.</p>
-      <button 
-        @click="addSampleData"
-        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm"
-      >
-        Load Sample Orders
-      </button>
+      <p class="text-gray-500">No completed or cancelled orders yet.</p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
+import { useOrders } from '@/composables/useOrders.js'
 
 const router = useRouter()
-const orders = ref([])
+const { orders, fetchOrders } = useOrders()
+const isLoading = ref(true)
 
-function goBack() {
-  router.push('/customer/profile')
-}
+const historicOrders = computed(() =>
+  orders.value.filter((o) => ['completed', 'cancelled'].includes(o.statusValue))
+)
 
-function addSampleData() {
-  orders.value = [
-    {
-      id: 1020,
-      orderNumber: 'Order #1020',
-      date: 'February 28, 2024',
-      status: 'Completed',
-      product: 'Glass Coffee Mugs',
-      quantity: 1000,
-      size: '12oz',
-      totalAmount: 520000,
-      supplyType: 'Company Cups',
-      deliveryMethod: 'Delivery'
-    },
-    {
-      id: 1018,
-      orderNumber: 'Order #1018',
-      date: 'March 8, 2024',
-      status: 'Cancelled',
-      product: 'Stainless Steel Tumblers',
-      quantity: 1500,
-      size: '16oz, 20oz',
-      totalAmount: 1020000,
-      supplyType: 'Own Cups',
-      deliveryMethod: 'Delivery'
-    },
-    {
-      id: 1015,
-      orderNumber: 'Order #1015',
-      date: 'January 20, 2024',
-      status: 'Completed',
-      product: 'Travel Coffee Cups',
-      quantity: 2000,
-      size: '16oz',
-      totalAmount: 1180000,
-      supplyType: 'Company Cups',
-      deliveryMethod: 'Pick-up'
-    }
-  ]
-}
+function goBack() { router.push('/customer/profile') }
+function viewOrderDetails(order) { router.push(`/customer/orders/${order.id}`) }
 
-function viewOrderDetails(order) {
-  router.push(`/customer/orders/${order.id}`)
-}
+onMounted(async () => {
+  await fetchOrders()
+  isLoading.value = false
+})
 </script>
+
+<style scoped>
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.7s linear infinite; }
+</style>

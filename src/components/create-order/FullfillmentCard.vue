@@ -97,29 +97,11 @@
           <span class="text-xs text-gray-400">Mon–Sat · 8AM–6PM · (02) 1234-5678</span>
         </div>
       </div>
-
-      <!-- Preferred date -->
-      <div class="space-y-1.5">
-        <label class="text-sm font-medium text-gray-700" for="ff-date">
-          Preferred {{ modelValue.method === 'delivery' ? 'Delivery' : 'Pickup' }} Date
-        </label>
-        <input
-          id="ff-date"
-          :value="modelValue.preferredDate"
-          @input="updateField('preferredDate', $event.target.value)"
-          type="date"
-          :min="minDate"
-          class="field"
-        />
-        <p class="text-xs text-gray-400">Subject to production schedule. We'll confirm with you.</p>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
 const props = defineProps({
   modelValue: { type: Object, required: true },
   customerAddress: { type: String, default: '' },
@@ -127,8 +109,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
-
-const minDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })

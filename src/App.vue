@@ -1,34 +1,25 @@
 <!-- src/App.vue -->
 <template>
   <router-view />
+  <FeedbackModal
+    v-model:visible="feedbackVisible"
+    :title="feedbackTitle"
+    :status="feedbackStatus"
+    :message="feedbackMessage"
+    :duration="feedbackDuration"
+  />
 </template>
 
-<script setup>
+<script>
+import FeedbackModal from '@/modals/FeedbackModal.vue'
+import {useFeedback} from '@/utils/useFeedback'
+
+export default {
+  components: { FeedbackModal },
+  setup() {
+    return { ...useFeedback() }
+  }
+}
 </script>
 
 
-<!-- src/
-├── views/
-│   └── MainLayout.vue        / Customer Layout
-├── pages/
-│   └── CustomerHomeView.vue      ← assembles the 3 sections, handles navigation
-└── components/
-│    └── home/
-│    │    ├── AppHeader.vue         
-│    │    ├── HeroSection.vue      
-│    │    ├── OrderTypeCards.vue    
-│    │    └── HowItWorksCard.vue  
-│    │    
-│    │---- other folder for different pages(profile, cart)
-│    │
-│    │---NavigationBar.vue       
-│--- data/
-│      │--- dummyData.js   (all data will be here)
-│
-│------modals/
-│         │----(future modals)
-│
-│-----router/
-│         │-----index.html
-│
-│--App.vue -->

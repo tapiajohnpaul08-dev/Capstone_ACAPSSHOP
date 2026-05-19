@@ -66,13 +66,18 @@
             <span class="text-gray-500">Quantity</span>
             <span class="font-medium text-gray-800">{{ Number(quantity).toLocaleString() }} pcs</span>
           </div>
-          <div v-if="sizes" class="flex justify-between">
-            <span class="text-gray-500">Sizes</span>
-            <span class="font-medium text-gray-800">{{ sizes }}</span>
-          </div>
+           <div v-if="sizes" class="flex justify-between">
+    <span class="text-gray-500">Size</span>
+    <span class="font-medium text-gray-800">{{ sizes }}</span>
+  </div>
           <div v-if="designSource" class="flex justify-between">
             <span class="text-gray-500">Design</span>
             <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
+          </div>
+          <!-- FIXED: ETA display now shows actual days -->
+          <div class="flex justify-between">
+            <span class="text-gray-500">ETA</span>
+            <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
           </div>
           <div v-if="filesCount > 0" class="flex justify-between">
             <span class="text-gray-500">Files</span>
@@ -139,6 +144,7 @@
 <script setup>
 import { computed } from 'vue'
 import { getPriceForQuantity } from '@/data/catalogData'
+import { ETA_CONFIG } from '@/constants/orderConstants'
 
 const props = defineProps({
   orderType: { type: String, required: true },
@@ -157,6 +163,15 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['submit'])
+
+// NEW: Calculate ETA based on design source
+const estimatedETA = computed(() => {
+  if (!props.designSource) return '—'
+  const days = props.designSource === 'upload' 
+    ? ETA_CONFIG.UPLOAD_DAYS 
+    : ETA_CONFIG.SAVED_TEMPLATE_DAYS
+  return `${days} business days`
+})
 
 function calculateCartItemTotal(item) {
   const total = getPriceForQuantity(item.productId, item.size, item.quantity)
@@ -179,6 +194,7 @@ function getUnitPrice() {
   return `₱${firstSize.price.toFixed(2)}`
 }
 
+// FIXED: Improved bulk pricing calculation
 const singleProductTotal = computed(() => {
   if (!props.quantity || isNaN(Number(props.quantity))) return '₱0'
   const qty = Number(props.quantity)
@@ -188,10 +204,20 @@ const singleProductTotal = computed(() => {
     if (!firstSize || !firstSize.price) return '₱0'
     
     let unitPrice = firstSize.price
-    if (qty >= 5000 && firstSize.bulkPrices?.[5000]) unitPrice = firstSize.bulkPrices[5000] / 5000
-    else if (qty >= 2000 && firstSize.bulkPrices?.[2000]) unitPrice = firstSize.bulkPrices[2000] / 2000
-    else if (qty >= 1000 && firstSize.bulkPrices?.[1000]) unitPrice = firstSize.bulkPrices[1000] / 1000
-    else if (qty >= 500 && firstSize.bulkPrices?.[500]) unitPrice = firstSize.bulkPrices[500] / 500
+    
+    // Use bulk pricing if available
+    if (firstSize.bulkPrices) {
+      const bulkThresholds = Object.keys(firstSize.bulkPrices)
+        .map(Number)
+        .sort((a, b) => b - a) // Descending order
+      
+      for (const threshold of bulkThresholds) {
+        if (qty >= threshold) {
+          unitPrice = firstSize.bulkPrices[threshold] / threshold
+          break
+        }
+      }
+    }
     
     return `₱${(unitPrice * qty).toLocaleString()}`
   }

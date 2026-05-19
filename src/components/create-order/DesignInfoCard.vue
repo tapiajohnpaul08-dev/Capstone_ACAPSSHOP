@@ -73,6 +73,17 @@
           </label>
         </div>
 
+        <!-- Upload progress indicator -->
+        <div v-if="uploadProgress > 0 && uploadProgress < 100" class="space-y-1">
+          <div class="flex justify-between text-xs text-gray-600">
+            <span>Uploading...</span>
+            <span>{{ uploadProgress }}%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+            <div class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
+          </div>
+        </div>
+
         <!-- Uploaded files list -->
         <div v-if="modelValue.files && modelValue.files.length > 0" class="space-y-2">
           <div
@@ -101,9 +112,13 @@
         <p v-if="errors.files" class="text-xs text-red-500">{{ errors.files }}</p>
       </div>
 
-      <!-- Saved templates -->
+      <!-- Saved templates with loading state -->
       <div v-if="modelValue.designSource === 'saved'" class="space-y-3">
-        <div v-if="savedTemplates.length === 0" class="p-6 text-center bg-gray-50 rounded-xl border border-dashed">
+        <div v-if="isLoadingTemplates" class="p-6 text-center bg-gray-50 rounded-xl">
+          <div class="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+          <p class="text-sm text-gray-500 mt-2">Loading your templates...</p>
+        </div>
+        <div v-else-if="savedTemplates.length === 0" class="p-6 text-center bg-gray-50 rounded-xl border border-dashed">
           <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-gray-400 mb-2">
             <rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 9 6 6m0-6-6 6"/>
           </svg>
@@ -171,7 +186,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { designsApi } from '@/api.js'
+import { FILE_CONSTANTS } from '@/constants/orderConstants'
 
 const props = defineProps({
   modelValue: { type: Object, required: true },
@@ -181,8 +198,35 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const dragging = ref(false)
-const savedTemplates = ref([]) // Would be loaded from API/store
+const savedTemplates = ref([])
 const selectedTemplateId = ref(null)
+const isLoadingTemplates = ref(false)
+const uploadProgress = ref(0)
+
+onMounted(async () => {
+  await loadSavedTemplates()
+})
+
+async function loadSavedTemplates() {
+  isLoadingTemplates.value = true
+  try {
+    const { designs, success } = await designsApi.getDesigns()
+    if (success && designs) {
+      savedTemplates.value = designs.map(d => ({
+        id: d.id,
+        name: d.name,
+        thumbnail: d.image,
+        lastUsed: d.createdAt,
+        printSize: d.printSize,
+        placement: d.placement
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load templates:', error)
+  } finally {
+    isLoadingTemplates.value = false
+  }
+}
 
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
@@ -192,15 +236,57 @@ function setDesignSource(source) {
   updateField('designSource', source)
 }
 
-function handleDrop(e) {
-  dragging.value = false
-  const newFiles = [...(e.dataTransfer.files || [])]
-  updateField('files', [...(props.modelValue.files || []), ...newFiles])
+function validateFiles(files) {
+  const errors = []
+  for (const file of files) {
+    if (!FILE_CONSTANTS.ALLOWED_TYPES.includes(file.type)) {
+      errors.push(`${file.name}: Invalid file type. Allowed: ${FILE_CONSTANTS.ALLOWED_EXTENSIONS.join(', ')}`)
+    }
+    if (file.size > FILE_CONSTANTS.MAX_SIZE_BYTES) {
+      errors.push(`${file.name}: File too large. Max ${FILE_CONSTANTS.MAX_SIZE_MB}MB`)
+    }
+  }
+  return errors
 }
 
-function handleFileSelect(e) {
+async function handleDrop(e) {
+  dragging.value = false
+  const newFiles = [...(e.dataTransfer.files || [])]
+  const validationErrors = validateFiles(newFiles)
+  
+  if (validationErrors.length > 0) {
+    emit('update:modelValue', { ...props.modelValue, filesError: validationErrors.join(', ') })
+    return
+  }
+  
+  // Simulate upload progress
+  uploadProgress.value = 0
+  const interval = setInterval(() => {
+    if (uploadProgress.value < 100) {
+      uploadProgress.value += 10
+    } else {
+      clearInterval(interval)
+    }
+  }, 50)
+  
+  setTimeout(() => {
+    updateField('files', [...(props.modelValue.files || []), ...newFiles])
+    uploadProgress.value = 0
+  }, 500)
+}
+
+async function handleFileSelect(e) {
   const newFiles = [...(e.target.files || [])]
+  const validationErrors = validateFiles(newFiles)
+  
+  if (validationErrors.length > 0) {
+    emit('update:modelValue', { ...props.modelValue, filesError: validationErrors.join(', ') })
+    e.target.value = ''
+    return
+  }
+  
   updateField('files', [...(props.modelValue.files || []), ...newFiles])
+  e.target.value = ''
 }
 
 function removeFile(index) {
@@ -231,4 +317,6 @@ function formatFileSize(bytes) {
 textarea.field {
   @apply h-auto py-2;
 }
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 1s linear infinite; }
 </style>

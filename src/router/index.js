@@ -11,6 +11,16 @@ const router = createRouter({
       component: () => import('@/views/LoginForm.vue'),
       meta: { requiresAuth: false },
     },
+      {
+    path: '/customer/signup',
+    name: 'SignUp',
+    component: () => import('@/views/SignupView.vue'),
+  },
+  {
+    path: '/customer/verify-otp',
+    name: 'OtpVerify',
+    component: () => import('@/views/OtpVerifyView.vue')
+  },
     // All authenticated routes - inside MainLayout (with navigation bar)
     {
       path: '/customer',
@@ -48,7 +58,7 @@ const router = createRouter({
         {
           path: 'catalog',
           name: 'CustomerCatalog',
-          component: () => import('@/pages/CatalogPage.vue'),
+          component: () => import('@/pages/CustomerHomePage.vue'),
           meta: { requiresAuth: true },
         },
         {

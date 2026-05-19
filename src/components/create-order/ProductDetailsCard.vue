@@ -6,7 +6,7 @@
         Tell us about the cups you're bringing in.
       </p>
       <p v-else class="text-xs text-gray-500 mt-0.5">
-        Confirm quantity and sizes for your selected product.
+        Confirm quantity and size for your selected product.
       </p>
     </div>
     <div class="px-6 py-5 space-y-4">
@@ -62,37 +62,49 @@
 
         <div class="space-y-1.5">
           <label class="text-sm font-medium text-gray-700" for="pd-sizes">
-            {{ orderType === 'company-product' ? 'Size(s)' : 'Sizes (comma-separated)' }}
+            Size <span class="text-red-500">*</span>
           </label>
-          <!-- For company product: select from available sizes -->
-          <div v-if="orderType === 'company-product' && selectedProduct" class="flex flex-wrap gap-2">
-            <label
-              v-for="size in getSizeNames()"
-              :key="size"
-              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border cursor-pointer text-xs font-medium transition-colors"
-              :class="selectedSizes.includes(size)
-                ? 'border-blue-600 bg-blue-50 text-blue-700'
-                : 'border-gray-300 text-gray-600 hover:border-gray-400'"
-            >
-              <input
-                type="checkbox"
-                :value="size"
-                :checked="selectedSizes.includes(size)"
-                @change="toggleSize(size)"
-                class="hidden"
-              />
-              {{ size }}
-            </label>
+          
+          <!-- For company product: radio buttons for single size selection -->
+          <div v-if="orderType === 'company-product' && selectedProduct" class="space-y-2">
+            <div class="flex flex-wrap gap-3">
+              <label
+                v-for="size in getSizeNames()"
+                :key="size"
+                class="flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium transition-colors"
+                :class="modelValue.sizes === size
+                  ? 'border-blue-600 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-600 hover:border-gray-400'"
+              >
+                <input
+                  type="radio"
+                  :value="size"
+                  :checked="modelValue.sizes === size"
+                  @change="updateField('sizes', size)"
+                  class="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500"
+                />
+                {{ size }}
+                <span class="text-xs text-gray-500 ml-1">
+                  (₱{{ getSizePrice(size) }}/pc)
+                </span>
+              </label>
+            </div>
+            <p v-if="getSelectedSizePrice && modelValue.quantity" class="text-xs text-gray-500">
+              Estimated unit price at {{ formatNumber(modelValue.quantity) }} pcs: 
+              <span class="font-semibold text-blue-600">{{ getBulkPrice() }}</span>/pc
+            </p>
           </div>
-          <!-- For own cups: free text -->
+          
+          <!-- For own cups: free text input -->
           <input
             v-else
             id="pd-sizes"
             :value="modelValue.sizes"
             @input="updateField('sizes', $event.target.value)"
             type="text"
-            placeholder="e.g., 12oz, 16oz"
+            placeholder="e.g., 12oz"
             class="field"
+            :class="{ 'border-red-400 ring-1 ring-red-300': errors.sizes }"
           />
           <p v-if="errors.sizes" class="text-xs text-red-500">{{ errors.sizes }}</p>
         </div>
@@ -132,9 +144,12 @@ const quantityPlaceholder = computed(() => {
   return 'e.g., 1000'
 })
 
-const selectedSizes = computed(() => {
-  if (!props.modelValue.sizes) return []
-  return props.modelValue.sizes.split(',').map(s => s.trim()).filter(Boolean)
+// Computed property for selected size price
+const getSelectedSizePrice = computed(() => {
+  if (!props.modelValue.sizes) return null
+  const sizeName = props.modelValue.sizes
+  const size = props.selectedProduct?.sizes?.find(s => (s.name || s) === sizeName)
+  return size?.price || null
 })
 
 function getSizeNames() {
@@ -142,20 +157,44 @@ function getSizeNames() {
   return props.selectedProduct.sizes.map(s => s.name || s)
 }
 
+function getSizePrice(sizeName) {
+  const size = props.selectedProduct?.sizes?.find(s => (s.name || s) === sizeName)
+  return size?.price?.toLocaleString() || 0
+}
+
 function getSizeOptions() {
   return getSizeNames().join(', ')
 }
 
-function updateField(field, value) {
-  emit('update:modelValue', { ...props.modelValue, [field]: value })
+function getBulkPrice() {
+  const qty = Number(props.modelValue.quantity)
+  if (!qty || isNaN(qty)) return '—'
+  
+  const sizeName = props.modelValue.sizes
+  if (!sizeName) return '—'
+  
+  const size = props.selectedProduct?.sizes?.find(s => (s.name || s) === sizeName)
+  if (!size) return '—'
+  
+  let unitPrice = size.price
+  
+  if (size.bulkPrices) {
+    if (qty >= 5000 && size.bulkPrices[5000]) unitPrice = size.bulkPrices[5000] / 5000
+    else if (qty >= 2000 && size.bulkPrices[2000]) unitPrice = size.bulkPrices[2000] / 2000
+    else if (qty >= 1000 && size.bulkPrices[1000]) unitPrice = size.bulkPrices[1000] / 1000
+    else if (qty >= 500 && size.bulkPrices[500]) unitPrice = size.bulkPrices[500] / 500
+  }
+  
+  return `₱${unitPrice.toFixed(2)}`
 }
 
-function toggleSize(size) {
-  const current = selectedSizes.value
-  const updated = current.includes(size)
-    ? current.filter(s => s !== size)
-    : [...current, size]
-  updateField('sizes', updated.join(', '))
+function formatNumber(value) {
+  if (!value) return '0'
+  return Number(value).toLocaleString()
+}
+
+function updateField(field, value) {
+  emit('update:modelValue', { ...props.modelValue, [field]: value })
 }
 </script>
 

@@ -57,13 +57,14 @@
           <input
             id="ci-phone"
             :value="modelValue.phone"
-            @input="updateField('phone', $event.target.value)"
+            @input="handlePhoneInput($event.target.value)"
             type="tel"
             placeholder="+63 912 345 6789"
             class="field"
             :class="{ 'border-red-400 ring-1 ring-red-300': errors.phone }"
           />
           <p v-if="errors.phone" class="text-xs text-red-500">{{ errors.phone }}</p>
+          <p class="text-xs text-gray-400">Format: +63XXXXXXXXXX or 09XXXXXXXXX</p>
         </div>
       </div>
 
@@ -97,6 +98,8 @@
 </template>
 
 <script setup>
+import { PHONE_REGEX } from '@/constants/orderConstants'
+
 const props = defineProps({
   modelValue: { type: Object, required: true },
   errors: { type: Object, default: () => ({}) }
@@ -106,6 +109,18 @@ const emit = defineEmits(['update:modelValue'])
 
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
+}
+
+function handlePhoneInput(value) {
+  // Remove spaces and special characters for validation
+  const cleanValue = value.replace(/[\s\-\(\)]/g, '')
+  updateField('phone', value)
+  
+  // Emit validation error if needed (parent can listen)
+  if (cleanValue && !PHONE_REGEX.test(cleanValue)) {
+    // Parent component will handle error display
+    emit('validation-error', { field: 'phone', message: 'Enter a valid Philippine phone number' })
+  }
 }
 </script>
 

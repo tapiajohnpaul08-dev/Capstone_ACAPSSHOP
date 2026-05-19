@@ -1,4 +1,4 @@
-import { h } from 'vue'
+import { h, markRaw} from 'vue'
 
 // Simple icon components
 const MailIcon = {
@@ -59,12 +59,12 @@ export const loginData = {
     {
       provider: 'google',
       label: 'Google',
-      icon: MailIcon
+      icon: markRaw(MailIcon) // Marking as raw to avoid Vue trying to make it reactive
     },
     {
       provider: 'facebook',
       label: 'Facebook',
-      icon: FacebookIcon
+      icon: markRaw(FacebookIcon)
     }
   ],
   

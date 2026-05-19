@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-xl border">
+  <div class="bg-white rounded-xl border ">
     <div class="px-6 pt-6">
       <h4 class="leading-none text-lg font-semibold">How Our Order Process Works</h4>
     </div>
