@@ -11,22 +11,95 @@
 
     <div class="bg-white rounded-xl border">
       <form @submit.prevent="saveAccount" class="p-6 space-y-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- First Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-            <input v-model="form.name" type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <input 
+              v-model="form.firstName" 
+              type="text" 
+              required 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
           </div>
+          
+          <!-- Middle Name (Optional) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Middle Name
+              <span class="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input 
+              v-model="form.middleName" 
+              type="text" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
+          </div>
+          
+          <!-- Last Name -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <input 
+              v-model="form.lastName" 
+              type="text" 
+              required 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Email (read-only - cannot change) -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input v-model="form.email" type="email" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <input 
+              v-model="form.email" 
+              type="email" 
+              readonly 
+              disabled
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" 
+            />
+            <p class="text-xs text-gray-400 mt-1">Email cannot be changed</p>
           </div>
+          
+          <!-- Username -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input 
+              v-model="form.username" 
+              type="text" 
+              required 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Phone Number -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input v-model="form.phone" type="tel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500 border border-gray-300 px-3 py-2 rounded-lg bg-gray-50">+63</span>
+              <input 
+                v-model="form.phone" 
+                type="tel" 
+                placeholder="917 000 0000"
+                class="flex-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              />
+            </div>
           </div>
+          
+          <!-- Company Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-            <input v-model="form.company" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Company Name
+              <span class="text-gray-400 text-xs">(optional)</span>
+            </label>
+            <input 
+              v-model="form.companyName" 
+              type="text" 
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+            />
           </div>
         </div>
 
@@ -53,7 +126,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
-import { profileApi } from '@/api.js'
+import { profileApi, authApi } from '@/api.js'
 import FeedbackModal from '@/modals/FeedbackModal.vue'
 
 const router = useRouter()
@@ -63,33 +136,110 @@ const feedbackTitle = ref('')
 const feedbackMessage = ref('')
 const feedbackStatus = ref('success')
 
-const form = ref({ name: '', email: '', phone: '', company: '' })
-
-onMounted(async () => {
-  const res = await profileApi.getProfile()
-  if (res.success) {
-    form.value.name = res.user.name || ''
-    form.value.email = res.user.email || ''
-    form.value.phone = res.user.phone || ''
-    form.value.company = res.user.company || ''
-  }
+const form = ref({
+  firstName: '',
+  middleName: '',
+  lastName: '',
+  email: '',
+  username: '',
+  phone: '',
+  companyName: ''
 })
 
-async function saveAccount() {
-  isSaving.value = true
-  const res = await profileApi.updateProfile(form.value)
-  isSaving.value = false
-  feedbackTitle.value = res.success ? 'Profile Updated' : 'Update Failed'
-  feedbackMessage.value = res.success ? 'Your account information has been saved.' : 'Something went wrong. Please try again.'
-  feedbackStatus.value = res.success ? 'success' : 'error'
-  feedbackVisible.value = true
-  if (res.success) setTimeout(() => router.push('/customer/profile'), 2200)
+// Store customerId for update API
+const customerId = ref('')
+
+onMounted(async () => {
+  await loadProfile()
+})
+
+async function loadProfile() {
+  const result = await profileApi.getProfile()
+  
+  if (result.success && result.data) {
+    const user = result.data
+    customerId.value = user.customerId || user._id
+    
+    form.value = {
+      firstName: user.firstName || '',
+      middleName: user.middleName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
+      username: user.username || '',
+      phone: user.phone || '',
+      companyName: user.companyName || ''
+    }
+  } else {
+    feedbackTitle.value = 'Error'
+    feedbackMessage.value = result.message || 'Failed to load profile'
+    feedbackStatus.value = 'error'
+    feedbackVisible.value = true
+  }
 }
 
-function goBack() { router.push('/customer/profile') }
+async function saveAccount() {
+  if (!form.value.firstName || !form.value.lastName || !form.value.username) {
+    feedbackTitle.value = 'Validation Error'
+    feedbackMessage.value = 'First name, last name, and username are required'
+    feedbackStatus.value = 'error'
+    feedbackVisible.value = true
+    return
+  }
+
+  isSaving.value = true
+  
+  const updateData = {
+    firstName: form.value.firstName,
+    middleName: form.value.middleName,
+    lastName: form.value.lastName,
+    username: form.value.username,
+    phone: form.value.phone,
+    companyName: form.value.companyName || null
+  }
+  
+  const result = await authApi.updateCustomer(customerId.value, updateData)
+  
+  isSaving.value = false
+  
+  if (result.success) {
+    // Update localStorage with new user data
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
+    const updatedUser = {
+      ...currentUser,
+      firstName: form.value.firstName,
+      middleName: form.value.middleName,
+      lastName: form.value.lastName,
+      username: form.value.username,
+      phone: form.value.phone,
+      companyName: form.value.companyName
+    }
+    localStorage.setItem('currentUser', JSON.stringify(updatedUser))
+    localStorage.setItem('userName', `${form.value.firstName} ${form.value.lastName}`)
+    
+    feedbackTitle.value = 'Profile Updated'
+    feedbackMessage.value = 'Your account information has been saved successfully.'
+    feedbackStatus.value = 'success'
+    feedbackVisible.value = true
+    
+    setTimeout(() => router.push('/customer/profile'), 2000)
+  } else {
+    feedbackTitle.value = 'Update Failed'
+    feedbackMessage.value = result.message || 'Something went wrong. Please try again.'
+    feedbackStatus.value = 'error'
+    feedbackVisible.value = true
+  }
+}
+
+function goBack() {
+  router.push('/customer/profile')
+}
 </script>
 
 <style scoped>
-@keyframes spin { to { transform: rotate(360deg); } }
-.animate-spin { animation: spin 0.7s linear infinite; }
+@keyframes spin { 
+  to { transform: rotate(360deg); } 
+}
+.animate-spin { 
+  animation: spin 0.7s linear infinite; 
+}
 </style>

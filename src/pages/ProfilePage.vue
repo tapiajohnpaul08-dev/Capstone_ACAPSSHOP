@@ -10,6 +10,12 @@
             <div class="flex-1">
               <h2 class="text-xl font-bold">{{ userName }}</h2>
               <p class="text-gray-600">{{ userEmail }}</p>
+              <!-- Show provider badge -->
+              <span v-if="userProvider && userProvider !== 'local'" class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">
+                <span v-if="userProvider === 'google'">🔵</span>
+                <span v-else-if="userProvider === 'facebook'">🔷</span>
+                {{ userProvider === 'google' ? 'Google Account' : userProvider === 'facebook' ? 'Facebook Account' : '' }}
+              </span>
             </div>
           </div>
         </div>
@@ -18,7 +24,7 @@
       <div class="bg-white rounded-xl border">
         <div class="p-0">
           <ProfileMenuItem
-            v-for="item in menuItems"
+            v-for="item in filteredMenuItems"
             :key="item.id"
             :icon="item.icon"
             :title="item.title"
@@ -69,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { LogOut, Trash2 } from 'lucide-vue-next'
 import ProfileMenuItem from '@/components/profile/ProfileMenuItem.vue'
@@ -81,18 +87,37 @@ const { logout: authLogout, userName, userEmail, userInitial } = useAuth()
 
 const showLogoutConfirm = ref(false)
 const showDeleteConfirm = ref(false)
+const userProvider = ref('local') // 'local', 'google', 'facebook'
 
-const menuItems = ref([
+// All menu items
+const allMenuItems = ref([
   { id: 'account', icon: 'User', title: 'Account Information', description: 'Manage your personal information', to: '/customer/profile/account' },
   { id: 'designs', icon: 'Image', title: 'My Design Templates', description: 'View and manage saved designs', to: '/customer/designs' },
-  { id: 'customer-info', icon: 'FileText', title: 'Customer Info Template', description: 'Manage your default order information', to: '/customer/profile/customer-info' },
   { id: 'order-history', icon: 'History', title: 'Order History', description: 'View all past orders', to: '/customer/order-history' },
+  { id: 'change-password', icon: 'Settings', title: 'Change Password', description: 'Update your account password', to: '/customer/profile/change-password', requiresLocal: true },
   { id: 'privacy', icon: 'Shield', title: 'Privacy', description: 'Control your privacy settings', to: '/customer/profile/privacy' },
-  { id: 'change-password', icon: 'Settings', title: 'Change Password', description: 'Update your account password', to: '/customer/profile/change-password' },
   { id: 'language', icon: 'Globe', title: 'Language', description: 'English', badge: 'English', to: null },
   { id: 'help', icon: 'CircleHelp', title: 'Help Centre', description: 'Get support and assistance', to: null },
   { id: 'feedback', icon: 'MessageSquare', title: 'Share Feedback', description: 'Tell us what you think', to: null }
 ])
+
+// Filter menu items based on provider
+const filteredMenuItems = computed(() => {
+  if (userProvider.value === 'local') {
+    return allMenuItems.value
+  }
+  // For third-party accounts, hide items that require local account
+  return allMenuItems.value.filter(item => !item.requiresLocal)
+})
+
+// Load user data from localStorage
+onMounted(() => {
+  const currentUser = localStorage.getItem('currentUser')
+  if (currentUser) {
+    const user = JSON.parse(currentUser)
+    userProvider.value = user.provider || 'local'
+  }
+})
 
 function handleMenuClick(item) {
   if (item.to) router.push(item.to)

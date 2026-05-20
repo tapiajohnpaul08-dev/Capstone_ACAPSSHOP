@@ -136,11 +136,15 @@ export const oauthApi = {
 // ─── Customer Profile ─────────────────────────────────────────────────────────
 export const profileApi = {
   async getProfile() {
-    return authApi.getProfile();
+    return handleResponse(
+      axiosInstance.get('/customer/profile')
+    );
   },
 
-  async updateProfile(customerId, data) {
-    return authApi.updateCustomer(customerId, data);
+  async updateProfile(data) {
+    // This is a wrapper - actual update needs customerId
+    console.warn('Use authApi.updateCustomer(customerId, data) instead');
+    return { success: false, message: 'Use updateCustomer method' };
   },
 
   async changePassword(customerId, currentPassword, newPassword) {
