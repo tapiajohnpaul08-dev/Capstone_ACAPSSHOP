@@ -15,7 +15,6 @@
         <!-- Email icon + instructions -->
         <div class="flex flex-col items-center text-center space-y-2">
           <div class="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center">
-            <!-- Mail icon (inline SVG, no dependency) -->
             <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
@@ -62,9 +61,10 @@
             Code expired.
             <button
               @click="resendOtp"
-              class="text-blue-600 hover:underline font-medium"
+              :disabled="resendLoading"
+              class="text-blue-600 hover:underline font-medium disabled:opacity-50"
             >
-              Resend code
+              {{ resendLoading ? 'Sending...' : 'Resend code' }}
             </button>
           </span>
         </div>
@@ -103,7 +103,9 @@
 
 <script>
 import { appName } from '@/data/loginData.js'
+import { otpApi, authApi } from '@/api'
 import { useFeedback } from '@/utils/useFeedback'
+
 const { showSuccess, showError } = useFeedback()
 
 export default {
@@ -116,7 +118,8 @@ export default {
       otpRefs: [],
       otpError: '',
       isLoading: false,
-      timerSeconds: 120,
+      resendLoading: false,
+      timerSeconds: 60,
       timerInterval: null,
       timerActive: true
     }
@@ -124,7 +127,7 @@ export default {
 
   computed: {
     emailDisplay() {
-      return this.$route.query.email || 'your email'
+      return this.$route.query.email || sessionStorage.getItem('pendingEmail') || 'your email'
     },
     otpCode() {
       return this.otpDigits.join('')
@@ -149,7 +152,7 @@ export default {
 
   methods: {
     startTimer() {
-      this.timerSeconds = 120
+      this.timerSeconds = 60
       this.timerActive = true
       clearInterval(this.timerInterval)
       this.timerInterval = setInterval(() => {
@@ -161,13 +164,39 @@ export default {
       }, 1000)
     },
 
-    resendOtp() {
-      this.otpDigits = ['', '', '', '', '', '']
+    async resendOtp() {
+      if (this.resendLoading) return
+      
+      const email = this.$route.query.email || sessionStorage.getItem('pendingEmail')
+      
+      if (!email) {
+        showError('Error', 'Email address not found.')
+        this.goBack()
+        return
+      }
+
+      this.resendLoading = true
       this.otpError = ''
-      this.startTimer()
-      this.$nextTick(() => {
-        if (this.otpRefs[0]) this.otpRefs[0].focus()
-      })
+      this.otpDigits = ['', '', '', '', '', '']
+
+      try {
+        const result = await otpApi.sendOtp(email)
+        
+        if (result.success) {
+          showSuccess('New verification code sent!')
+          this.startTimer()
+          this.$nextTick(() => {
+            if (this.otpRefs[0]) this.otpRefs[0].focus()
+          })
+        } else {
+          showError('Failed', result.message || 'Failed to resend code.')
+        }
+      } catch (error) {
+        console.error('Resend OTP error:', error)
+        showError('Error', 'Failed to resend code.')
+      } finally {
+        this.resendLoading = false
+      }
     },
 
     handleOtpInput(index, event) {
@@ -211,69 +240,75 @@ export default {
     },
 
     async handleVerify() {
-      if (this.otpCode.length < 6) {
+    if (this.otpCode.length < 6) {
         this.otpError = 'Please enter all 6 digits'
         return
-      }
+    }
 
-      this.isLoading = true
-      this.otpError = ''
+    this.isLoading = true
+    this.otpError = ''
 
-      try {
-        // Simulate OTP verification
-        await new Promise(resolve => setTimeout(resolve, 1500))
+    const email = this.$route.query.email || sessionStorage.getItem('pendingEmail')
+    const pendingData = sessionStorage.getItem('pendingSignup')
 
-        // In a real app, verify the OTP with your backend here.
-        // For demo: any 6-digit code is accepted.
+    if (!email || !pendingData) {
+        showError('Error', 'Registration data not found. Please start over.')
+        this.goBack()
+        return
+    }
 
-        const pendingSignup = JSON.parse(sessionStorage.getItem('pendingSignup') || '{}')
+    try {
+        // ✅ Remove the separate verify call
+        // Just register directly with OTP
+        const userData = JSON.parse(pendingData)
+        const registrationData = {
+            ...userData,
+            otp: this.otpCode  // Send OTP with registration
+        }
+        
+        console.log('Sending registration data:', registrationData)
 
-        if (pendingSignup.email) {
-          // Register user in localStorage (mirrors login page pattern)
-          const existingUsers = JSON.parse(localStorage.getItem('customerUsers') || '[]')
-          const newUser = {
-            id: Date.now(),
-            email: pendingSignup.email,
-            password: pendingSignup.password,
-            name: pendingSignup.fullName,
-            phone: pendingSignup.phone,
-            company: pendingSignup.company || ''
-          }
-          existingUsers.push(newUser)
-          localStorage.setItem('customerUsers', JSON.stringify(existingUsers))
+        // Register directly (backend will verify OTP)
+        const registerResult = await authApi.register(registrationData)
 
-          // Auto-login the new user
-          localStorage.setItem('customerToken', 'demo-token-' + Date.now())
-          localStorage.setItem('userName', newUser.name)
-          localStorage.setItem('userEmail', newUser.email)
-          localStorage.setItem('currentUser', JSON.stringify({
-            id: newUser.id,
-            email: newUser.email,
-            name: newUser.name,
-            loggedInAt: new Date().toISOString()
-          }))
-
-          sessionStorage.removeItem('pendingSignup')
+        if (!registerResult.success) {
+            this.otpError = registerResult.message || 'Registration failed'
+            showError('Registration Failed', this.otpError)
+            this.isLoading = false
+            return
         }
 
+        // Auto-login
+        if (registerResult.data?.token) {
+            localStorage.setItem('customerToken', registerResult.data.token)
+            localStorage.setItem('token', registerResult.data.token)
+            localStorage.setItem('currentUser', JSON.stringify(registerResult.data.customer))
+            localStorage.setItem('userName', `${registerResult.data.customer.firstName} ${registerResult.data.customer.lastName}`)
+            localStorage.setItem('userEmail', registerResult.data.customer.email)
+        }
 
-        showSuccess('Email verified! Your account has been created.')
-        // Redirect to dashboard
+        sessionStorage.removeItem('pendingSignup')
+        sessionStorage.removeItem('pendingEmail')
+
+        showSuccess('Account created successfully! Redirecting...')
+        
         setTimeout(() => {
-          this.$router.push('/customer/dashboard')
-        }, 2000)
+            this.$router.push('/customer/dashboard')
+        }, 1500)
 
-      } catch (error) {
-        console.error('Verification error:', error)
-        this.otpError = 'Verification failed. Please try again.'
-        showError('Verification Failed', 'An error occurred. Please try again.')
-      } finally {
+    } catch (error) {
+        console.error('Registration error:', error)
+        this.otpError = error.response?.data?.message || 'Registration failed.'
+        showError('Registration Failed', this.otpError)
+    } finally {
         this.isLoading = false
-      }
-    },
+    }
+},
 
     goBack() {
       clearInterval(this.timerInterval)
+      sessionStorage.removeItem('pendingSignup')
+      sessionStorage.removeItem('pendingEmail')
       this.$router.push('/customer/signup')
     }
   }
