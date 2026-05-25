@@ -69,12 +69,18 @@
           id="ff-addr"
           :value="modelValue.deliveryAddress"
           @input="updateField('deliveryAddress', $event.target.value)"
+          @blur="validateDeliveryAddress"
           placeholder="Enter complete delivery address"
           rows="2"
           class="field resize-none"
-          :class="{ 'border-red-400 ring-1 ring-red-300': errors.deliveryAddress }"
+          :class="{ 
+            'border-red-400 ring-1 ring-red-300': deliveryAddressError,
+            'border-green-400 ring-1 ring-green-300': isValidDeliveryAddress && modelValue.deliveryAddress
+          }"
         ></textarea>
-        <p v-if="errors.deliveryAddress" class="text-xs text-red-500">{{ errors.deliveryAddress }}</p>
+        <p v-if="deliveryAddressError" class="text-xs text-red-500">{{ deliveryAddressError }}</p>
+        <p v-else-if="isValidDeliveryAddress && modelValue.deliveryAddress" class="text-xs text-green-500">✓ Valid address</p>
+        
         <label class="flex items-center gap-2 cursor-pointer select-none w-fit mt-1">
           <input
             type="checkbox"
@@ -102,6 +108,8 @@
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+
 const props = defineProps({
   modelValue: { type: Object, required: true },
   customerAddress: { type: String, default: '' },
@@ -110,18 +118,54 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+// Local validation
+const deliveryAddressTouched = ref(false)
+
+const deliveryAddressError = computed(() => {
+  if (!deliveryAddressTouched.value && !props.errors?.deliveryAddress) return ''
+  if (props.modelValue.method !== 'delivery') return ''
+  if (!props.modelValue.deliveryAddress || !props.modelValue.deliveryAddress.trim()) {
+    return 'Delivery address is required'
+  }
+  if (props.modelValue.deliveryAddress.trim().length < 5) {
+    return 'Please enter a complete delivery address'
+  }
+  return props.errors?.deliveryAddress || ''
+})
+
+const isValidDeliveryAddress = computed(() => {
+  return deliveryAddressTouched.value && 
+         props.modelValue.deliveryAddress && 
+         props.modelValue.deliveryAddress.trim().length >= 5 &&
+         !deliveryAddressError.value
+})
+
+function validateDeliveryAddress() {
+  deliveryAddressTouched.value = true
+}
+
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
+  if (field === 'deliveryAddress') {
+    validateDeliveryAddress()
+  }
 }
 
 function setMethod(method) {
   updateField('method', method)
+  if (method === 'pickup') {
+    deliveryAddressTouched.value = false
+  }
 }
 
 function handleSameAsCustomer(checked) {
   updateField('sameAsCustomer', checked)
   if (checked && props.customerAddress) {
     updateField('deliveryAddress', props.customerAddress)
+    validateDeliveryAddress()
+  } else if (!checked) {
+    updateField('deliveryAddress', '')
+    deliveryAddressTouched.value = false
   }
 }
 </script>

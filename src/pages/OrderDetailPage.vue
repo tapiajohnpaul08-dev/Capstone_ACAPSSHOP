@@ -385,74 +385,59 @@ function contactSupport() {
 
 function orderAgain() {
   console.log('=== orderAgain function START ===')
-  console.log('order.value.items:', order.value.items)
-  console.log('order.value.items.length:', order.value.items?.length)
   
   // Check if it's a multi-item order (items array with length > 1)
   if (order.value.items && order.value.items.length > 1) {
-    // Multi-item order - add all items to cart
     const itemsToReorder = order.value.items.map(item => ({
-      productId: item.product?.id || item.productId,
-      name: item.product?.name || item.name,
-      image: item.product?.image || item.image,
-      category: item.product?.category || item.category,
-      size: item.details?.sizes || item.size,
-      quantity: item.details?.quantity || item.quantity,
-      printPlacement: item.design?.printPlacement || '',
-      printSize: item.design?.printSize || '',
-      designNotes: item.design?.designNotes || '',
+      productId: item.productId,
+      name: item.name,
+      image: item.image,
+      category: item.category,
+      size: item.size,
+      quantity: item.quantity,
+      printPlacement: item.design?.printPlacement || item.printPlacement || '',
+      printSize: item.design?.printSize || item.printSize || '',
+      designNotes: item.design?.designNotes || item.designNotes || '',
       inStock: true
     }))
     
-    console.log('Items to reorder (multi):', itemsToReorder)
     sessionStorage.setItem('pendingCart', JSON.stringify(itemsToReorder))
     router.push('/customer/orders/create?type=company-product&source=cart')
   } 
-  // Single product order (items length === 1 with product object)
+  // Single product order
   else if (order.value.items && order.value.items.length === 1) {
     const item = order.value.items[0]
     
-    // Check if it has the nested product structure
-    if (item.product && item.product.id) {
-      // Company product with nested structure
-      const productId = item.product.id
-      console.log('Single product order, productId:', productId)
-      router.push(`/customer/orders/create?type=company-product&productId=${productId}`)
-    } 
-    // Flat structure fallback
-    else if (item.productId) {
+    if (item.productId) {
       router.push(`/customer/orders/create?type=company-product&productId=${item.productId}`)
     }
     // Own cups order
-    else if (order.value.orderType === 'own-cups' || order.value.supplyType === 'Own Cups') {
+    else if (order.value.supplyType === 'Own Cups' || order.value.isProvided) {
       const ownCupsData = {
-        productType: item.product?.name || item.name,
-        quantity: item.details?.quantity || item.quantity,
-        sizes: item.details?.sizes || item.size,
-        specifications: item.details?.specifications || ''
+        productType: item.name,
+        quantity: item.quantity,
+        sizes: item.size,
+        specifications: item.designNotes || ''
       }
       sessionStorage.setItem('pendingOwnCups', JSON.stringify(ownCupsData))
       router.push('/customer/orders/create?type=own-cups')
     }
-    else {
-      // Fallback to catalog
-      router.push('/customer/dashboard')
-    }
-  } 
-  // Legacy single product format (no items array)
+  }
+  // Legacy single product format
   else if (order.value.productId) {
     router.push(`/customer/orders/create?type=company-product&productId=${order.value.productId}`)
-  } 
-  else if (order.value.orderType === 'own-cups' || order.value.supplyType === 'Own Cups') {
+  }
+  // Own cups order (legacy)
+  else if (order.value.supplyType === 'Own Cups' || order.value.isProvided) {
     const ownCupsData = {
-      productType: order.value.product,
+      productType: order.value.productName || order.value.product,
       quantity: order.value.quantity,
-      sizes: order.value.sizes,
-      specifications: order.value.specifications || ''
+      sizes: order.value.size,
+      specifications: ''
     }
     sessionStorage.setItem('pendingOwnCups', JSON.stringify(ownCupsData))
     router.push('/customer/orders/create?type=own-cups')
-  } 
+  }
   else {
     router.push('/customer/dashboard')
   }

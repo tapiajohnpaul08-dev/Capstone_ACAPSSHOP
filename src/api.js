@@ -1,7 +1,6 @@
 // src/api.js
 // ─────────────────────────────────────────────────────────────────────────────
 // CUSTOMER SIDE API calls using axios - Connected to your Express/MongoDB backend
-// Only using working customer routes: /otp, /auth, /customer
 // ─────────────────────────────────────────────────────────────────────────────
 
 import axiosInstance from './services/axios';
@@ -22,22 +21,16 @@ const handleResponse = async (request) => {
 
 // ─── Customer Auth ───────────────────────────────────────────────────────────
 export const authApi = {
-  // Customer Registration (with OTP)
   async register(userData) {
-    // Register expects OTP in the request body
     return handleResponse(
       axiosInstance.post('/customer/register', userData)
     );
   },
-
-  // Customer Login
   async login(email, password) {
     return handleResponse(
       axiosInstance.post('/customer/login', { email, password })
     );
   },
-
-  // Customer Logout
   async logout() {
     localStorage.removeItem('customerToken');
     localStorage.removeItem('currentUser');
@@ -46,29 +39,21 @@ export const authApi = {
       axiosInstance.post('/customer/logout')
     );
   },
-
-  // Verify Customer Token
   async verifyToken() {
     return handleResponse(
       axiosInstance.get('/customer/verify')
     );
   },
-
-  // Get Customer Profile (requires auth)
   async getProfile() {
     return handleResponse(
       axiosInstance.get('/customer/profile')
     );
   },
-
-  // Update Customer
   async updateCustomer(customerId, data) {
     return handleResponse(
       axiosInstance.put(`/customer/${customerId}`, data)
     );
   },
-
-  // Change Password
   async changePassword(customerId, currentPassword, newPassword) {
     return handleResponse(
       axiosInstance.put(`/customer/${customerId}/password`, { 
@@ -81,14 +66,11 @@ export const authApi = {
 
 // ─── OTP Routes ──────────────────────────────────────────────────────────────
 export const otpApi = {
-  // Send OTP for registration
   async sendOtp(email) {
     return handleResponse(
       axiosInstance.post('/otp/send', { email })
     );
   },
-
-  // Verify OTP
   async verifyOtp(email, otp) {
     return handleResponse(
       axiosInstance.post('/otp/verify', { email, otp })
@@ -96,19 +78,14 @@ export const otpApi = {
   }
 };
 
-// ─── OAuth Routes (Google/Facebook) ──────────────────────────────────────────
+// ─── OAuth Routes ──────────────────────────────────────────────────────────
 export const oauthApi = {
-  // Google OAuth - Redirect to Google
   googleLogin() {
     window.location.href = 'http://localhost:3001/api/v1/auth/google';
   },
-
-  // Facebook OAuth - Redirect to Facebook
   facebookLogin() {
     window.location.href = 'http://localhost:3001/api/v1/auth/facebook';
   },
-
-  // Handle OAuth callback (parse token from URL)
   handleCallback() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -121,11 +98,8 @@ export const oauthApi = {
       localStorage.setItem('token', token);
       return { success: true, token, user: userData };
     }
-    
     return { success: false, message: 'OAuth callback failed' };
   },
-
-  // Google OAuth - JSON response alternative
   async googleLoginJson() {
     return handleResponse(
       axiosInstance.get('/auth/google/json')
@@ -140,93 +114,161 @@ export const profileApi = {
       axiosInstance.get('/customer/profile')
     );
   },
-
   async updateProfile(data) {
-    // This is a wrapper - actual update needs customerId
     console.warn('Use authApi.updateCustomer(customerId, data) instead');
     return { success: false, message: 'Use updateCustomer method' };
   },
-
   async changePassword(customerId, currentPassword, newPassword) {
     return authApi.changePassword(customerId, currentPassword, newPassword);
   }
 };
 
-// ─── NOTE: The following APIs are NOT YET IMPLEMENTED in your backend ─────────
-// These will be added for customer-facing features when you create the routes
-
-// Orders (Customer can view their orders)
-export const ordersApi = {
-  async getOrders() {
-    console.warn('Orders API not implemented yet. Add /api/v1/order routes for customers.');
-    return { success: false, message: 'Orders API not available' };
+// ─── Products API ─────────────────────────────────────────────────────────────
+export const productsApi = {
+  async getAllProducts() {
+    return handleResponse(
+      axiosInstance.get('/product')
+    );
   },
-  async getOrder(id) {
-    console.warn('Orders API not implemented yet.');
-    return { success: false, message: 'Orders API not available' };
+  async getProductById(id) {
+    return handleResponse(
+      axiosInstance.get(`/product/${id}`)
+    );
   },
-  async createOrder(orderData) {
-    console.warn('Orders API not implemented yet.');
-    return { success: false, message: 'Orders API not available' };
+  async getProductsByCategory(category) {
+    return handleResponse(
+      axiosInstance.get(`/product/category/${category}`)
+    );
   },
-  async cancelOrder(id) {
-    console.warn('Orders API not implemented yet.');
-    return { success: false, message: 'Orders API not available' };
+  async getFeaturedProducts() {
+    return handleResponse(
+      axiosInstance.get('/product/featured')
+    );
+  },
+  async getPopularProducts() {
+    return handleResponse(
+      axiosInstance.get('/product/popular')
+    );
+  },
+  async getAllSizes(productId) {
+    return handleResponse(
+      axiosInstance.get(`/product/${productId}/sizes`)
+    );
+  },
+  async getSizeDetails(productId, sizeName) {
+    return handleResponse(
+      axiosInstance.get(`/product/${productId}/size/${sizeName}`)
+    );
+  },
+  async calculatePrice(productId, sizeName, quantity) {
+    return handleResponse(
+      axiosInstance.post('/product/calculate-price', { productId, sizeName, quantity })
+    );
   }
 };
 
-// Products/Designs (Customer can browse designs)
+// ─── Orders API (FULLY IMPLEMENTED with your backend) ────────────────────────
+export const ordersApi = {
+  // Create a new order (customer)
+  async createOrder(orderData) {
+    return handleResponse(
+      axiosInstance.post('/order/customer/create', orderData)
+    );
+  },
+  
+  // Get customer's orders
+  async getMyOrders() {
+    return handleResponse(
+      axiosInstance.get('/order/customer/my-orders')
+    );
+  },
+  
+  // Get single order by ID (using orderId from your model)
+  async getMyOrderById(orderId) {
+    return handleResponse(
+      axiosInstance.get(`/order/customer/orders/${orderId}`)
+    );
+  },
+  
+  // Cancel order
+  async cancelMyOrder(orderId) {
+    return handleResponse(
+      axiosInstance.patch(`/order/customer/orders/${orderId}/cancel`)
+    );
+  },
+  
+  // Update order (only pending orders)
+  async updateMyOrder(orderId, updateData) {
+    return handleResponse(
+      axiosInstance.put(`/order/customer/orders/${orderId}`, updateData)
+    );
+  }
+};
+
+// ─── Designs/Templates API ────────────────────────────────────────────────────
 export const designsApi = {
   async getDesigns() {
-    console.warn('Products API not implemented yet. Add /api/v1/product routes.');
-    return { success: false, message: 'Products API not available' };
+    // If you have a designs endpoint, implement here
+    // For now, return empty array
+    return { success: true, designs: [] };
   },
   async getDesign(id) {
-    console.warn('Products API not implemented yet.');
-    return { success: false, message: 'Products API not available' };
+    return { success: false, message: 'Not implemented yet' };
+  },
+  async saveDesign(designData) {
+    return { success: false, message: 'Not implemented yet' };
   }
 };
 
-// Cart (Customer can manage cart)
+// ─── Cart API (Client-side only for now) ──────────────────────────────────────
 export const cartApi = {
   async getCart() {
-    console.warn('Cart API not implemented yet. Add /api/v1/cart routes.');
-    return { success: true, items: [] };
+    const savedCart = localStorage.getItem('customerCart');
+    return { success: true, items: savedCart ? JSON.parse(savedCart) : [] };
   },
   async addToCart(item) {
-    console.warn('Cart API not implemented yet.');
-    return { success: false, message: 'Cart API not available' };
+    const savedCart = localStorage.getItem('customerCart');
+    const cart = savedCart ? JSON.parse(savedCart) : [];
+    cart.push(item);
+    localStorage.setItem('customerCart', JSON.stringify(cart));
+    return { success: true, message: 'Item added to cart' };
   },
   async updateCartItem(id, quantity) {
-    console.warn('Cart API not implemented yet.');
-    return { success: false, message: 'Cart API not available' };
+    const savedCart = localStorage.getItem('customerCart');
+    const cart = savedCart ? JSON.parse(savedCart) : [];
+    const index = cart.findIndex(item => item.id === id);
+    if (index !== -1) {
+      cart[index].quantity = quantity;
+      localStorage.setItem('customerCart', JSON.stringify(cart));
+    }
+    return { success: true };
   },
   async removeFromCart(id) {
-    console.warn('Cart API not implemented yet.');
-    return { success: false, message: 'Cart API not available' };
+    const savedCart = localStorage.getItem('customerCart');
+    const cart = savedCart ? JSON.parse(savedCart) : [];
+    const filtered = cart.filter(item => item.id !== id);
+    localStorage.setItem('customerCart', JSON.stringify(filtered));
+    return { success: true };
   },
   async clearCart() {
-    console.warn('Cart API not implemented yet.');
-    return { success: false, message: 'Cart API not available' };
+    localStorage.removeItem('customerCart');
+    return { success: true };
   }
 };
 
-// Pricing (Customer can calculate prices)
+// ─── Pricing API ──────────────────────────────────────────────────────────────
 export const pricingApi = {
-  async getPrice(cupType, quantity, colors = 1) {
-    console.warn('Pricing API not implemented yet.');
-    return { success: false, message: 'Pricing API not available' };
+  async getPrice(productId, sizeName, quantity) {
+    return productsApi.calculatePrice(productId, sizeName, quantity);
   }
 };
 
-// Support Messages (Customer can send messages)
+// ─── Support Messages API ─────────────────────────────────────────────────────
 export const messagesApi = {
   async getMessages() {
-    console.warn('Messages API not implemented yet.');
     return { success: true, messages: [] };
   },
   async sendMessage(messageData) {
-    console.warn('Messages API not implemented yet.');
-    return { success: false, message: 'Messages API not available' };
+    return { success: false, message: 'Messages API not available yet' };
   }
 };

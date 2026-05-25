@@ -13,7 +13,7 @@
 
       <!-- Company product: show selected product preview -->
       <div v-if="orderType === 'company-product' && selectedProduct" class="flex gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-        <img :src="selectedProduct.image" :alt="selectedProduct.name" class="w-16 h-16 object-cover rounded-lg border shrink-0" />
+        <img :src="getImageUrl(selectedProduct.image)" :alt="selectedProduct.name" class="w-16 h-16 object-cover rounded-lg border shrink-0" />
         <div class="flex-1 min-w-0">
           <div class="text-xs text-blue-600 font-medium">{{ selectedProduct.category }}</div>
           <h3 class="font-semibold text-sm text-gray-900 mt-0.5">{{ selectedProduct.name }}</h3>
@@ -128,6 +128,8 @@
 <script setup>
 import { computed } from 'vue'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
 const props = defineProps({
   modelValue: { type: Object, required: true },
   orderType: { type: String, required: true },
@@ -191,6 +193,15 @@ function getBulkPrice() {
 function formatNumber(value) {
   if (!value) return '0'
   return Number(value).toLocaleString()
+}
+
+function getImageUrl(imagePath) {
+  if (!imagePath) return `${API_BASE_URL}/uploads/products/default-product.jpg`
+  if (imagePath.startsWith('http')) return imagePath
+  const cleanPath = imagePath.replace(/^\/+/, '')
+  if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`
+  if (cleanPath.startsWith('products/')) return `${API_BASE_URL}/uploads/${cleanPath}`
+  return `${API_BASE_URL}/uploads/products/${cleanPath}`
 }
 
 function updateField(field, value) {

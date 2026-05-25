@@ -8,9 +8,10 @@
         <!-- Product Image -->
         <div class="flex-shrink-0">
           <img 
-            :src="order.image || '/placeholder-image.png'" 
+            :src="getImageUrl(order.image)" 
             :alt="order.product || 'Order Item'" 
             class="w-20 h-20 object-cover rounded-lg"
+            @error="handleImageError"
           />
         </div>
 
@@ -18,7 +19,7 @@
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between gap-2 mb-2">
             <div>
-              <div class="font-semibold">{{ order.orderNumber || 'Order #' + order.id }}</div>
+              <div class="font-semibold">{{ order.orderNumber || order.orderId || 'Order #' + order.id }}</div>
               <div class="text-sm text-gray-600">{{ order.date || formatDate(order.createdAt) }}</div>
             </div>
             <div class="flex gap-2">
@@ -26,14 +27,14 @@
                 class="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium"
                 :class="statusBadgeClass"
               >
-                {{ order.status || 'Pending' }}
+                {{ formatStatus(order.status) }}
               </span>
             </div>
           </div>
 
           <div class="space-y-1">
             <div class="text-sm">
-              <span class="font-semibold">{{ order.product || 'Custom Order' }}</span>
+              <span class="font-semibold">{{ order.product || getFirstItemName() }}</span>
               <template v-if="order.quantity">
                 • {{ formatNumber(order.quantity) }} pcs
               </template>
@@ -44,21 +45,20 @@
           </div>
 
           <div class="flex items-center gap-4 mt-3 text-sm text-gray-600">
-            <div v-if="order.supplyType" class="flex items-center gap-1">
+            <div class="flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
                 <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
                 <path d="M12 22V12"/>
                 <polyline points="3.29 7 12 12 20.71 7"/>
-                <path d="m7.5 4.27 9 5.15"/>
               </svg>
-              <span>{{ order.supplyType }}</span>
+              <span>{{ order.supplyType || (order.isProvided ? 'Own Cups' : 'Company Cups') }}</span>
             </div>
-            <div v-if="order.deliveryMethod" class="flex items-center gap-1">
+            <div class="flex items-center gap-1">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
                 <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
                 <circle cx="12" cy="10" r="3"/>
               </svg>
-              <span>{{ order.deliveryMethod }}</span>
+              <span>{{ order.deliveryMethod || order.receivingMode || 'Delivery' }}</span>
             </div>
           </div>
         </div>
@@ -66,7 +66,7 @@
         <!-- Amount Section -->
         <div class="flex-shrink-0 text-right">
           <div class="text-sm text-gray-600">Total Amount</div>
-          <div class="text-xl font-bold text-blue-600">{{ formatPrice(order.totalAmount) }}</div>
+          <div class="text-xl font-bold text-blue-600">{{ formatPrice(order.totalAmount || order.amount) }}</div>
           <span 
             v-if="order.paymentStatus"
             class="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium mt-2"
@@ -83,6 +83,8 @@
 <script setup>
 import { computed } from 'vue'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
 const props = defineProps({
   order: {
     type: Object,
@@ -92,34 +94,72 @@ const props = defineProps({
 
 defineEmits(['click'])
 
+function getImageUrl(imagePath) {
+  if (!imagePath) return '/placeholder-image.png'
+  if (imagePath.startsWith('http')) return imagePath
+  const cleanPath = imagePath.replace(/^\/+/, '')
+  if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`
+  return `${API_BASE_URL}/uploads/products/${cleanPath}`
+}
+
+function handleImageError(event) {
+  event.target.src = '/placeholder-image.png'
+}
+
+function getFirstItemName() {
+  if (props.order.items && props.order.items.length > 0) {
+    return props.order.items[0].name
+  }
+  return 'Custom Order'
+}
+
+function formatStatus(status) {
+  const statusMap = {
+    'Pending': 'Pending Review',
+    'Scheduled': 'Scheduled for Production',
+    'In Production': 'In Production',
+    'Out for Delivery': 'Ready',
+    'Completed': 'Completed',
+    'Cancelled': 'Cancelled',
+    'pending': 'Pending Review',
+    'design_review': 'Design Review',
+    'approved': 'Approved',
+    'production': 'In Production',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled'
+  }
+  return statusMap[status] || status || 'Pending'
+}
+
 const statusBadgeClass = computed(() => {
-  const status = props.order.status || 'Pending'
+  const status = props.order.status
   const classes = {
-    'Pending Review': 'bg-yellow-100 text-yellow-800',
-    'Scheduled for Production': 'bg-blue-100 text-blue-800',
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'Scheduled': 'bg-blue-100 text-blue-800',
     'In Production': 'bg-purple-100 text-purple-800',
-    'Ready': 'bg-green-100 text-green-800',
+    'production': 'bg-purple-100 text-purple-800',
+    'Out for Delivery': 'bg-green-100 text-green-800',
+    'ready': 'bg-green-100 text-green-800',
     'Completed': 'bg-gray-100 text-gray-800',
+    'completed': 'bg-gray-100 text-gray-800',
     'Cancelled': 'bg-red-100 text-red-800',
-    'Delayed': 'bg-orange-100 text-orange-800',
-    'Pending': 'bg-yellow-100 text-yellow-800'
+    'cancelled': 'bg-red-100 text-red-800'
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
 })
 
 const paymentBadgeClass = computed(() => {
-  const paymentStatus = props.order.paymentStatus || 'Pending Payment'
+  const paymentStatus = props.order.paymentStatus
   const classes = {
     'Paid': 'bg-green-100 text-green-800',
-    'Partial Payment': 'bg-orange-100 text-orange-800',
-    'Pending Payment': 'bg-yellow-100 text-yellow-800',
-    'Refunded': 'bg-gray-100 text-gray-800'
+    'Partial': 'bg-orange-100 text-orange-800',
+    'Unpaid': 'bg-yellow-100 text-yellow-800'
   }
   return classes[paymentStatus] || 'bg-gray-100 text-gray-800'
 })
 
 function formatPrice(price) {
-  // Handle undefined, null, or non-numeric values
   if (price === undefined || price === null || isNaN(price)) {
     return '₱0'
   }

@@ -21,13 +21,13 @@
         </span>
       </div>
 
-      <!-- Cart Items Section (for multi-item orders) -->
+      <!-- Cart Items Section -->
       <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
         <div class="space-y-3 max-h-64 overflow-y-auto">
           <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
             <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-              <img :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+              <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" @error="handleImageError" />
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
@@ -47,16 +47,14 @@
 
       <!-- Single Product Section -->
       <div v-else>
-        <!-- Selected product (company) -->
         <div v-if="orderType === 'company-product' && selectedProduct" class="flex gap-3 p-3 bg-gray-50 rounded-lg">
-          <img :src="selectedProduct.image" :alt="selectedProduct.name" class="w-12 h-12 object-cover rounded-md shrink-0" />
+          <img :src="getImageUrl(selectedProduct.image)" :alt="selectedProduct.name" class="w-12 h-12 object-cover rounded-md shrink-0" @error="handleImageError" />
           <div class="min-w-0">
             <div class="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug">{{ selectedProduct.name }}</div>
             <div class="text-xs text-gray-500 mt-0.5">{{ selectedProduct.category }}</div>
           </div>
         </div>
 
-        <!-- Summary rows -->
         <div class="space-y-2.5 text-sm">
           <div v-if="orderType === 'own-cups' && productType" class="flex justify-between">
             <span class="text-gray-500">Product Type</span>
@@ -66,15 +64,14 @@
             <span class="text-gray-500">Quantity</span>
             <span class="font-medium text-gray-800">{{ Number(quantity).toLocaleString() }} pcs</span>
           </div>
-           <div v-if="sizes" class="flex justify-between">
-    <span class="text-gray-500">Size</span>
-    <span class="font-medium text-gray-800">{{ sizes }}</span>
-  </div>
+          <div v-if="sizes" class="flex justify-between">
+            <span class="text-gray-500">Size</span>
+            <span class="font-medium text-gray-800">{{ sizes }}</span>
+          </div>
           <div v-if="designSource" class="flex justify-between">
             <span class="text-gray-500">Design</span>
             <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
           </div>
-          <!-- FIXED: ETA display now shows actual days -->
           <div class="flex justify-between">
             <span class="text-gray-500">ETA</span>
             <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
@@ -85,7 +82,6 @@
           </div>
         </div>
 
-        <!-- Pricing -->
         <div class="border-t pt-4 space-y-2">
           <div v-if="orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
             <div class="flex justify-between text-sm">
@@ -104,7 +100,6 @@
         Final price confirmed after design review and approval.
       </p>
 
-      <!-- Validation hints -->
       <div v-if="validationHints.length > 0" class="space-y-1.5">
         <div
           v-for="hint in validationHints"
@@ -118,7 +113,6 @@
         </div>
       </div>
 
-      <!-- Submit -->
       <button
         @click="emit('submit')"
         :disabled="!canSubmit || isSubmitting"
@@ -143,8 +137,8 @@
 
 <script setup>
 import { computed } from 'vue'
-import { getPriceForQuantity } from '@/data/catalogData'
-import { ETA_CONFIG } from '@/constants/orderConstants'
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 const props = defineProps({
   orderType: { type: String, required: true },
@@ -164,66 +158,66 @@ const props = defineProps({
 
 const emit = defineEmits(['submit'])
 
-// NEW: Calculate ETA based on design source
+function getImageUrl(imagePath) {
+  if (!imagePath) return `${API_BASE_URL}/uploads/products/default-product.jpg`
+  if (imagePath.startsWith('http')) return imagePath
+  const cleanPath = imagePath.replace(/^\/+/, '')
+  if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`
+  if (cleanPath.startsWith('products/')) return `${API_BASE_URL}/uploads/${cleanPath}`
+  return `${API_BASE_URL}/uploads/products/${cleanPath}`
+}
+
+function handleImageError(event) {
+  event.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
+}
+
 const estimatedETA = computed(() => {
   if (!props.designSource) return '—'
-  const days = props.designSource === 'upload' 
-    ? ETA_CONFIG.UPLOAD_DAYS 
-    : ETA_CONFIG.SAVED_TEMPLATE_DAYS
-  return `${days} business days`
+  // 'custom' is a fallback placeholder passed from parent; treat as upload
+  const src = props.designSource === 'custom' ? 'upload' : props.designSource
+  return src === 'upload' ? '5-7 business days' : '3-5 business days'
 })
 
 function calculateCartItemTotal(item) {
-  const total = getPriceForQuantity(item.productId, item.size, item.quantity)
-  return total ? `₱${total.toLocaleString()}` : '₱0'
+  if (item.estimatedTotal) return `₱${item.estimatedTotal.toLocaleString()}`
+  return '₱0'
 }
 
 const cartSubtotal = computed(() => {
   let total = 0
   for (const item of props.cartItems) {
-    const itemTotal = getPriceForQuantity(item.productId, item.size, item.quantity)
-    if (itemTotal) total += itemTotal
+    if (item.estimatedTotal) total += item.estimatedTotal
   }
   return `₱${total.toLocaleString()}`
 })
 
 function getUnitPrice() {
-  if (!props.selectedProduct || !props.selectedProduct.sizes) return '—'
-  const firstSize = props.selectedProduct.sizes[0]
-  if (!firstSize || !firstSize.price) return '—'
-  return `₱${firstSize.price.toFixed(2)}`
+  const size = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
+             ?? props.selectedProduct?.sizes?.[0]
+  if (!size?.price) return '—'
+  return `₱${size.price.toFixed(2)}`
 }
 
-// FIXED: Improved bulk pricing calculation
 const singleProductTotal = computed(() => {
-  if (!props.quantity || isNaN(Number(props.quantity))) return '₱0'
+  if (props.orderType === 'own-cups') return '₱0 (Price upon review)'
+  if (props.cartItems?.length > 0) return cartSubtotal.value
+  
   const qty = Number(props.quantity)
+  if (!qty || isNaN(qty)) return '₱0'
   
-  if (props.orderType === 'company-product' && props.selectedProduct && props.selectedProduct.sizes) {
-    const firstSize = props.selectedProduct.sizes[0]
-    if (!firstSize || !firstSize.price) return '₱0'
-    
-    let unitPrice = firstSize.price
-    
-    // Use bulk pricing if available
-    if (firstSize.bulkPrices) {
-      const bulkThresholds = Object.keys(firstSize.bulkPrices)
-        .map(Number)
-        .sort((a, b) => b - a) // Descending order
-      
-      for (const threshold of bulkThresholds) {
-        if (qty >= threshold) {
-          unitPrice = firstSize.bulkPrices[threshold] / threshold
-          break
-        }
-      }
+  // Use the currently selected size for price estimate
+  const selectedSize = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
+                    ?? props.selectedProduct?.sizes?.[0]
+  if (selectedSize?.price) {
+    let unitPrice = selectedSize.price
+    const bulkPrices = selectedSize.bulkPrices
+    if (bulkPrices) {
+      if (qty >= 5000 && bulkPrices[5000]) unitPrice = bulkPrices[5000] / 5000
+      else if (qty >= 2000 && bulkPrices[2000]) unitPrice = bulkPrices[2000] / 2000
+      else if (qty >= 1000 && bulkPrices[1000]) unitPrice = bulkPrices[1000] / 1000
+      else if (qty >= 500 && bulkPrices[500]) unitPrice = bulkPrices[500] / 500
     }
-    
     return `₱${(unitPrice * qty).toLocaleString()}`
-  }
-  
-  if (props.orderType === 'own-cups' && props.quantity) {
-    return '₱0 (Price upon review)'
   }
   
   return '₱0'

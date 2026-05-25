@@ -54,30 +54,39 @@ const { orders, fetchOrders } = useOrders()
 const selectedStatus = ref('all')
 const isLoading = ref(false)
 
-// Fixed status tabs to match actual statusValue values
+// Status tabs matching your backend status values
 const statusTabs = [
   { value: 'all', label: 'All' },
   { value: 'pending', label: 'Pending Review' },
-  { value: 'scheduled', label: 'Scheduled for Production' },
+  { value: 'scheduled', label: 'Scheduled' },
   { value: 'production', label: 'In Production' },
   { value: 'ready', label: 'Ready' },
   { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-  { value: 'delayed', label: 'Delayed' }
+  { value: 'cancelled', label: 'Cancelled' }
 ]
 
 const getOrderCount = (status) => {
   if (status === 'all') return orders.value.length
-  return orders.value.filter((o) => o.statusValue === status || o.status === status).length
+  return orders.value.filter((o) => {
+    const orderStatus = o.status?.toLowerCase() || ''
+    if (status === 'ready') return orderStatus === 'out for delivery' || orderStatus === 'ready'
+    return orderStatus === status
+  }).length
 }
 
 const filteredOrders = computed(() => {
   if (selectedStatus.value === 'all') return orders.value
-  return orders.value.filter((o) => o.statusValue === selectedStatus.value || o.status === selectedStatus.value)
+  return orders.value.filter((o) => {
+    const orderStatus = o.status?.toLowerCase() || ''
+    if (selectedStatus.value === 'ready') {
+      return orderStatus === 'out for delivery' || orderStatus === 'ready'
+    }
+    return orderStatus === selectedStatus.value
+  })
 })
 
 function viewOrderDetails(order) {
-  router.push(`/customer/orders/${order.id}`)
+  router.push(`/customer/orders/${order.orderId || order.id}`)
 }
 
 onMounted(async () => {

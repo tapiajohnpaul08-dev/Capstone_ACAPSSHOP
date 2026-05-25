@@ -88,62 +88,68 @@
         </div>
       </div>
 
-      <!-- Products Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-    <div
-      v-for="product in filteredProducts"
-      :key="product.id"
-      class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md group"
-    >
-      <!-- Image -->
-      <div class="relative">
-        <img :src="product.image" :alt="product.name" class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" />
-        <!-- ... badges ... -->
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-16">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+        <p class="text-gray-500 mt-2">Loading products...</p>
       </div>
 
-      <!-- Info -->
-      <div class="p-3">
-        <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
-        <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
-        <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
-        <div class="mt-2 flex items-center justify-between">
-          <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
-          <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
-        </div>
-        
-        <!-- Simplified buttons - just add to cart without modal -->
-        <div class="mt-2 flex gap-1.5">
-          <button
-            @click.stop="addToCart(product)"
-            class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-            :disabled="product.inStock === false"
-          >
-            Add to Cart
-          </button>
-          <button
-            class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors"
-            :class="product.inStock !== false
-              ? 'bg-blue-600 text-white hover:bg-blue-700'
-              : 'bg-gray-100 text-gray-400'"
-            :disabled="product.inStock === false"
-            @click.stop="product.inStock !== false && orderCompanyProduct(product)"
-          >
-            Order Now
-          </button>
+      <!-- Products Grid -->
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div
+          v-for="product in filteredProducts"
+          :key="product.id"
+          class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md group"
+        >
+          <!-- Image -->
+          <div class="relative">
+<img 
+      :src="getImageUrl(product.image)" 
+      :alt="product.name" 
+      class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" 
+      @error="handleImageError"
+      loading="lazy"
+    />
+    <!-- Optional: Add a loading placeholder -->
+    <div class="absolute inset-0 bg-gray-100 animate-pulse -z-10"></div>
+            </div>
+
+          <!-- Info -->
+          <div class="p-3">
+            <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
+            <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
+            <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
+              <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
+            </div>
+            
+            <!-- Simplified buttons - just add to cart without modal -->
+            <div class="mt-2 flex gap-1.5">
+              <button
+                @click.stop="addToCart(product)"
+                class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              >
+                Add to Cart
+              </button>
+              <button
+                class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
+                @click.stop="orderCompanyProduct(product)"
+              >
+                Order Now
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  </div>
 
       <!-- Empty state -->
-      <div v-if="filteredProducts.length === 0" class="text-center py-16">
+      <div v-if="!loading && filteredProducts.length === 0" class="text-center py-16">
         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-gray-300 mb-3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <p class="text-gray-400 text-sm">No products found.</p>
         <button @click="searchQuery = ''; selectedCategory = 'all'" class="mt-2 text-xs text-blue-600 hover:underline">Clear filters</button>
       </div>
     </div>
-
-
 
     <!-- Cart Drawer -->
     <Teleport to="body">
@@ -178,14 +184,14 @@
                 class="flex gap-3 bg-gray-50 rounded-xl p-3"
               >
                 <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-gray-100">
-                  <img :src="item.image" :alt="item.name" class="w-full h-full object-cover" />
+                  <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" />
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-semibold text-gray-900 truncate">{{ item.name }}</p>
                   <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity.toLocaleString() }} pcs</p>
                   <p v-if="item.printSize" class="text-xs text-gray-400">Print: {{ item.printSize }}</p>
                   <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
-                  <p class="text-sm font-bold text-blue-600 mt-0.5">{{ item.estimatedTotal }}</p>
+                  <p class="text-sm font-bold text-blue-600 mt-0.5">{{ formatPriceAmount(item.estimatedTotal) }}</p>
                 </div>
                 <button @click="removeFromCart(idx)" class="text-gray-300 hover:text-red-500 transition-colors self-start mt-0.5">
                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -203,7 +209,7 @@
                 Proceed to Order
               </button>
               <button
-                @click="cart = []"
+                @click="clearCart"
                 class="w-full py-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
               >Clear cart</button>
             </div>
@@ -230,17 +236,23 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { products, getPriceForQuantity } from '@/data/catalogData'
+import { productsApi, ordersApi } from '@/api'
 
 const router = useRouter()
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+
+
+// State
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 const showCart = ref(false)
 const cart = ref([])
 const toast = ref({ show: false, message: '' })
+const products = ref([])
+const loading = ref(true)
 
 const howItWorks = [
   { number: 1, title: 'Place Your Order', description: 'Pick a product or bring your own cups, upload your design.' },
@@ -254,26 +266,59 @@ const categories = [
   { value: 'Paper Cups', label: 'Paper Cups' },
 ]
 
+// Computed
 const cartCount = computed(() => cart.value.length)
 
 const filteredProducts = computed(() => {
-  let list = [...products]
+  let list = [...products.value]
   if (selectedCategory.value !== 'all') {
     list = list.filter(p => p.category === selectedCategory.value)
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    list = list.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q) || (p.subcategory && p.subcategory.toLowerCase().includes(q)))
+    list = list.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
   }
   return list
 })
 
-const estimatedTotal = computed(() => {
-  if (!modalProduct.value || !modalForm.value.size || !modalForm.value.quantity) return null
-  const total = getPriceForQuantity(modalProduct.value, modalForm.value.size, modalForm.value.quantity)
-  if (!total) return null
-  return `₱${total.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
-})
+// Methods
+function getImageUrl(imagePath) {
+  if (!imagePath) {
+    return `${API_BASE_URL}/uploads/products/default-product.jpg`
+  }
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath
+  }
+  
+  // Clean the path - remove any leading slashes and ensure proper format
+  let cleanPath = imagePath.replace(/^\/+/, '') // Remove leading slashes
+  
+  // If the path already starts with 'uploads/', use it directly
+  if (cleanPath.startsWith('uploads/')) {
+    return `${API_BASE_URL}/${cleanPath}`
+  }
+  
+  // If the path starts with 'products/' (from multer destination)
+  if (cleanPath.startsWith('products/')) {
+    return `${API_BASE_URL}/uploads/${cleanPath}`
+  }
+  
+  // Default: assume it's just a filename in the products folder
+  // Your multer saves to 'uploads/products/' with filename like 'product-123456789-123456789.jpg'
+  return `${API_BASE_URL}/uploads/products/${cleanPath}`
+}
+
+function handleImageError(event) {
+  console.error('Image failed to load:', event.target.src)
+  // Set a fallback image
+  event.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
+  // If even default fails, use a placeholder
+  event.target.onerror = () => {
+    event.target.src = 'https://via.placeholder.com/300x200?text=No+Image'
+  }
+}
 
 function getSizeOptions(product) {
   if (!product.sizes || product.sizes.length === 0) return 'Standard size'
@@ -295,35 +340,79 @@ function formatPrice(product) {
   return `₱${minPrice.toFixed(2)} – ₱${maxPrice.toFixed(2)}`
 }
 
-function addToCart(product) {
+function formatPriceAmount(amount) {
+  if (!amount) return ''
+  return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
+}
+
+async function addToCart(product) {
   // Get the first available size as default
   const defaultSize = product.sizes?.[0]?.name || ''
+  
+  // Calculate estimated price
+  let estimatedTotal = null
+  if (defaultSize && product.minOrder) {
+    const priceResult = await productsApi.calculatePrice(product.id, defaultSize, product.minOrder)
+    if (priceResult.success && priceResult.data) {
+      estimatedTotal = priceResult.data.total
+    }
+  }
   
   cart.value.push({
     productId: product.id,
     name: product.name,
     image: product.image,
     category: product.category,
-    size: defaultSize,  // Default size
-    quantity: product.minOrder || 500,  // Minimum quantity
-    printPlacement: '',  // Empty, to be filled in order page
-    printSize: '',  // Empty, to be filled in order page
-    designNotes: '',  // Empty, to be filled in order page
-    estimatedTotal: null,  // Will be calculated in order page
+    size: defaultSize,
+    quantity: product.minOrder || 500,
+    printPlacement: '',
+    printSize: '',
+    designNotes: '',
+    estimatedTotal: estimatedTotal
   })
   
+  // Save cart to localStorage
+  saveCartToLocalStorage()
   showToast(`${product.name} added to cart!`)
 }
 
 function removeFromCart(idx) {
   cart.value.splice(idx, 1)
+  saveCartToLocalStorage()
+}
+
+function clearCart() {
+  cart.value = []
+  saveCartToLocalStorage()
+  showToast('Cart cleared')
+}
+
+function saveCartToLocalStorage() {
+  localStorage.setItem('customerCart', JSON.stringify(cart.value))
+}
+
+function loadCartFromLocalStorage() {
+  const savedCart = localStorage.getItem('customerCart')
+  if (savedCart) {
+    cart.value = JSON.parse(savedCart)
+  }
 }
 
 function openCart() {
   showCart.value = true
 }
 
-function proceedToOrder() {
+async function proceedToOrder() {
+  // Check if user is logged in
+  const token = localStorage.getItem('customerToken')
+  if (!token) {
+    showToast('Please login to proceed with your order')
+    setTimeout(() => {
+      router.push('/customer/login')
+    }, 1500)
+    return
+  }
+  
   // Enrich cart items with all required fields
   const enrichedCart = cart.value.map(item => ({
     productId: item.productId,
@@ -348,14 +437,61 @@ function showToast(message) {
   setTimeout(() => { toast.value.show = false }, 2500)
 }
 
-
 function createOwnCupsOrder() {
+  const token = localStorage.getItem('customerToken')
+  if (!token) {
+    showToast('Please login to create an order')
+    setTimeout(() => {
+      router.push('/customer/login')
+    }, 1500)
+    return
+  }
   router.push('/customer/orders/create?type=own-cups')
 }
 
 function orderCompanyProduct(product) {
+  const token = localStorage.getItem('customerToken')
+  if (!token) {
+    showToast('Please login to place an order')
+    setTimeout(() => {
+      router.push('/customer/login')
+    }, 1500)
+    return
+  }
   router.push(`/customer/orders/create?type=company-product&productId=${product.id}`)
 }
+
+// Load products from backend
+async function loadProducts() {
+  loading.value = true
+  try {
+    const response = await productsApi.getAllProducts()
+    console.log('Products response:', response) // Debug log
+    
+    if (response.success && response.data) {
+      products.value = response.data
+      // Debug: log first product's image path
+      if (response.data.length > 0) {
+        console.log('First product image path:', response.data[0].image)
+        console.log('Full image URL:', getImageUrl(response.data[0].image))
+      }
+    } else {
+      console.error('Failed to load products:', response.message)
+      showToast('Failed to load products')
+    }
+  } catch (error) {
+    console.error('Error loading products:', error)
+    showToast('Error loading products')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  loadProducts()
+  loadCartFromLocalStorage()
+})
 </script>
 
 <style scoped>
