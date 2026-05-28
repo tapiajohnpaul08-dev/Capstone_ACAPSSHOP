@@ -35,6 +35,8 @@ export function useOrders() {
     error.value = null
     try {
       const response = await ordersApi.getMyOrderById(orderId)
+          console.log('orderRes:', response.data)
+
       if (response.success && response.data) {
         const order = transformOrderToFrontend(response.data)
         return { success: true, order }
@@ -75,7 +77,7 @@ export function useOrders() {
 
   // Submit order (create new)
   const submitOrder = async (orderData) => {
-    console.log('orderData:',orderData);
+    console.log('orderData:', orderData);
     
     loading.value = true
     try {
@@ -115,6 +117,7 @@ export function useOrders() {
         category: item.category,
         size: item.size,
         quantity: item.quantity,
+        estimatedTotal: item.estimatedTotal,
         image: item.image,
         design: {
           source: item.designSource,
@@ -142,6 +145,7 @@ export function useOrders() {
       status: backendOrder.status,
       statusValue: statusMap[backendOrder.status?.toLowerCase()] || 'pending',
       paymentStatus: backendOrder.paymentStatus,
+      isProvided: backendOrder.isProvided, // ← ADD THIS LINE
       supplyType: backendOrder.isProvided ? 'Own Cups' : 'Company Cups',
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
@@ -152,17 +156,18 @@ export function useOrders() {
       date: backendOrder.orderedAt ? new Date(backendOrder.orderedAt).toLocaleDateString() : new Date().toLocaleDateString(),
       createdAt: backendOrder.orderedAt || backendOrder.createdAt,
       items: items,
-      customer: backendOrder.customer || {
-        name: backendOrder.customerName,
-        email: backendOrder.customerEmail,
-        phone: backendOrder.customerPhone,
-        address: backendOrder.address
-      },
+      customerName: backendOrder.customerName,
+      customerEmail: backendOrder.customerEmail,
+      customerPhone: backendOrder.customerPhone,
+      address: backendOrder.address,
+      company: backendOrder.customer?.company || '',
       fulfillment: backendOrder.fulfillment || {
         method: backendOrder.receivingMode === 'Pick-up' ? 'pickup' : 'delivery',
         deliveryAddress: backendOrder.address
       },
-      designDetails: backendOrder.designDetails
+      designDetails: backendOrder.designDetails,
+      expectedDelivery: backendOrder.expectedDelivery ? new Date(backendOrder.expectedDelivery).toLocaleDateString() : null,
+      statusHistory: backendOrder.statusHistory
     }
   }
 

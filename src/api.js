@@ -171,6 +171,8 @@ export const productsApi = {
 export const ordersApi = {
   // Create a new order (customer)
   async createOrder(orderData) {
+
+    console.log('Creating order with data:', orderData);
     return handleResponse(
       axiosInstance.post('/order/customer/create', orderData)
     );
@@ -202,7 +204,14 @@ export const ordersApi = {
     return handleResponse(
       axiosInstance.put(`/order/customer/orders/${orderId}`, updateData)
     );
-  }
+  },
+   uploadDesignFiles: async (formData) => {
+    return handleResponse(
+      axiosInstance.post('/designs/upload-design', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    );
+  },
 };
 
 // ─── Designs/Templates API ────────────────────────────────────────────────────
@@ -270,5 +279,95 @@ export const messagesApi = {
   },
   async sendMessage(messageData) {
     return { success: false, message: 'Messages API not available yet' };
+  }
+};
+
+
+export const templatesApi = {
+  async getTemplates() {
+    return handleResponse(
+      axiosInstance.get('/customer/templates')
+    );
+  },
+  
+  async getTemplateById(templateId) {
+    return handleResponse(
+      axiosInstance.get(`/customer/templates/${templateId}`)
+    );
+  },
+  
+  async createTemplate(templateData) {
+    // Check if we're sending an existingImagePath (no file upload)
+    if (templateData.existingImagePath) {
+      // Send as regular JSON, not FormData
+      return handleResponse(
+        axiosInstance.post('/customer/templates', {
+          name: templateData.name,
+          printSize: templateData.printSize,
+          placement: templateData.placement,
+          notes: templateData.notes,
+          existingImagePath: templateData.existingImagePath
+        })
+      );
+    }
+    
+    // Otherwise, use FormData for file upload
+    const formData = new FormData();
+    formData.append('name', templateData.name);
+    formData.append('printSize', templateData.printSize || '');
+    formData.append('placement', templateData.placement || '');
+    formData.append('notes', templateData.notes || '');
+    
+    if (templateData.imageFile) {
+      formData.append('image', templateData.imageFile);
+    }
+    
+    return handleResponse(
+      axiosInstance.post('/customer/templates', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    );
+  },
+  
+  async updateTemplate(templateId, templateData) {
+    const formData = new FormData();
+    formData.append('name', templateData.name);
+    formData.append('printSize', templateData.printSize || '');
+    formData.append('placement', templateData.placement || '');
+    formData.append('notes', templateData.notes || '');
+    
+    if (templateData.imageFile) {
+      formData.append('image', templateData.imageFile);
+    }
+    
+    return handleResponse(
+      axiosInstance.put(`/customer/templates/${templateId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    );
+  },
+  
+  async deleteTemplate(templateId) {
+    return handleResponse(
+      axiosInstance.delete(`/customer/templates/${templateId}`)
+    );
+  },
+  
+  async saveDesignAsTemplate(orderDesignData) {
+    const formData = new FormData();
+    formData.append('templateName', orderDesignData.templateName);
+    formData.append('printSize', orderDesignData.printSize || '');
+    formData.append('printPlacement', orderDesignData.printPlacement || '');
+    formData.append('designNotes', orderDesignData.designNotes || '');
+    
+    if (orderDesignData.imageFile) {
+      formData.append('image', orderDesignData.imageFile);
+    }
+    
+    return handleResponse(
+      axiosInstance.post('/customer/templates/save-from-order', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    );
   }
 };

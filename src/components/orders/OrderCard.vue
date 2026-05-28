@@ -95,10 +95,19 @@ const props = defineProps({
 defineEmits(['click'])
 
 function getImageUrl(imagePath) {
-  if (!imagePath) return '/placeholder-image.png'
-  if (imagePath.startsWith('http')) return imagePath
-  const cleanPath = imagePath.replace(/^\/+/, '')
-  if (cleanPath.startsWith('uploads/')) return `${API_BASE_URL}/${cleanPath}`
+  if (!imagePath) {
+    return `${API_BASE_URL}/uploads/products/default-product.jpg`
+  }
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath
+  }
+  let cleanPath = imagePath.replace(/^\/+/, '') // Remove leading slashes
+  if (cleanPath.startsWith('uploads/')) {
+    return `${API_BASE_URL}/${cleanPath}`
+  }
+  if (cleanPath.startsWith('products/')) {
+    return `${API_BASE_URL}/uploads/${cleanPath}`
+  }
   return `${API_BASE_URL}/uploads/products/${cleanPath}`
 }
 
@@ -118,15 +127,10 @@ function formatStatus(status) {
     'Pending': 'Pending Review',
     'Scheduled': 'Scheduled for Production',
     'In Production': 'In Production',
-    'Out for Delivery': 'Ready',
+    'Out for Delivery': 'Out for Delivery',
     'Completed': 'Completed',
     'Cancelled': 'Cancelled',
-    'pending': 'Pending Review',
-    'design_review': 'Design Review',
-    'approved': 'Approved',
-    'production': 'In Production',
-    'completed': 'Completed',
-    'cancelled': 'Cancelled'
+    
   }
   return statusMap[status] || status || 'Pending'
 }

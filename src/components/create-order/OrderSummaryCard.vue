@@ -19,31 +19,35 @@
         <span class="px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600 capitalize">
           {{ fulfillment || '—' }}
         </span>
+        <span v-if="paymentMethod" class="px-2 py-1 rounded-md text-xs font-medium" 
+          :class="paymentMethod === 'cod' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'">
+          {{ paymentMethod === 'cod' ? '💵 COD' : '🏦 Bank Transfer' }}
+        </span>
       </div>
 
       <!-- Cart Items Section -->
-      <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
-        <div class="space-y-3 max-h-64 overflow-y-auto">
-          <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
-            <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-              <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" @error="handleImageError" />
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
-              <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity.toLocaleString() }} pcs</p>
-              <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
-            </div>
-            <div class="text-right">
-              <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
-            </div>
-          </div>
-        </div>
-        <div class="border-t pt-2 flex justify-between font-semibold">
-          <span>Subtotal</span>
-          <span class="text-blue-600">{{ cartSubtotal }}</span>
-        </div>
+ <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
+  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
+  <div class="space-y-3 max-h-64 overflow-y-auto">
+    <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
+      <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+        <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" @error="handleImageError" />
       </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
+        <p class="text-xs text-gray-500">{{ item.size || 'Select size' }} · {{ (item.quantity || 0).toLocaleString() }} pcs</p>
+        <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
+      </div>
+      <div class="text-right">
+        <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="border-t pt-2 flex justify-between font-semibold">
+    <span>Subtotal</span>
+    <span class="text-blue-600">{{ cartSubtotal }}</span>
+  </div>
+</div>
 
       <!-- Single Product Section -->
       <div v-else>
@@ -72,8 +76,9 @@
             <span class="text-gray-500">Design</span>
             <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
           </div>
+          <!-- ETA Display - FIXED -->
           <div class="flex justify-between">
-            <span class="text-gray-500">ETA</span>
+            <span class="text-gray-500">Estimated Delivery</span>
             <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
           </div>
           <div v-if="filesCount > 0" class="flex justify-between">
@@ -89,9 +94,10 @@
               <span class="text-gray-700">{{ getUnitPrice() }}</span>
             </div>
           </div>
-          <div class="flex justify-between items-center">
+          <!-- Estimated Total - FIXED -->
+          <div class="flex justify-between items-center pt-2">
             <span class="font-semibold text-gray-900">Estimated Total</span>
-            <span class="text-xl font-bold text-blue-600">{{ singleProductTotal }}</span>
+            <span class="text-xl font-bold text-blue-600">{{ estimatedTotalDisplay }}</span>
           </div>
         </div>
       </div>
@@ -149,6 +155,8 @@ const props = defineProps({
   designSource: { type: String, default: '' },
   filesCount: { type: Number, default: 0 },
   fulfillment: { type: String, default: '' },
+  paymentMethod: { type: String, default: 'cod' },
+  totalAmount: { type: Number, default: 0 },
   canSubmit: { type: Boolean, default: false },
   isSubmitting: { type: Boolean, default: false },
   validationHints: { type: Array, default: () => [] },
@@ -171,46 +179,135 @@ function handleImageError(event) {
   event.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
 }
 
+// ETA based on design source and delivery method
 const estimatedETA = computed(() => {
-  if (!props.designSource) return '—'
-  // 'custom' is a fallback placeholder passed from parent; treat as upload
-  const src = props.designSource === 'custom' ? 'upload' : props.designSource
-  return src === 'upload' ? '5-7 business days' : '3-5 business days'
+  if (props.designSource === 'upload') {
+    return props.fulfillment === 'Delivery' ? '7-10 business days' : '5-7 business days'
+  }
+  if (props.designSource === 'saved') {
+    return props.fulfillment === 'Delivery' ? '5-7 business days' : '3-5 business days'
+  }
+  return props.fulfillment === 'Delivery' ? '7-10 business days' : '5-7 business days'
 })
 
 function calculateCartItemTotal(item) {
-  if (item.estimatedTotal) return `₱${item.estimatedTotal.toLocaleString()}`
+  if (item.estimatedTotal && item.estimatedTotal > 0) {
+    return `₱${item.estimatedTotal.toLocaleString()}`
+  }
+  
+  if (item.sizes && item.size) {
+    const size = item.sizes.find(s => s.name === item.size)
+    if (size) {
+      let unitPrice = size.price
+      const qty = item.quantity
+      if (qty >= 5000 && size.bulkPrices?.[5000]) {
+        unitPrice = size.bulkPrices[5000] / 5000
+      } else if (qty >= 2000 && size.bulkPrices?.[2000]) {
+        unitPrice = size.bulkPrices[2000] / 2000
+      } else if (qty >= 1000 && size.bulkPrices?.[1000]) {
+        unitPrice = size.bulkPrices[1000] / 1000
+      } else if (qty >= 500 && size.bulkPrices?.[500]) {
+        unitPrice = size.bulkPrices[500] / 500
+      }
+      return `₱${(unitPrice * qty).toLocaleString()}`
+    }
+  }
+  
   return '₱0'
 }
-
 const cartSubtotal = computed(() => {
   let total = 0
   for (const item of props.cartItems) {
-    if (item.estimatedTotal) total += item.estimatedTotal
+    if (item.estimatedTotal && item.estimatedTotal > 0) {
+      total += item.estimatedTotal
+    } else if (item.sizes && item.size) {
+      const size = item.sizes.find(s => s.name === item.size)
+      if (size) {
+        let unitPrice = size.price
+        const qty = item.quantity
+        if (qty >= 5000 && size.bulkPrices?.[5000]) {
+          unitPrice = size.bulkPrices[5000] / 5000
+        } else if (qty >= 2000 && size.bulkPrices?.[2000]) {
+          unitPrice = size.bulkPrices[2000] / 2000
+        } else if (qty >= 1000 && size.bulkPrices?.[1000]) {
+          unitPrice = size.bulkPrices[1000] / 1000
+        } else if (qty >= 500 && size.bulkPrices?.[500]) {
+          unitPrice = size.bulkPrices[500] / 500
+        }
+        total += unitPrice * qty
+      }
+    }
   }
   return `₱${total.toLocaleString()}`
 })
 
 function getUnitPrice() {
+  const qty = Number(props.quantity)
+  if (!qty || isNaN(qty)) return '—'
+  
   const size = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
              ?? props.selectedProduct?.sizes?.[0]
   if (!size?.price) return '—'
-  return `₱${size.price.toFixed(2)}`
+  
+  let unitPrice = size.price
+  const bulkPrices = size.bulkPrices
+  
+  if (bulkPrices) {
+    if (qty >= 5000 && bulkPrices[5000]) unitPrice = bulkPrices[5000] / 5000
+    else if (qty >= 2000 && bulkPrices[2000]) unitPrice = bulkPrices[2000] / 2000
+    else if (qty >= 1000 && bulkPrices[1000]) unitPrice = bulkPrices[1000] / 1000
+    else if (qty >= 500 && bulkPrices[500]) unitPrice = bulkPrices[500] / 500
+  }
+  
+  return `₱${unitPrice.toFixed(2)}`
 }
 
-const singleProductTotal = computed(() => {
-  if (props.orderType === 'own-cups') return '₱0 (Price upon review)'
-  if (props.cartItems?.length > 0) return cartSubtotal.value
+// Estimated total display - FIXED
+const estimatedTotalDisplay = computed(() => {
+  // For own cups orders
+  if (props.orderType === 'own-cups') {
+    return '₱0 (Price upon review)'
+  }
   
+  // For cart orders (multi-item)
+  if (props.cartItems && props.cartItems.length > 0) {
+    let total = 0
+    for (const item of props.cartItems) {
+      // Calculate price per item based on quantity and bulk pricing
+      let itemTotal = 0
+      if (item.estimatedTotal && item.estimatedTotal > 0) {
+        itemTotal = item.estimatedTotal
+      } else if (item.sizes && item.size) {
+        const size = item.sizes.find(s => s.name === item.size)
+        if (size) {
+          let unitPrice = size.price
+          const qty = item.quantity
+          if (qty >= 5000 && size.bulkPrices?.[5000]) {
+            unitPrice = size.bulkPrices[5000] / 5000
+          } else if (qty >= 2000 && size.bulkPrices?.[2000]) {
+            unitPrice = size.bulkPrices[2000] / 2000
+          } else if (qty >= 1000 && size.bulkPrices?.[1000]) {
+            unitPrice = size.bulkPrices[1000] / 1000
+          } else if (qty >= 500 && size.bulkPrices?.[500]) {
+            unitPrice = size.bulkPrices[500] / 500
+          }
+          itemTotal = unitPrice * qty
+        }
+      }
+      total += itemTotal
+    }
+    return `₱${total.toLocaleString()}`
+  }
+  
+  // For single product orders
   const qty = Number(props.quantity)
   if (!qty || isNaN(qty)) return '₱0'
   
-  // Use the currently selected size for price estimate
-  const selectedSize = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
-                    ?? props.selectedProduct?.sizes?.[0]
-  if (selectedSize?.price) {
-    let unitPrice = selectedSize.price
-    const bulkPrices = selectedSize.bulkPrices
+  const size = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
+             ?? props.selectedProduct?.sizes?.[0]
+  if (size?.price) {
+    let unitPrice = size.price
+    const bulkPrices = size.bulkPrices
     if (bulkPrices) {
       if (qty >= 5000 && bulkPrices[5000]) unitPrice = bulkPrices[5000] / 5000
       else if (qty >= 2000 && bulkPrices[2000]) unitPrice = bulkPrices[2000] / 2000

@@ -95,53 +95,42 @@
       </div>
 
       <!-- Products Grid -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <div
-          v-for="product in filteredProducts"
-          :key="product.id"
-          class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md group"
-        >
-          <!-- Image -->
-          <div class="relative">
-<img 
-      :src="getImageUrl(product.image)" 
-      :alt="product.name" 
-      class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" 
-      @error="handleImageError"
-      loading="lazy"
-    />
-    <!-- Optional: Add a loading placeholder -->
-    <div class="absolute inset-0 bg-gray-100 animate-pulse -z-10"></div>
-            </div>
+<div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+  <div
+    v-for="product in filteredProducts"
+  :key="product.id"
+  @click="goToProductDetail(product)"
+  class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer group"
+>
+    <!-- Image -->
+    <div class="relative">
+      <img 
+        :src="getImageUrl(product.image)" 
+        :alt="product.name" 
+        class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" 
+        @error="handleImageError"
+        loading="lazy"
+      />
+      <div class="absolute inset-0 bg-gray-100 animate-pulse -z-10"></div>
+    </div>
 
-          <!-- Info -->
-          <div class="p-3">
-            <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
-            <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
-            <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
-            <div class="mt-2 flex items-center justify-between">
-              <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
-              <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
-            </div>
-            
-            <!-- Simplified buttons - just add to cart without modal -->
-            <div class="mt-2 flex gap-1.5">
-              <button
-                @click.stop="addToCart(product)"
-                class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-              >
-                Add to Cart
-              </button>
-              <button
-                class="flex-1 py-1.5 rounded-md text-xs font-semibold transition-colors bg-blue-600 text-white hover:bg-blue-700"
-                @click.stop="orderCompanyProduct(product)"
-              >
-                Order Now
-              </button>
-            </div>
-          </div>
-        </div>
+    <!-- Info -->
+    <div class="p-3">
+      <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
+      <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
+      <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
+      <div class="mt-2 flex items-center justify-between">
+        <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
+        <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Remove the buttons - remove this part -->
+<!-- The buttons are removed, now clicking the whole card navigates to detail page -->
+
+
 
       <!-- Empty state -->
       <div v-if="!loading && filteredProducts.length === 0" class="text-center py-16">
@@ -262,7 +251,7 @@ const howItWorks = [
 
 const categories = [
   { value: 'all', label: 'All' },
-  { value: 'Cups', label: 'Cups' },
+  { value: 'Plastic Cups', label: 'Plastic Cups' },
   { value: 'Paper Cups', label: 'Paper Cups' },
 ]
 
@@ -346,15 +335,22 @@ function formatPriceAmount(amount) {
 }
 
 async function addToCart(product) {
-  // Get the first available size as default
-  const defaultSize = product.sizes?.[0]?.name || ''
+  // Find the first size that has stock
+  const availableSize = product.sizes?.find(s => s.stock > 0);
+  
+  if (!availableSize) {
+    showToast(`${product.name} is out of stock!`);
+    return;
+  }
+  
+  const defaultSize = availableSize.name;
   
   // Calculate estimated price
-  let estimatedTotal = null
+  let estimatedTotal = null;
   if (defaultSize && product.minOrder) {
-    const priceResult = await productsApi.calculatePrice(product.id, defaultSize, product.minOrder)
+    const priceResult = await productsApi.calculatePrice(product.id, defaultSize, product.minOrder);
     if (priceResult.success && priceResult.data) {
-      estimatedTotal = priceResult.data.total
+      estimatedTotal = priceResult.data.total;
     }
   }
   
@@ -368,12 +364,18 @@ async function addToCart(product) {
     printPlacement: '',
     printSize: '',
     designNotes: '',
-    estimatedTotal: estimatedTotal
-  })
+    estimatedTotal: estimatedTotal,
+    sizes: product.sizes || [],
+    minOrder: product.minOrder || 500
+  });
   
-  // Save cart to localStorage
-  saveCartToLocalStorage()
-  showToast(`${product.name} added to cart!`)
+  saveCartToLocalStorage();
+  showToast(`${product.name} (${defaultSize}) added to cart!`);
+}
+
+// Add this function
+function goToProductDetail(product) {
+  router.push(`/customer/product/${product.id}`)
 }
 
 function removeFromCart(idx) {
@@ -413,7 +415,7 @@ async function proceedToOrder() {
     return
   }
   
-  // Enrich cart items with all required fields
+  // Enrich cart items with all required fields including design info
   const enrichedCart = cart.value.map(item => ({
     productId: item.productId,
     name: item.name,
@@ -424,14 +426,19 @@ async function proceedToOrder() {
     printPlacement: item.printPlacement || '',
     printSize: item.printSize || '',
     designNotes: item.designNotes || '',
+    designSource: item.designSource || 'upload',
+    files: item.files || [],
+    selectedTemplateId: item.selectedTemplateId || null,
+    selectedTemplate: item.selectedTemplate || null,
     estimatedTotal: item.estimatedTotal
+    
   }))
   
+  console.log('Saving enriched cart to session:', enrichedCart)
   sessionStorage.setItem('pendingCart', JSON.stringify(enrichedCart))
   showCart.value = false
   router.push('/customer/orders/create?type=company-product&source=cart')
 }
-
 function showToast(message) {
   toast.value = { show: true, message }
   setTimeout(() => { toast.value.show = false }, 2500)

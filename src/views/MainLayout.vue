@@ -23,7 +23,6 @@ const { cartCount, init } = useCart()
 const notificationCount = ref(2)
 const unreadCount = ref(1)
 
-onMounted(() => init())
 
 function handleBell() {
   console.log('Bell clicked - open notifications panel')

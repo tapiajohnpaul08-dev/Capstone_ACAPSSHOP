@@ -181,27 +181,67 @@
           class="field resize-none"
         ></textarea>
       </div>
+
+      <!-- Save as Template Button - Only show when there's design content to save -->
+      <div v-if="canSaveAsTemplate" class="pt-2 border-t">
+        <button
+          @click="saveCurrentDesignAsTemplate"
+          :disabled="isSavingTemplate"
+          class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors shadow-sm"
+        >
+          <svg v-if="!isSavingTemplate" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          <svg v-else class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ isSavingTemplate ? 'Saving...' : '💾 Save Current Design as Template' }}
+        </button>
+        <p class="text-xs text-gray-400 mt-2 text-center">
+          Save this design configuration for future orders
+        </p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { designsApi } from '@/api.js'
+import { ref, computed, onMounted } from 'vue'
+import { designsApi, templatesApi } from '@/api.js'
 import { FILE_CONSTANTS } from '@/constants/orderConstants'
 
 const props = defineProps({
   modelValue: { type: Object, required: true },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  productName: { type: String, default: '' } // Optional product name for template naming
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'template-saved'])
 
 const dragging = ref(false)
 const savedTemplates = ref([])
 const selectedTemplateId = ref(null)
 const isLoadingTemplates = ref(false)
 const uploadProgress = ref(0)
+const isSavingTemplate = ref(false)
+
+// Check if there's design content to save
+const canSaveAsTemplate = computed(() => {
+  const design = props.modelValue
+  // Check if there's any meaningful design content
+  const hasFiles = design.files && design.files.length > 0
+  const hasPrintSize = design.printSize && design.printSize.trim()
+  const hasPrintPlacement = design.printPlacement && design.printPlacement.trim()
+  const hasDesignNotes = design.designNotes && design.designNotes.trim()
+  
+  // Also check if a template is selected
+  const hasSelectedTemplate = design.selectedTemplateId
+  
+  return hasFiles || hasPrintSize || hasPrintPlacement || hasDesignNotes || hasSelectedTemplate
+})
 
 onMounted(async () => {
   await loadSavedTemplates()
@@ -210,16 +250,33 @@ onMounted(async () => {
 async function loadSavedTemplates() {
   isLoadingTemplates.value = true
   try {
-    const { designs, success } = await designsApi.getDesigns()
-    if (success && designs) {
-      savedTemplates.value = designs.map(d => ({
-        id: d.id,
-        name: d.name,
-        thumbnail: d.image,
-        lastUsed: d.createdAt,
-        printSize: d.printSize,
-        placement: d.placement
+    // Try to use the new templates API first
+    const response = await templatesApi.getTemplates()
+    
+    if (response.success && response.data) {
+      savedTemplates.value = response.data.map(t => ({
+        id: t.templateId,
+        name: t.name,
+        thumbnail: t.imagePath || '/placeholder-template.png',
+        lastUsed: t.updatedAt || t.createdAt,
+        printSize: t.printSize,
+        placement: t.placement,
+        notes: t.notes
       }))
+    } else {
+      // Fallback to old designs API
+      const { designs, success } = await designsApi.getDesigns()
+      if (success && designs) {
+        savedTemplates.value = designs.map(d => ({
+          id: d.id,
+          name: d.name,
+          thumbnail: d.image,
+          lastUsed: d.createdAt,
+          printSize: d.printSize,
+          placement: d.placement,
+          notes: d.notes
+        }))
+      }
     }
   } catch (error) {
     console.error('Failed to load templates:', error)
@@ -228,12 +285,68 @@ async function loadSavedTemplates() {
   }
 }
 
+async function saveCurrentDesignAsTemplate() {
+  isSavingTemplate.value = true
+  
+  try {
+    // Prepare template data from current design
+    const templateName = prompt('Enter a name for this template:', 
+      props.productName ? `${props.productName} Design` : 'My Design Template'
+    )
+    
+    if (!templateName) {
+      isSavingTemplate.value = false
+      return // User cancelled
+    }
+    
+    // Get first file path if exists
+    let imagePath = ''
+    if (props.modelValue.files && props.modelValue.files.length > 0) {
+      // If it's a file object with path
+      imagePath = props.modelValue.files[0].path || 
+                  props.modelValue.files[0].url || 
+                  (props.modelValue.files[0] instanceof File ? URL.createObjectURL(props.modelValue.files[0]) : '')
+    }
+    
+    const templateData = {
+      name: templateName,
+      imagePath: imagePath,
+      printSize: props.modelValue.printSize || '',
+      placement: props.modelValue.printPlacement || '',
+      notes: props.modelValue.designNotes || ''
+    }
+    
+    const response = await templatesApi.createTemplate(templateData)
+    
+    if (response.success) {
+      // Refresh templates list
+      await loadSavedTemplates()
+      
+      // Emit event to parent
+      emit('template-saved', response.data)
+      
+      // Show success message (you can add a toast notification here)
+      alert('Template saved successfully! You can now use it in future orders.')
+    } else {
+      alert('Failed to save template: ' + (response.message || 'Unknown error'))
+    }
+  } catch (error) {
+    console.error('Error saving template:', error)
+    alert('An error occurred while saving the template. Please try again.')
+  } finally {
+    isSavingTemplate.value = false
+  }
+}
+
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
 }
 
 function setDesignSource(source) {
-  updateField('designSource', source)
+  emit('update:modelValue', { ...props.modelValue, designSource: source })
+  if (source === 'saved' && savedTemplates.value.length === 0) {
+    loadSavedTemplates()
+  }
 }
 
 function validateFiles(files) {
@@ -297,9 +410,14 @@ function removeFile(index) {
 
 function selectTemplate(template) {
   selectedTemplateId.value = template.id
-  updateField('selectedTemplate', template)
-  updateField('printSize', template.printSize)
-  updateField('printPlacement', template.placement)
+  emit('update:modelValue', { 
+    ...props.modelValue, 
+    selectedTemplateId: template.id,
+    selectedTemplate: template,
+    printSize: template.printSize || props.modelValue.printSize,
+    printPlacement: template.placement || props.modelValue.printPlacement,
+    designNotes: template.notes || props.modelValue.designNotes
+  })
 }
 
 function formatFileSize(bytes) {

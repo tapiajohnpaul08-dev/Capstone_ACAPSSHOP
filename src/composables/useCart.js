@@ -1,38 +1,96 @@
 // src/composables/useCart.js
 import { ref, computed } from 'vue'
-import { cartApi } from '@/api.js'
-
-const items = ref([])
-let initialized = false
 
 export function useCart() {
-  async function init() {
-    if (initialized) return
-    const res = await cartApi.getCart()
-    if (res.success) items.value = res.items
-    initialized = true
+  const cartItems = ref([])
+
+  // Load cart from localStorage
+  const loadCart = () => {
+    const savedCart = localStorage.getItem('customerCart')
+    if (savedCart) {
+      cartItems.value = JSON.parse(savedCart)
+    }
   }
 
-  const cartCount = computed(() => items.value.length)
-  const cartTotal = computed(() => items.value.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0))
-
-  async function addToCart(item) {
-    const res = await cartApi.addToCart(item)
-    if (res.success) items.value = res.items
-    return res
+  // Save cart to localStorage
+  const saveCart = () => {
+    localStorage.setItem('customerCart', JSON.stringify(cartItems.value))
   }
 
-  async function removeFromCart(id) {
-    const res = await cartApi.removeFromCart(id)
-    if (res.success) items.value = res.items
-    return res
+  // Add item to cart
+  const addToCart = (product, size, quantity, estimatedTotal) => {
+    cartItems.value.push({
+      productId: product.id,
+      name: product.name,
+      image: product.image,
+      category: product.category,
+      size: size,
+      quantity: quantity,
+      printPlacement: '',
+      printSize: '',
+      designNotes: '',
+      designSource: 'upload',
+      files: [],
+      selectedTemplateId: null,
+      selectedTemplate: null,
+      estimatedTotal: estimatedTotal,
+      createdAt: new Date().toISOString()
+    })
+    saveCart()
   }
 
-  async function clearCart() {
-    const res = await cartApi.clearCart()
-    if (res.success) items.value = []
-    return res
+  // Remove item from cart
+  const removeFromCart = (index) => {
+    cartItems.value.splice(index, 1)
+    saveCart()
   }
 
-  return { items, cartCount, cartTotal, init, addToCart, removeFromCart, clearCart }
+  // Clear cart
+  const clearCart = () => {
+    cartItems.value = []
+    saveCart()
+  }
+
+  // Update item quantity
+  const updateQuantity = (index, quantity) => {
+    if (cartItems.value[index]) {
+      cartItems.value[index].quantity = quantity
+      saveCart()
+    }
+  }
+
+  // Update item design
+  const updateItemDesign = (index, designData) => {
+    if (cartItems.value[index]) {
+      cartItems.value[index] = { ...cartItems.value[index], ...designData }
+      saveCart()
+    }
+  }
+
+  // Get cart count
+  const cartCount = computed(() => cartItems.value.length)
+
+  // Get cart total
+  const cartTotal = computed(() => {
+    return cartItems.value.reduce((sum, item) => sum + (item.estimatedTotal || 0), 0)
+  })
+
+  // Prepare cart for checkout
+  const prepareForCheckout = () => {
+    sessionStorage.setItem('pendingCart', JSON.stringify(cartItems.value))
+    return cartItems.value
+  }
+
+  return {
+    cartItems,
+    cartCount,
+    cartTotal,
+    loadCart,
+    addToCart,
+    removeFromCart,
+    clearCart,
+    updateQuantity,
+    updateItemDesign,
+    prepareForCheckout
+  }
 }
