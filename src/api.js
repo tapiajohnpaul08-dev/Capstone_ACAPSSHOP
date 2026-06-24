@@ -272,13 +272,45 @@ export const pricingApi = {
   }
 };
 
-// ─── Support Messages API ─────────────────────────────────────────────────────
-export const messagesApi = {
-  async getMessages() {
-    return { success: true, messages: [] };
+// ─── Chat API (Customer) ─────────────────────────────────────────────────────
+export const chatApi = {
+  // Get or create conversation
+  getOrCreateConversation: async (subject, orderId) => {
+    return handleResponse(
+      axiosInstance.post('/chat/customer/conversations', { subject, orderId })
+    );
   },
-  async sendMessage(messageData) {
-    return { success: false, message: 'Messages API not available yet' };
+  
+  // Get my conversations
+  getMyConversations: async (status = null) => {
+    const url = status ? `/chat/customer/conversations?status=${status}` : '/chat/customer/conversations';
+    return handleResponse(axiosInstance.get(url));
+  },
+  
+  // Get messages for a conversation
+  getMessages: async (conversationId, limit = 50, before = null) => {
+    let url = `/chat/customer/conversations/${conversationId}/messages?limit=${limit}`;
+    if (before) url += `&before=${before}`;
+    return handleResponse(axiosInstance.get(url));
+  },
+  
+  // Send a message
+  sendMessage: async (conversationId, content, attachments = []) => {
+    return handleResponse(
+      axiosInstance.post('/chat/customer/messages', { conversationId, content, attachments })
+    );
+  },
+  
+  // Get unread count
+  getUnreadCount: async () => {
+    return handleResponse(axiosInstance.get('/chat/customer/unread-count'));
+  },
+  
+  // Update conversation status
+  updateConversationStatus: async (conversationId, status) => {
+    return handleResponse(
+      axiosInstance.patch(`/chat/customer/conversations/${conversationId}/status`, { status })
+    );
   }
 };
 
