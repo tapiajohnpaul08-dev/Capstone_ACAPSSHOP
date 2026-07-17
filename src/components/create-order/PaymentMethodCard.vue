@@ -39,7 +39,7 @@
         </div>
 
         <!-- Bank Transfer / Online Banking Option -->
-        <div
+        <!-- <div
           @click="selectMethod('bank_transfer')"
           class="p-4 rounded-lg border-2 cursor-pointer transition-all"
           :class="modelValue.method === 'bank_transfer'
@@ -63,7 +63,7 @@
               <p class="text-xs text-gray-500 mt-1">Pay via bank transfer before production</p>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Bank Selection (only when bank transfer selected) -->

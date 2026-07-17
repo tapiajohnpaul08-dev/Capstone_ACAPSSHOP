@@ -231,13 +231,13 @@
           Cancel Order
         </button>
         
-        <button 
+        <!-- <button 
           v-if="order.paymentStatus === 'Unpaid' && order.status?.toLowerCase() !== 'cancelled'" 
           @click="makePayment" 
           class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
         >
           Make Payment
-        </button>
+        </button> -->
         
         <button 
           v-if="order.status?.toLowerCase() === 'cancelled'" 
