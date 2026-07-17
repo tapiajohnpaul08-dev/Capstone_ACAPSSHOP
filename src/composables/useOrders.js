@@ -160,6 +160,7 @@ export function useOrders() {
       customerEmail: backendOrder.customerEmail,
       customerPhone: backendOrder.customerPhone,
       address: backendOrder.address,
+      postalCode: backendOrder.postalCode || '',
       company: backendOrder.customer?.company || '',
       fulfillment: backendOrder.fulfillment || {
         method: backendOrder.receivingMode === 'Pick-up' ? 'pickup' : 'delivery',

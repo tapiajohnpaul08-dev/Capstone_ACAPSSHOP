@@ -104,6 +104,17 @@
         <p v-if="localErrors.address" class="text-xs text-red-500">{{ localErrors.address }}</p>
         <p v-else-if="isValidField('address') && modelValue.address" class="text-xs text-green-500">✓ Valid address</p>
       </div>
+      
+      <div class="space-y-1 5">
+        <label>Postal Code</label>
+        <input
+          type="Number"
+          :value="modelValue.postalCode"
+          @input="updateField('postalCode', $event.target.value)"
+          placeholder="Enter postal code"
+          class="field"
+        />
+      </div>
 
       <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
         <input

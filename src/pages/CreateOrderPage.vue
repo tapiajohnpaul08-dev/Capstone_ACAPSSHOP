@@ -457,6 +457,7 @@ async function handleSubmit() {
     items: itemsArray,
     quantity: totalQuantity,  // ← ADD THIS - Top-level quantity field
     address: customerInfo.value.address,
+    postalCode: customerInfo.value.postalCode || '',
     receivingMode: fulfillment.value.method === 'pickup' ? 'Pick-up' : 'Delivery',
     paymentMethod: paymentMethod.value.method,
     paymentDetails: paymentMethod.value.method === 'bank_transfer' ? {

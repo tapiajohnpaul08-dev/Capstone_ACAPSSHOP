@@ -147,9 +147,13 @@
             <div class="text-xs text-gray-500">Phone</div>
             <div class="font-medium">{{ order.customerPhone || order.customer?.phone || 'N/A' }}</div>
           </div>
-          <div class="md:col-span-2">
+          <div >
             <div class="text-xs text-gray-500">Address</div>
             <div class="font-medium">{{ order.address || order.customer?.address || order.deliveryAddress || 'N/A' }}</div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500">Postal Code</div>
+            <div class="font-medium">{{ order.postalCode || 'N/A' }}</div>
           </div>
         </div>
       </div>
