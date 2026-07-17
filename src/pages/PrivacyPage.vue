@@ -45,7 +45,34 @@
         </div>
       </div>
 
-      <div class="flex gap-3">
+    </div>
+
+    <div class="mb-6 mt-10">
+      <h1 class="text-2xl font-bold">Security Settings</h1>
+      <p class="text-gray-600 mt-1">Control your security settings</p>
+    </div>
+
+    <div class="space-y-4">
+        <div class="bg-white rounded-xl border">
+        <div class="p-6 space-y-4">
+          
+          
+          <div class="border-t pt-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-semibold">Change Password</h3>
+                <p class="text-sm text-gray-600">Update your account password</p>
+              </div>
+              <div>
+                <router-link to="/customer/profile/change-password" class="text-blue-600 hover:underline">Change</router-link>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    <div class="flex gap-3 mt-10">
         <button
           @click="savePrivacy"
           class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -59,7 +86,6 @@
           Cancel
         </button>
       </div>
-    </div>
   </div>
 </template>
 

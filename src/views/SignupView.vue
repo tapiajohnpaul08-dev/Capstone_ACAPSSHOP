@@ -249,11 +249,11 @@ export default {
 
   computed: {
     strengthLabel() {
-      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
+      const labels = ['', 'Weak', 'Good', 'Strong']
       return labels[this.passwordStrength] || ''
     },
     strengthTextColor() {
-      const colors = ['', 'text-red-500', 'text-orange-500', 'text-yellow-600', 'text-green-600']
+      const colors = ['', 'text-red-500', 'text-orange-500', 'text-green-600']
       return colors[this.passwordStrength] || ''
     }
   },
@@ -265,7 +265,6 @@ export default {
       if (pw.length >= 8) score++
       if (/[A-Z]/.test(pw)) score++
       if (/[0-9]/.test(pw)) score++
-      if (/[^A-Za-z0-9]/.test(pw)) score++
       this.passwordStrength = score
     },
 
@@ -274,7 +273,6 @@ export default {
       const colorMap = {
         1: 'bg-red-400',
         2: 'bg-orange-400',
-        3: 'bg-yellow-400',
         4: 'bg-green-500'
       }
       return index <= this.passwordStrength ? colorMap[this.passwordStrength] : 'bg-gray-200'

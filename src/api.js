@@ -61,6 +61,30 @@ export const authApi = {
         newPassword 
       })
     );
+  },
+
+  
+ // Password change with OTP (for OAuth users)
+  async requestPasswordOtp(email) {
+    return handleResponse(
+      axiosInstance.post('/customer/request-password-otp', { email })
+    );
+  },
+
+async updatePasswordWithOtp(email, otp, newPassword) {
+    return handleResponse(
+      axiosInstance.post('/customer/update-password-with-otp', { email, otp, newPassword })
+    );
+  },
+
+ // Password change with current password (for local users)
+  async updatePasswordWithCurrent(customerId, currentPassword, newPassword) {
+    return handleResponse(
+      axiosInstance.put(`/customer/update-password-with-current/${customerId}`, { 
+        currentPassword, 
+        newPassword 
+      })
+    );
   }
 };
 
