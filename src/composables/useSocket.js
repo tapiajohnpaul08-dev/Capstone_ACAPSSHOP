@@ -107,18 +107,20 @@ export function useSocket() {
     }
   }
   
-  const sendMessage = (conversationId, content, attachments = [], replyToMessageId = null) => {
-    if (socketInstance?.connected) {
-      socketInstance.emit('send-message', {
-        conversationId,
-        content,
-        attachments,
-        replyToMessageId
-      })
-      return true
-    }
-    return false
+const sendMessage = (conversationId, content, attachments = [], replyToMessageId = null) => {
+  console.log('🟢 Socket sendMessage with replyToMessageId:', replyToMessageId)
+  if (socketInstance?.connected) {
+    socketInstance.emit('send-message', {
+      conversationId,
+      content,
+      attachments,
+      replyToMessageId
+    })
+    return true
   }
+  console.log('🟢 Socket not connected')
+  return false
+}
   
   const sendTyping = (conversationId, isTyping) => {
     if (socketInstance?.connected) {

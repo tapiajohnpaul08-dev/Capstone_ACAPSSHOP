@@ -10,7 +10,7 @@
               <span class="text-white font-bold text-sm">AC</span>
             </div>
             <div>
-              <h4 class="font-semibold text-gray-900">ACAPSHOP Support</h4>
+              <h4 class="font-semibold text-gray-900">ACAPSHOP</h4>
               <div class="flex items-center gap-1.5 mt-0.5">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -23,16 +23,16 @@
             </div>
           </div>
           
-          <div class="flex items-center gap-2">
+          <!-- <div class="flex items-center gap-2">
             <div class="bg-gray-50 px-3 py-1.5 rounded-full">
               <div class="flex items-center gap-1.5">
                 <div class="w-1.5 h-1.5 rounded-full" :class="isSocketConnected ? 'bg-green-500' : 'bg-red-500'"></div>
                 <span class="text-xs text-gray-600">
-                  {{ isSocketConnected ? 'Live' : 'Connecting...' }}
+                  {{ isSocketConnected ? 'Connected' : 'Connecting...' }}
                 </span>
               </div>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -58,32 +58,83 @@
               <div 
                 v-for="msg in group.messages" 
                 :key="msg.messageId"
-                class="flex"
+                class="flex items-start group"
                 :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'"
               >
-                <!-- Avatar for admin -->
-                <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2">
+                <!-- Avatar for admin (left side) -->
+                <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
                     <span class="text-white text-xs font-bold">A</span>
                   </div>
                 </div>
                 
-                <!-- Message Bubble -->
-                <div class="max-w-[70%] group">
+                <!-- Message Bubble with actions -->
+                <div class="flex items-center gap-1.5 max-w-[75%]">
+                  <!-- Action buttons - LEFT SIDE (for customer messages only) -->
+                  <div 
+                    v-if="msg.senderType === 'customer'"
+                    class="flex flex-row gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <!-- Reply button -->
+                    <button
+                      v-if="!msg.isDeleted"
+                      @click="setReplyTo(msg)"
+                      class="p-1.5 rounded-full hover:bg-blue-200 transition-colors"
+                      title="Reply to this message"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-300 hover:text-blue-600">
+                        <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
+                        <path d="M21 15l-5-5 5-5"/>
+                      </svg>
+                    </button>
+                    
+                    <!-- Unsend button (only for customer's own messages) -->
+                    <button
+                      v-if="canUnsendMessage(msg)"
+                      @click="openUnsendModal(msg)"
+                      class="p-1.5 rounded-full hover:bg-red-200 transition-colors"
+                      title="Unsend message"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-red-500">
+                        <path d="M3 6h18"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Bubble -->
                   <div
                     class="rounded-2xl px-4 py-2.5 shadow-sm transition-all hover:shadow-md"
-                    :class="msg.senderType === 'customer'
-                      ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'"
+                    :class="[
+                      msg.senderType === 'customer'
+                        ? 'bg-blue-600 text-white rounded-br-sm'
+                        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200',
+                      msg.isDeleted ? 'opacity-60' : ''
+                    ]"
                   >
                     <div v-if="msg.senderType === 'admin'" class="text-xs font-semibold mb-1 text-purple-600">
                       ACAPSHOP Support
                     </div>
                     
-                    <p v-if="msg.content" class="text-sm leading-relaxed whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                    <!-- Reply indicator -->
+                    <div v-if="msg.replyTo" class="text-xs mb-1.5 p-1.5 rounded bg-opacity-20" :class="msg.senderType === 'customer' ? 'bg-blue-500 bg-opacity-20' : 'bg-gray-100'">
+                      <span class="text-[10px] opacity-70">Replying to:</span>
+                      <p class="text-xs truncate max-w-[200px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
+                        {{ msg.replyTo.content }}
+                      </p>
+                    </div>
+                    
+                    <p v-if="msg.content && !msg.isDeleted" class="text-sm leading-relaxed whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                    
+                    <!-- Unsend indicator -->
+                    <p v-if="msg.isDeleted" class="text-sm leading-relaxed whitespace-pre-wrap break-words italic" :class="msg.senderType === 'customer' ? 'text-blue-300' : 'text-gray-400'">
+                      This message was unsent
+                    </p>
                     
                     <!-- Attachments -->
-                    <div v-if="msg.attachments && msg.attachments.length > 0">
+                    <div v-if="msg.attachments && msg.attachments.length > 0 && !msg.isDeleted">
                       <div v-for="(file, idx) in msg.attachments" :key="idx">
                         <div v-if="isImageFile(file)" class="mt-2">
                           <img 
@@ -111,8 +162,8 @@
                     </div>
                     
                     <!-- Time and Status -->
-                    <div class="flex items-center justify-end gap-1 mt-1">
-                      <span class="text-xs" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
+                    <div class="flex items-center gap-1 mt-1" :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'">
+                      <span class="text-[10px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
                         {{ formatTime(msg.createdAt) }}
                       </span>
                       <span v-if="msg.senderType === 'customer' && !msg.isPending && !msg.failed" class="text-blue-200">
@@ -125,13 +176,32 @@
                         </svg>
                       </span>
                       <div v-if="msg.isPending" class="w-3 h-3 border-2 border-blue-200 border-t-transparent rounded-full animate-spin"></div>
-                      <span v-if="msg.failed" class="text-xs text-red-400">Failed</span>
+                      <span v-if="msg.failed" class="text-[10px] text-red-400">Failed</span>
                     </div>
+                  </div>
+
+                  <!-- Action buttons - RIGHT SIDE (for admin messages only) -->
+                  <div 
+                    v-if="msg.senderType === 'admin'"
+                    class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <!-- Reply button only -->
+                    <button
+                      v-if="!msg.isDeleted"
+                      @click="setReplyTo(msg)"
+                      class="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+                      title="Reply to this message"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-700">
+                        <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
+                        <path d="M21 15l-5-5 5-5"/>
+                      </svg>
+                    </button>
                   </div>
                 </div>
                 
-                <!-- Avatar for customer -->
-                <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2">
+                <!-- Avatar for customer (right side) -->
+                <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
                   <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
                     <span class="text-white text-xs font-bold">{{ userInitial }}</span>
                   </div>
@@ -152,6 +222,25 @@
             </div>
           </div>
         </template>
+      </div>
+
+      <!-- Reply indicator -->
+      <div v-if="replyToMessage" class="border-t px-4 py-2 bg-blue-50 border-blue-100 flex items-center justify-between">
+        <div class="flex items-center gap-2 min-w-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600 flex-shrink-0">
+            <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
+            <path d="M21 15l-5-5 5-5"/>
+          </svg>
+          <div class="min-w-0">
+            <span class="text-xs text-blue-600 font-medium">Replying to:</span>
+            <p class="text-sm text-gray-600 truncate">{{ replyToMessage.content || '📎 Attachment' }}</p>
+          </div>
+        </div>
+        <button @click="clearReply" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+          </svg>
+        </button>
       </div>
 
       <!-- Input Area - Fixed at bottom -->
@@ -180,7 +269,7 @@
           </div>
         </div>
         
-        <div class="flex gap-2 items-end">
+        <div class="flex gap-2 items-center">
           <!-- Attachment Button -->
           <div class="relative">
             <input
@@ -204,7 +293,7 @@
           </div>
           
           <!-- Message Input -->
-          <div class="flex-1 relative">
+          <div class="flex-1  relative">
             <textarea
               v-model="newMessage"
               @keydown.enter.exact.prevent="sendMessage"
@@ -258,6 +347,57 @@
       </transition>
     </Teleport>
 
+    <!-- Unsend Confirmation Modal -->
+    <Teleport to="body">
+      <div 
+        v-if="unsendModal.show" 
+        class="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        @click.self="closeUnsendModal"
+      >
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"></div>
+        
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-300">
+          <div class="text-center">
+            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
+                <path d="M3 6h18"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <path d="M10 11v6"/>
+                <path d="M14 11v6"/>
+              </svg>
+            </div>
+            
+            <h3 class="text-lg font-bold text-gray-900 mb-2">Unsend Message?</h3>
+            <p class="text-sm text-gray-600 mb-6">
+              This message will be removed for everyone in the conversation.
+              <br>
+              <span class="text-xs text-gray-400">This action cannot be undone.</span>
+            </p>
+            
+            <div class="flex gap-3">
+              <button
+                @click="closeUnsendModal"
+                class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                @click="confirmUnsend"
+                :disabled="isUnsendLoading"
+                class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <svg v-if="isUnsendLoading" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                {{ isUnsendLoading ? 'Unsend...' : 'Yes, Unsend' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
@@ -274,6 +414,7 @@
     </Teleport>
   </div>
 </template>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
@@ -291,7 +432,7 @@ const {
   onNewMessage,
   onUserTyping,
   onError,
-  isAdminOnline,  // Add this - realtime admin online status
+  isAdminOnline,
   onlineUsers 
 } = useSocket()
 
@@ -308,11 +449,21 @@ const viewerImage = ref('')
 const conversationId = ref(null)
 const messages = ref([])
 const toast = ref({ show: false, type: 'success', message: '' })
+const replyToMessage = ref(null)
+const unsendModal = ref({ show: false, message: null })
+const isUnsendLoading = ref(false)
 let typingTimeoutId = null
-// Track temp message by its ID to replace it when real message arrives
 let pendingTempId = null
 
-// Computed
+// ── Auto-scroll helpers ──────────────────────────────
+const scrollToBottom = async () => {
+  await nextTick()
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  }
+}
+
+// ── Computed ──────────────────────────────────────────
 const groupedMessages = computed(() => {
   const groups = {}
   messages.value.forEach(msg => {
@@ -325,7 +476,7 @@ const groupedMessages = computed(() => {
   return Object.values(groups)
 })
 
-// Helper Functions
+// ── Helper Functions ──────────────────────────────────
 function formatTime(dateValue) {
   if (!dateValue) return ''
   try {
@@ -417,13 +568,6 @@ function removeAttachment(index) {
   pendingAttachments.value.splice(index, 1)
 }
 
-async function scrollToBottom() {
-  await nextTick()
-  if (messagesContainer.value) {
-    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
-  }
-}
-
 function handleTyping() {
   if (conversationId.value && isSocketConnected.value) {
     sendTyping(conversationId.value, true)
@@ -432,6 +576,66 @@ function handleTyping() {
     typingTimeoutId = setTimeout(() => {
       sendTyping(conversationId.value, false)
     }, 2000)
+  }
+}
+
+// ── Reply feature ──
+function setReplyTo(msg) {
+  replyToMessage.value = msg
+  if (fileInput.value) {
+    fileInput.value?.focus()
+  }
+}
+
+function clearReply() {
+  replyToMessage.value = null
+}
+
+// ── Unsend feature ──
+function canUnsendMessage(msg) {
+  if (msg.isDeleted) return false
+  const msgTime = new Date(msg.createdAt).getTime()
+  const now = Date.now()
+  const ageInMinutes = (now - msgTime) / 60000
+  return ageInMinutes <= 5
+}
+
+function openUnsendModal(msg) {
+  unsendModal.value = { show: true, message: msg }
+}
+
+function closeUnsendModal() {
+  unsendModal.value = { show: false, message: null }
+}
+
+async function confirmUnsend() {
+  const msg = unsendModal.value.message
+  if (!msg) return
+  
+  isUnsendLoading.value = true
+  
+  try {
+    const result = await chatApi.unsendMessage(msg.messageId)
+    
+    if (result.success) {
+      const index = messages.value.findIndex(m => m.messageId === msg.messageId)
+      if (index !== -1) {
+        messages.value[index] = {
+          ...messages.value[index],
+          isDeleted: true,
+          content: 'This message was unsent'
+        }
+      }
+      showToast('success', 'Message unsent successfully')
+      closeUnsendModal()
+    } else {
+      showToast('error', result.message || 'Failed to unsend message')
+    }
+  } catch (error) {
+    console.error('Failed to unsend message:', error)
+    showToast('error', 'Failed to unsend message')
+  } finally {
+    isUnsendLoading.value = false
   }
 }
 
@@ -462,60 +666,114 @@ async function sendMessage() {
   
   isSending.value = true
   
-  const attachments = pendingAttachments.value.map(file => ({
-    name: file.name,
-    size: file.size,
-    type: file.type,
-    url: URL.createObjectURL(file)
-  }))
-  
-  const tempId = 'temp_' + Date.now()
-  pendingTempId = tempId
-  
-  const tempMessage = {
-    messageId: tempId,
-    conversationId: conversationId.value,
-    senderType: 'customer',
-    senderId: customerId.value,
-    content: content || '📎 Sent an attachment',
-    attachments: attachments,
-    createdAt: new Date().toISOString(),
-    isPending: true,
-    isRead: false
-  }
-  
-  // Add optimistic message
-  messages.value.push(tempMessage)
-  newMessage.value = ''
-  pendingAttachments.value = []
-  await scrollToBottom()
-  
-  // Send via socket
-  if (isSocketConnected.value && conversationId.value) {
-    sendSocketMessage(conversationId.value, content || '📎 Attachment', attachments)
-  } else {
-    // Fallback to REST API
-    try {
-      const response = await chatApi.sendMessage(conversationId.value, content || '📎 Attachment', attachments)
+  try {
+    let uploadedFiles = []
+    
+    if (pendingAttachments.value.length > 0) {
+      try {
+        const uploadResult = await chatApi.uploadFiles(pendingAttachments.value)
+        if (uploadResult.success && uploadResult.files) {
+          uploadedFiles = uploadResult.files
+        } else {
+          showToast('error', 'Failed to upload files')
+          isSending.value = false
+          return
+        }
+      } catch (error) {
+        console.error('File upload error:', error)
+        showToast('error', 'Failed to upload files')
+        isSending.value = false
+        return
+      }
+    }
+    
+    const tempId = 'temp_' + Date.now()
+    pendingTempId = tempId
+    
+    const replyToMsg = replyToMessage.value
+    const replyToMessageId = replyToMsg?.messageId || null
+    
+    console.log('🔵 SENDING REPLY - replyToMessageId:', replyToMessageId)
+    
+    const tempMessage = {
+      messageId: tempId,
+      conversationId: conversationId.value,
+      senderType: 'customer',
+      senderId: customerId.value,
+      content: content || (uploadedFiles.length > 0 ? '📎 Sent an attachment' : ''),
+      attachments: uploadedFiles,
+      createdAt: new Date().toISOString(),
+      isPending: true,
+      isRead: false,
+      replyTo: replyToMsg ? {
+        messageId: replyToMsg.messageId,
+        content: replyToMsg.content || '📎 Attachment'
+      } : null
+    }
+    
+    messages.value.push(tempMessage)
+    newMessage.value = ''
+    clearReply()
+    pendingAttachments.value = []
+    await scrollToBottom()
+    
+    const messageContent = content || (uploadedFiles.length > 0 ? '📎 Attachment' : '')
+    
+    // ✅ ONLY send via socket (not both)
+    if (isSocketConnected.value && conversationId.value) {
+      console.log('🔵 Sending via socket only')
+      const sent = sendSocketMessage(
+        conversationId.value,
+        messageContent,
+        uploadedFiles,
+        replyToMessageId
+      )
+      
+      // If socket fails, fallback to REST
+      if (!sent) {
+        console.log('🔵 Socket failed, using REST fallback')
+        const response = await chatApi.sendMessage(
+          conversationId.value,
+          messageContent,
+          uploadedFiles,
+          replyToMessageId
+        )
+        if (response.success && response.data) {
+          const index = messages.value.findIndex(m => m.messageId === tempId)
+          if (index !== -1) {
+            messages.value[index] = { ...response.data, isPending: false }
+          }
+          pendingTempId = null
+        }
+      }
+    } else {
+      // REST fallback when socket is not connected
+      console.log('🔵 Socket not connected, using REST')
+      const response = await chatApi.sendMessage(
+        conversationId.value,
+        messageContent,
+        uploadedFiles,
+        replyToMessageId
+      )
       if (response.success && response.data) {
-        // Replace temp message with real message
         const index = messages.value.findIndex(m => m.messageId === tempId)
         if (index !== -1) {
           messages.value[index] = { ...response.data, isPending: false }
         }
         pendingTempId = null
       }
-    } catch (error) {
-      showToast('error', 'Failed to send message')
-      const index = messages.value.findIndex(m => m.messageId === tempId)
-      if (index !== -1) {
-        messages.value[index].failed = true
-        messages.value[index].isPending = false
-      }
     }
+  } catch (error) {
+    console.error('Error sending message:', error)
+    showToast('error', 'Failed to send message')
+    const index = messages.value.findIndex(m => m.messageId === pendingTempId)
+    if (index !== -1) {
+      messages.value[index].failed = true
+      messages.value[index].isPending = false
+    }
+  } finally {
+    isSending.value = false
   }
-  
-  isSending.value = false
 }
 
 async function initConversation() {
@@ -538,28 +796,40 @@ async function initConversation() {
 
 function setupSocketListeners() {
   onNewMessage((message) => {
-    console.log('New message received:', message.messageId, 'Pending temp:', pendingTempId)
+    console.log('📩 New message received via socket:', message.messageId)
+    console.log('📩 Pending temp ID:', pendingTempId)
     
-    // If we have a pending temp message, replace it with this real message
+    // If this is our own pending message, replace it
     if (pendingTempId) {
       const index = messages.value.findIndex(m => m.messageId === pendingTempId)
       if (index !== -1) {
-        // Replace the temp message with the real one
-        messages.value[index] = { ...message, isPending: false }
+        console.log('📩 Replacing temp message with real message')
+        messages.value[index] = { 
+          ...message, 
+          isPending: false,
+          replyTo: message.replyTo || messages.value[index].replyTo
+        }
         pendingTempId = null
+        // ✅ Auto-scroll to bottom after replacing
+        scrollToBottom()
         return
       }
     }
     
-    // Check if message already exists
+    // Check if message already exists (prevent duplicates)
     const exists = messages.value.some(m => m.messageId === message.messageId)
     if (!exists) {
+      console.log('📩 Adding new message to list')
       messages.value.push(message)
+      
+      // ✅ Auto-scroll to bottom for new messages
       scrollToBottom()
       
       if (conversationId.value && message.conversationId === conversationId.value) {
         markAsRead(conversationId.value)
       }
+    } else {
+      console.log('📩 Message already exists, skipping duplicate')
     }
   })
   
@@ -575,6 +845,18 @@ function setupSocketListeners() {
   })
 }
 
+// ── Watchers for auto-scroll ─────────────────────────
+// Watch for messages length changes (new messages)
+watch(() => messages.value.length, () => {
+  scrollToBottom()
+}, { flush: 'post' })
+
+// Watch for grouped messages changes (when new messages arrive)
+watch(groupedMessages, () => {
+  scrollToBottom()
+}, { flush: 'post' })
+
+// Watch for socket connection and conversation changes
 watch(isSocketConnected, (connected) => {
   if (connected && conversationId.value) {
     joinConversation(conversationId.value)
@@ -582,6 +864,7 @@ watch(isSocketConnected, (connected) => {
   }
 })
 
+// ── Lifecycle ─────────────────────────────────────────
 onMounted(async () => {
   if (token.value) {
     connectSocket(token.value, customerId.value, 'customer')
@@ -589,6 +872,10 @@ onMounted(async () => {
   }
   
   await initConversation()
+  
+  // ✅ Initial scroll to bottom after mount
+  await nextTick()
+  scrollToBottom()
 })
 
 onUnmounted(() => {
@@ -616,5 +903,30 @@ onUnmounted(() => {
 .toast-enter-from, .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(12px);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-in {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+.fade-in {
+  animation-name: fadeIn;
+}
+.zoom-in {
+  animation-name: zoomIn;
 }
 </style>

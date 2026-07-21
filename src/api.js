@@ -318,10 +318,15 @@ export const chatApi = {
     return handleResponse(axiosInstance.get(url));
   },
   
-  // Send a message
-  sendMessage: async (conversationId, content, attachments = []) => {
+   sendMessage: async (conversationId, content, attachments = [], replyToMessageId = null) => {
+    console.log('📨 chatApi.sendMessage called:', { conversationId, content, replyToMessageId })
     return handleResponse(
-      axiosInstance.post('/chat/customer/messages', { conversationId, content, attachments })
+      axiosInstance.post('/chat/customer/messages', { 
+        conversationId, 
+        content, 
+        attachments,
+        replyToMessageId 
+      })
     );
   },
   
@@ -329,13 +334,33 @@ export const chatApi = {
   getUnreadCount: async () => {
     return handleResponse(axiosInstance.get('/chat/customer/unread-count'));
   },
+
+    // Unsend a message
+  unsendMessage: async (messageId) => {
+    return handleResponse(
+      axiosInstance.delete(`/chat/customer/messages/${messageId}`)
+    );
+  },
   
   // Update conversation status
   updateConversationStatus: async (conversationId, status) => {
     return handleResponse(
       axiosInstance.patch(`/chat/customer/conversations/${conversationId}/status`, { status })
     );
-  }
+  },
+   // Upload files for chat
+  uploadFiles: async (files) => {
+    const formData = new FormData()
+    files.forEach(file => {
+      formData.append('files', file)
+    })
+    
+    return handleResponse(
+      axiosInstance.post('/chat/customer/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    )
+  },
 };
 
 
