@@ -11,6 +11,11 @@ const router = createRouter({
       component: () => import('@/views/LoginForm.vue'),
       meta: { requiresAuth: false },
     },
+            {
+  path: '/customer/forgot-password',
+  name: 'ForgotPassword',
+  component: () => import('@/pages/ForgotPasswordPage.vue'),
+},
     {
       path: '/customer/signup',
       name: 'SignUp',

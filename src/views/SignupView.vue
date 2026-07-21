@@ -145,15 +145,16 @@
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {{ showPassword ? 'Hide' : 'Show' }}
+                  <Eye v-if="!showPassword" class="h-4 w-4" />
+                  <EyeOff v-else class="h-4 w-4" />
                 </button>
               </div>
               <!-- Password strength bars -->
               <div v-if="form.password" class="flex gap-1 mt-1">
                 <div
-                  v-for="i in 4"
+                  v-for="i in 3"
                   :key="i"
                   :class="['h-1 flex-1 rounded-full transition-colors', getStrengthBarClass(i)]"
                 ></div>
@@ -177,12 +178,33 @@
                 <button
                   type="button"
                   @click="showConfirmPassword = !showConfirmPassword"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  {{ showConfirmPassword ? 'Hide' : 'Show' }}
+                  <Eye v-if="!showConfirmPassword" class="h-4 w-4" />
+                  <EyeOff v-else class="h-4 w-4" />
                 </button>
               </div>
               <p v-if="errors.confirmPassword" class="text-xs text-red-500">{{ errors.confirmPassword }}</p>
+            </div>
+          </div>
+
+          <!-- Password Requirements Checklist -->
+          <div v-if="form.password" class="grid grid-cols-2 gap-1 mt-1">
+            <div class="flex items-center gap-1 text-xs" :class="form.password.length >= 8 ? 'text-green-600' : 'text-gray-400'">
+              <span>{{ form.password.length >= 8 ? '✓' : '○' }}</span>
+              <span>At least 8 characters</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs" :class="/[A-Z]/.test(form.password) ? 'text-green-600' : 'text-gray-400'">
+              <span>{{ /[A-Z]/.test(form.password) ? '✓' : '○' }}</span>
+              <span>Uppercase letter</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs" :class="/[a-z]/.test(form.password) ? 'text-green-600' : 'text-gray-400'">
+              <span>{{ /[a-z]/.test(form.password) ? '✓' : '○' }}</span>
+              <span>Lowercase letter</span>
+            </div>
+            <div class="flex items-center gap-1 text-xs" :class="/[0-9]/.test(form.password) ? 'text-green-600' : 'text-gray-400'">
+              <span>{{ /[0-9]/.test(form.password) ? '✓' : '○' }}</span>
+              <span>Number</span>
             </div>
           </div>
 
@@ -213,9 +235,15 @@
 <script>
 import { appName } from '@/data/loginData.js'
 import { otpApi } from '@/api'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 export default {
   name: 'SignUpView',
+
+  components: {
+    Eye,
+    EyeOff
+  },
 
   data() {
     return {
@@ -249,12 +277,18 @@ export default {
 
   computed: {
     strengthLabel() {
-      const labels = ['', 'Weak', 'Good', 'Strong']
-      return labels[this.passwordStrength] || ''
+      const score = this.passwordStrength
+      if (score === 0) return ''
+      if (score === 1) return 'Weak'
+      if (score === 2) return 'Good'
+      return 'Strong'
     },
     strengthTextColor() {
-      const colors = ['', 'text-red-500', 'text-orange-500', 'text-green-600']
-      return colors[this.passwordStrength] || ''
+      const score = this.passwordStrength
+      if (score === 0) return ''
+      if (score === 1) return 'text-red-500'
+      if (score === 2) return 'text-orange-500'
+      return 'text-green-600'
     }
   },
 
@@ -262,20 +296,39 @@ export default {
     checkPasswordStrength() {
       const pw = this.form.password
       let score = 0
+      
+      // Check length (at least 8 characters)
       if (pw.length >= 8) score++
+      
+      // Check for uppercase letter
       if (/[A-Z]/.test(pw)) score++
+      
+      // Check for lowercase letter
+      if (/[a-z]/.test(pw)) score++
+      
+      // Check for number
       if (/[0-9]/.test(pw)) score++
+      
+      // Special characters are NOT checked - they don't add to score
+      
       this.passwordStrength = score
     },
 
     getStrengthBarClass(index) {
-      if (this.passwordStrength === 0) return 'bg-gray-200'
-      const colorMap = {
-        1: 'bg-red-400',
-        2: 'bg-orange-400',
-        4: 'bg-green-500'
+      const score = this.passwordStrength
+      if (score === 0) return 'bg-gray-200'
+      
+      // Show color based on score
+      if (index === 1) {
+        return score >= 1 ? 'bg-red-400' : 'bg-gray-200'
       }
-      return index <= this.passwordStrength ? colorMap[this.passwordStrength] : 'bg-gray-200'
+      if (index === 2) {
+        return score >= 2 ? 'bg-orange-400' : 'bg-gray-200'
+      }
+      if (index === 3) {
+        return score >= 3 ? 'bg-green-500' : 'bg-gray-200'
+      }
+      return 'bg-gray-200'
     },
 
     validateForm() {

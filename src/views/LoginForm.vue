@@ -23,14 +23,24 @@
 
           <div class="space-y-2">
             <label for="password" class="text-sm font-medium">{{ loginData.fields.password.label }}</label>
-            <input
-              id="password"
-              v-model="form.password"
-              :type="showPassword ? 'text' : 'password'"
-              class="flex h-9 w-full rounded-md border border-gray-300 px-3 py-1 text-base bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 md:text-sm"
-              :placeholder="loginData.fields.password.placeholder"
-              required
-            />
+            <div class="relative">
+              <input
+                id="password"
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="flex h-9 w-full rounded-md border border-gray-300 px-3 py-1 pr-10 text-base bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 md:text-sm"
+                :placeholder="loginData.fields.password.placeholder"
+                required
+              />
+              <button
+                type="button"
+                @click="showPassword = !showPassword"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <Eye v-if="!showPassword" class="h-4 w-4" />
+                <EyeOff v-else class="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div class="text-right">
@@ -99,9 +109,15 @@
 <script>
 import { loginData, appName } from '@/data/loginData.js'
 import { authApi } from '@/api'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 export default {
   name: 'LoginView',
+  
+  components: {
+    Eye,
+    EyeOff
+  },
   
   data() {
     return {
@@ -194,7 +210,7 @@ export default {
     },
 
     handleForgotPassword() {
-      alert('Password reset link would be sent to your email.')
+      this.$router.push('/customer/forgot-password')
     },
 
     handleSignUp() {

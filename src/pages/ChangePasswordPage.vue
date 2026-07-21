@@ -6,15 +6,15 @@
         Back to Profile
       </button>
       <h1 class="text-2xl font-bold">Change Password</h1>
-      <p class="text-gray-600 mt-1">{{ isOAuthProvider ? 'Set a password for your account' : 'Update your account password' }}</p>
+      <p class="text-gray-600 mt-1">{{ getPageSubtitle() }}</p>
     </div>
 
     <div class="bg-white rounded-xl border p-6">
-      <!-- OAuth Provider Flow - Send OTP first -->
-      <div v-if="isOAuthProvider && !otpSent" class="space-y-4">
+      <!-- OTP Sending Step - For ALL users -->
+      <div v-if="!otpSent" class="space-y-4">
         <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
           <p class="text-sm text-blue-700">
-            Your account uses {{ providerName }} for login. To set a password, we'll send a verification code to your email.
+            {{ getOtpMessage() }}
           </p>
         </div>
         
@@ -33,8 +33,8 @@
 
       <!-- Password Change Form -->
       <form v-else @submit.prevent="handlePasswordChange" class="space-y-4">
-        <!-- Show OTP input for OAuth users -->
-        <div v-if="isOAuthProvider" class="space-y-2">
+        <!-- OTP Input -->
+        <div class="space-y-2">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
             <div class="flex gap-2">
@@ -72,29 +72,63 @@
           <p v-if="otpError" class="text-red-500 text-sm text-center">{{ otpError }}</p>
         </div>
 
-        <!-- Current Password (only for local accounts) -->
+        <!-- Current Password (ONLY for local accounts) -->
         <div v-if="!isOAuthProvider" class="space-y-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-          <input 
-            v-model="form.currentPassword" 
-            type="password" 
-            required 
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <a href="/forgot-password" class="text-sm text-blue-600 hover:underline">Forgot Password?</a>
+          <div class="relative">
+            <input 
+              v-model="form.currentPassword" 
+              :type="showCurrentPassword ? 'text' : 'password'" 
+              required 
+              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              @click="showCurrentPassword = !showCurrentPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <Eye v-if="!showCurrentPassword" class="h-4 w-4" />
+              <EyeOff v-else class="h-4 w-4" />
+            </button>
+          </div>
+          <button 
+            type="button" 
+            @click="goToForgotPassword" 
+            class="text-sm text-blue-600 hover:underline"
+          >
+            Forgot Password?
+          </button>
+        </div>
+        
+        <!-- OAuth users info -->
+        <div v-else class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-md">
+          <p class="text-sm text-yellow-700">
+            <strong>Note:</strong> Your account uses {{ providerName }} for login. 
+            You're setting a password for the first time. No current password is needed.
+          </p>
         </div>
 
         <!-- New Password with Strength Indicator -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-          <input 
-            v-model="form.newPassword" 
-            @input="checkPasswordStrength"
-            type="password" 
-            required 
-            minlength="6"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div class="relative">
+            <input 
+              v-model="form.newPassword" 
+              @input="checkPasswordStrength"
+              :type="showNewPassword ? 'text' : 'password'"
+              required 
+              minlength="6"
+              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              @click="showNewPassword = !showNewPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <Eye v-if="!showNewPassword" class="h-4 w-4" />
+              <EyeOff v-else class="h-4 w-4" />
+            </button>
+          </div>
           
           <!-- Password Strength Bar -->
           <div class="mt-2 space-y-1">
@@ -121,6 +155,10 @@
                 <span>{{ /[A-Z]/.test(form.newPassword) ? '✓' : '○' }}</span>
                 <span>Uppercase letter</span>
               </div>
+              <div class="flex items-center gap-1 text-xs" :class="/[a-z]/.test(form.newPassword) ? 'text-green-600' : 'text-gray-400'">
+                <span>{{ /[a-z]/.test(form.newPassword) ? '✓' : '○' }}</span>
+                <span>Lowercase letter</span>
+              </div>
               <div class="flex items-center gap-1 text-xs" :class="/[0-9]/.test(form.newPassword) ? 'text-green-600' : 'text-gray-400'">
                 <span>{{ /[0-9]/.test(form.newPassword) ? '✓' : '○' }}</span>
                 <span>Number</span>
@@ -134,13 +172,23 @@
         <!-- Confirm New Password -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-          <input 
-            v-model="form.confirmPassword" 
-            type="password" 
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :class="{ 'border-red-500': form.confirmPassword && form.newPassword !== form.confirmPassword }"
-          />
+          <div class="relative">
+            <input 
+              v-model="form.confirmPassword" 
+              :type="showConfirmPassword ? 'text' : 'password'"
+              required
+              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              :class="{ 'border-red-500': form.confirmPassword && form.newPassword !== form.confirmPassword }"
+            />
+            <button
+              type="button"
+              @click="showConfirmPassword = !showConfirmPassword"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <Eye v-if="!showConfirmPassword" class="h-4 w-4" />
+              <EyeOff v-else class="h-4 w-4" />
+            </button>
+          </div>
           <p v-if="form.confirmPassword && form.newPassword !== form.confirmPassword" class="text-red-500 text-xs mt-1">
             Passwords do not match
           </p>
@@ -154,7 +202,7 @@
             class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <span v-if="isSaving" class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            {{ isSaving ? 'Updating...' : (isOAuthProvider ? 'Set Password' : 'Update Password') }}
+            {{ isSaving ? 'Updating...' : getSubmitButtonText() }}
           </button>
           <button 
             type="button" 
@@ -180,7 +228,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, Eye, EyeOff } from 'lucide-vue-next'
 import { authApi, otpApi } from '@/api.js'
 import { useAuth } from '@/composables/useAuth.js'
 import FeedbackModal from '@/modals/FeedbackModal.vue'
@@ -202,6 +250,9 @@ const otpVerified = ref(false)
 const otpError = ref('')
 const otpSuccess = ref('')
 const cooldown = ref(0)
+const showCurrentPassword = ref(false)
+const showNewPassword = ref(false)
+const showConfirmPassword = ref(false)
 let cooldownInterval = null
 
 // Password strength
@@ -227,10 +278,12 @@ const providerName = computed(() => {
 })
 
 const canSubmit = computed(() => {
-  // For OAuth: need OTP verified and passwords match
+  // Must have OTP verified
+  if (!otpVerified.value) return false
+  
+  // For OAuth: need passwords match and valid
   if (isOAuthProvider.value) {
-    return otpVerified.value && 
-           form.value.newPassword && 
+    return form.value.newPassword && 
            form.value.confirmPassword &&
            form.value.newPassword === form.value.confirmPassword &&
            form.value.newPassword.length >= 6
@@ -246,8 +299,7 @@ const canSubmit = computed(() => {
 
 // Password strength computed properties
 const passwordStrengthPercent = computed(() => {
-  // Convert score (0-4) to percentage (0-100)
-  return (passwordStrength.value / 4) * 100
+  return (passwordStrength.value / 3) * 100
 })
 
 const passwordStrengthClass = computed(() => {
@@ -255,7 +307,6 @@ const passwordStrengthClass = computed(() => {
   if (score === 0) return 'bg-gray-200'
   if (score === 1) return 'bg-red-500'
   if (score === 2) return 'bg-orange-500'
-  if (score === 3) return 'bg-yellow-500'
   return 'bg-green-500'
 })
 
@@ -264,7 +315,6 @@ const passwordStrengthTextClass = computed(() => {
   if (score === 0) return 'text-gray-400'
   if (score === 1) return 'text-red-500'
   if (score === 2) return 'text-orange-500'
-  if (score === 3) return 'text-yellow-600'
   return 'text-green-600'
 })
 
@@ -272,25 +322,46 @@ const passwordStrengthLabel = computed(() => {
   const score = passwordStrength.value
   if (score === 0) return 'None'
   if (score === 1) return 'Weak'
-  if (score === 2) return 'Fair'
-  if (score === 3) return 'Good'
+  if (score === 2) return 'Good'
   return 'Strong'
 })
 
 // Methods
+function getPageSubtitle() {
+  if (isOAuthProvider.value) {
+    return `Set a password for your ${providerName.value} account`
+  }
+  return 'Update your account password'
+}
+
+function getOtpMessage() {
+  if (isOAuthProvider.value) {
+    return `Your account uses ${providerName.value} for login. To set a password, we'll send a verification code to your email. After verification, you can create a new password.`
+  }
+  return `To change your password, we'll send a verification code to your email. After verification, you'll need to enter your current password and set a new one.`
+}
+
+function getSubmitButtonText() {
+  return isOAuthProvider.value ? 'Set Password' : 'Update Password'
+}
+
 function checkPasswordStrength() {
   const pw = form.value.newPassword
   let score = 0
   
-  // Check length (minimum 8 characters for strong password)
+  // Check length (at least 8 characters)
   if (pw.length >= 8) score++
   
   // Check for uppercase letter
   if (/[A-Z]/.test(pw)) score++
   
+  // Check for lowercase letter
+  if (/[a-z]/.test(pw)) score++
+  
   // Check for number
   if (/[0-9]/.test(pw)) score++
   
+  // Special characters are NOT checked - they don't add to score
   
   passwordStrength.value = score
 }
@@ -313,7 +384,7 @@ async function sendOtpForPassword() {
     
     if (result.success) {
       otpSent.value = true
-      otpSuccess.value = 'Verification code sent to your email!'
+      otpSuccess.value = `Verification code sent to ${email}!`
       startCooldown()
     } else {
       otpError.value = result.message || 'Failed to send OTP'
@@ -388,8 +459,7 @@ async function handlePasswordChange() {
     return
   }
   
-  // For OAuth, check OTP verified
-  if (isOAuthProvider.value && !otpVerified.value) {
+  if (!otpVerified.value) {
     feedbackTitle.value = 'Verification Required'
     feedbackMessage.value = 'Please verify your OTP code first.'
     feedbackStatus.value = 'error'
@@ -405,14 +475,23 @@ async function handlePasswordChange() {
     const customerId = currentUser.value?.customerId || currentUser.value?._id
     
     if (isOAuthProvider.value) {
-      // Update with OTP
+      // OAuth users: update with OTP only (no current password)
       result = await authApi.updatePasswordWithOtp(
         email,
         form.value.otp,
         form.value.newPassword
       )
     } else {
-      // Update with current password
+      // Local users: verify current password
+      if (!form.value.currentPassword) {
+        feedbackTitle.value = 'Current Password Required'
+        feedbackMessage.value = 'Please enter your current password.'
+        feedbackStatus.value = 'error'
+        feedbackVisible.value = true
+        isSaving.value = false
+        return
+      }
+      
       result = await authApi.updatePasswordWithCurrent(
         customerId,
         form.value.currentPassword,
@@ -446,14 +525,18 @@ function goBack() {
   router.push('/customer/profile')
 }
 
+function goToForgotPassword() {
+  router.push('/customer/forgot-password')
+}
+
 function handleFeedbackClose() {
   // Optional: handle feedback close
 }
 
 // Lifecycle
 onMounted(() => {
-  // Auto-send OTP for OAuth users when page loads
-  if (isOAuthProvider.value && !otpSent.value) {
+  // Auto-send OTP for ALL users when page loads
+  if (!otpSent.value) {
     sendOtpForPassword()
   }
 })
