@@ -41,7 +41,7 @@
 
           <router-link
             to="/customer/messages"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all relative"
             :class="isActive('/customer/messages') ? 'bg-blue-600 text-white shadow-sm shadow-blue-200' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
@@ -142,6 +142,9 @@
         <router-link to="/customer/messages" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/messages') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           <span>Messages</span>
+          <span v-if="unreadCount > 0" class="ml-auto min-w-[20px] h-5 flex items-center justify-center text-xs font-semibold rounded-full bg-red-500 text-white">
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
         </router-link>
         <router-link to="/customer/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/profile') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
           <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>

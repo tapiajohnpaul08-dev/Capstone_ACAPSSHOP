@@ -128,11 +128,16 @@ const sendMessage = (conversationId, content, attachments = [], replyToMessageId
     }
   }
   
-  const markAsRead = (conversationId) => {
-    if (socketInstance?.connected) {
-      socketInstance.emit('mark-read', { conversationId })
-    }
+  // In useSocket.js (customer)
+const markAsRead = (conversationId) => {
+  if (socketInstance?.connected) {
+    socketInstance.emit('mark-read', { conversationId })
+    // Dispatch event for unread count update
+    window.dispatchEvent(new CustomEvent('messageRead', { 
+      detail: { conversationId }
+    }))
   }
+}
   
   const getOnlineStatus = (userIds) => {
     if (socketInstance?.connected && userIds.length > 0) {

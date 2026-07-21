@@ -651,6 +651,10 @@ async function loadMessages() {
       
       if (isSocketConnected.value) {
         markAsRead(conversationId.value)
+        // Dispatch event for unread count update
+        window.dispatchEvent(new CustomEvent('messageRead', { 
+          detail: { conversationId: conversationId.value }
+        }))
       }
     }
   } catch (error) {
@@ -831,6 +835,10 @@ function setupSocketListeners() {
     } else {
       console.log('📩 Message already exists, skipping duplicate')
     }
+
+    window.dispatchEvent(new CustomEvent('newMessageReceived', { 
+      detail: { conversationId: message.conversationId }
+    }))
   })
   
   onUserTyping(({ userType, isTyping: typing }) => {
