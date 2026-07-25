@@ -168,6 +168,9 @@ export function useOrders() {
       },
       designDetails: backendOrder.designDetails,
       expectedDelivery: backendOrder.expectedDelivery ? new Date(backendOrder.expectedDelivery).toLocaleDateString() : null,
+      preferredDate: backendOrder.preferredDate || null,
+      preferredTime: backendOrder.preferredTime || '',
+      notes: backendOrder.notes || '',
       statusHistory: backendOrder.statusHistory
     }
   }
