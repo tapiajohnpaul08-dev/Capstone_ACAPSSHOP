@@ -35,7 +35,7 @@ export function useOrders() {
     error.value = null
     try {
       const response = await ordersApi.getMyOrderById(orderId)
-          console.log('orderRes:', response.data)
+          console.log('fetched Order:', response.data)
 
       if (response.success && response.data) {
         const order = transformOrderToFrontend(response.data)
@@ -170,6 +170,7 @@ export function useOrders() {
       expectedDelivery: backendOrder.expectedDelivery ? new Date(backendOrder.expectedDelivery).toLocaleDateString() : null,
       preferredDate: backendOrder.preferredDate || null,
       preferredTime: backendOrder.preferredTime || '',
+      productionSchedule: backendOrder.productionSchedule || null,
       notes: backendOrder.notes || '',
       statusHistory: backendOrder.statusHistory
     }

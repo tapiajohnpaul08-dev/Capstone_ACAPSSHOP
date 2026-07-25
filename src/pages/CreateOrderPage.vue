@@ -2,7 +2,10 @@
   <div class="container mx-auto px-4 py-6 max-w-6xl">
     <!-- Header -->
     <div class="mb-6">
-      <button @click="router.back()" class="text-sm text-gray-500 hover:text-gray-800 mb-4">← Back</button>
+      <button @click="router.back()" class="text-sm text-gray-500 hover:text-gray-800 mb-4 inline-flex items-center gap-1">
+        <ArrowLeft class="w-4 h-4" />
+        Back
+      </button>
       <div class="flex items-start justify-between">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Create New Order</h1>
@@ -12,7 +15,9 @@
             <span v-else>Order from our catalog — we supply & print.</span>
           </p>
         </div>
-        <span class="px-3 py-1.5 rounded-full text-xs font-semibold" :class="orderBadgeClass">
+        <span class="px-3 py-1.5 rounded-full flex gap-3 text-xs font-semibold" :class="orderBadgeClass">
+          <ShoppingCart v-if="isCartOrder" class="w-3.5 h-3.5" />
+          <Package v-else class="w-3.5 h-3.5" />
           {{ orderBadgeText }}
         </span>
       </div>
@@ -37,11 +42,19 @@
             {{ getStepBadge(i) }}
           </span>
           {{ step.label }}
+          <!-- Show validation status on step buttons -->
+          <span v-if="i < currentStep" class="text-green-500">
+            <CheckCircle class="w-3 h-3" />
+          </span>
+          <span v-else-if="i === currentStep && !isStepValid" class="text-red-400">
+            <AlertCircle class="w-3 h-3" />
+          </span>
         </button>
         <span v-if="i < activeSteps.length - 1" class="text-gray-300">→</span>
       </div>
     </div>
 
+    <!-- Step Content -->
     <div class="flex flex-col lg:flex-row gap-6">
       <div class="flex-1 space-y-5">
         <!-- STEP 0: PRODUCT SELECTION -->
@@ -54,21 +67,26 @@
             :is-own-cups="isOwnCups"
             @product-changed="onProductChanged"
           />
-          <div v-if="step0Errors.length > 0" class="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div v-for="(error, idx) in step0Errors" :key="idx" class="text-xs text-red-600 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              {{ error }}
+          
+          <!-- Step Validation Status -->
+          <div class="mt-4 flex items-center justify-between">
+            <div>
+              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" />
+                {{ step0Errors[0] || 'Please complete all required fields' }}
+              </span>
+              <span v-else class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                All product details complete
+              </span>
             </div>
-          </div>
-          <div class="mt-4 flex justify-end">
             <button
               @click="nextStep"
               :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
             >
-              {{ orderProducts.length > 1 ? 'Configure Designs →' : 'Add Design →' }}
+              {{ orderProducts.length > 1 ? 'Configure Designs' : 'Add Design' }}
+              <ArrowRight class="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -81,9 +99,8 @@
             :has-design-required="false"
           />
 
-          <!-- Design Upload (only for individual or shared modes) -->
+          <!-- Design Upload -->
           <div v-if="designMode !== 'no-design'" class="mt-4">
-            <!-- Shared Design -->
             <div v-if="designMode === 'shared'">
               <DesignManager
                 v-model="sharedDesign"
@@ -94,7 +111,6 @@
               />
             </div>
 
-            <!-- Individual Designs -->
             <div v-else class="space-y-4">
               <div v-for="(item, idx) in orderProducts" :key="idx" class="bg-white rounded-xl border overflow-hidden">
                 <div class="px-6 py-4 border-b bg-gray-50">
@@ -119,13 +135,9 @@
             </div>
           </div>
 
-          <!-- No Design Mode - just show notes -->
           <div v-else class="bg-white rounded-xl border p-6">
             <div class="flex items-start gap-3">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0">
-                <path d="M12 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10z"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
+              <FileText class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
               <div>
                 <h4 class="font-semibold text-gray-900">Design by Description</h4>
                 <p class="text-sm text-gray-500">
@@ -134,32 +146,51 @@
               </div>
             </div>
             <div class="mt-4">
-              <label class="text-sm font-medium text-gray-700">Design Instructions</label>
+              <label class="text-sm font-medium text-gray-700">Design Instructions <span class="text-red-500">*</span></label>
               <textarea
                 v-model="designNotes"
                 rows="4"
                 placeholder="Describe your design in detail: colors, style, text, references, sample images, etc."
                 class="field resize-none"
+                :class="{
+                  'border-red-400 ring-1 ring-red-300': !designNotes?.trim() && step1Errors.length > 0
+                }"
               ></textarea>
+              <p v-if="!designNotes?.trim() && step1Errors.length > 0" class="text-xs text-red-500 mt-1">
+                Please provide design instructions
+              </p>
             </div>
           </div>
 
           <!-- Navigation -->
-          <div class="mt-4 flex justify-between">
-            <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-              ← Back
-            </button>
-            <button
-              @click="nextStep"
-              :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {{ designMode === 'shared' && orderProducts.length > 1 ? 'Set Placement →' : 'Enter Info →' }}
-            </button>
+          <div class="mt-4 flex items-center justify-between">
+            <div>
+              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" />
+                {{ step1Errors[0] || 'Please complete design details' }}
+              </span>
+              <span v-else class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                Design details complete
+              </span>
+            </div>
+            <div class="flex gap-3">
+              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                ← Back
+              </button>
+              <button
+                @click="nextStep"
+                :disabled="!isStepValid"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                {{ designMode === 'shared' && orderProducts.length > 1 ? 'Set Placement' : 'Enter Info' }}
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- STEP 2: PLACEMENT (only for shared design mode with multiple items) -->
+        <!-- STEP 2: PLACEMENT -->
         <div v-if="currentStep === 2 && designMode === 'shared' && orderProducts.length > 1">
           <PlacementManager
             v-model="placementSettings"
@@ -167,17 +198,30 @@
             description="Set the print placement for each item using the shared design."
           />
           
-          <div class="mt-4 flex justify-between">
-            <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-              ← Back
-            </button>
-            <button
-              @click="nextStep"
-              :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Enter Info →
-            </button>
+          <div class="mt-4 flex items-center justify-between">
+            <div>
+              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" />
+                {{ stepPlacementErrors[0] || 'Please set placement for all items' }}
+              </span>
+              <span v-else class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                Placement settings complete
+              </span>
+            </div>
+            <div class="flex gap-3">
+              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                ← Back
+              </button>
+              <button
+                @click="nextStep"
+                :disabled="!isStepValid"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                Enter Info
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -186,17 +230,30 @@
           <CustomerInfoCard v-model="customerInfo" :errors="errors.customer" />
           <FulfillmentCard v-model="fulfillment" :customer-address="customerInfo.address" :errors="errors.fulfillment" />
           
-          <div class="flex justify-between">
-            <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-              ← Back
-            </button>
-            <button
-              @click="nextStep"
-              :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Payment →
-            </button>
+          <div class="mt-4 flex items-center justify-between">
+            <div>
+              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" />
+                {{ stepInfoErrors[0] || 'Please complete all customer and delivery details' }}
+              </span>
+              <span v-else class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                Customer and delivery details complete
+              </span>
+            </div>
+            <div class="flex gap-3">
+              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                ← Back
+              </button>
+              <button
+                @click="nextStep"
+                :disabled="!isStepValid"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                Payment
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -204,24 +261,43 @@
         <div v-if="getStepKey(currentStep) === 'payment'" class="space-y-5">
           <PaymentMethodCard v-model="paymentMethod" :total-amount="totalAmount" />
           
-          <div class="flex justify-between">
-            <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
-              ← Back
-            </button>
-            <button
-              @click="nextStep"
-              :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              Review Order →
-            </button>
+          <div class="mt-4 flex items-center justify-between">
+            <div>
+              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+                <AlertCircle class="w-3 h-3" />
+                {{ stepPaymentErrors[0] || 'Please select a payment method' }}
+              </span>
+              <span v-else class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                Payment method selected
+              </span>
+            </div>
+            <div class="flex gap-3">
+              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                ← Back
+              </button>
+              <button
+                @click="nextStep"
+                :disabled="!isStepValid"
+                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              >
+                Review Order
+                <ArrowRight class="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- STEP 5: REVIEW -->
         <div v-if="getStepKey(currentStep) === 'review'">
           <div class="bg-white rounded-xl border p-6 space-y-6">
-            <h4 class="font-semibold text-gray-900">Review Your Order</h4>
+            <div class="flex items-center justify-between">
+              <h4 class="font-semibold text-gray-900">Review Your Order</h4>
+              <span v-if="isFormValid" class="text-xs text-green-500 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                Ready to submit
+              </span>
+            </div>
             
             <div class="grid md:grid-cols-2 gap-4 text-sm">
               <div>
@@ -239,6 +315,14 @@
               <div>
                 <span class="text-gray-500">Total Quantity</span>
                 <p class="font-medium">{{ totalQuantity.toLocaleString() }} pcs</p>
+              </div>
+              <div>
+                <span class="text-gray-500">Delivery Method</span>
+                <p class="font-medium">{{ fulfillment.method === 'pickup' ? 'Pick-up' : 'Delivery' }}</p>
+              </div>
+              <div>
+                <span class="text-gray-500">Payment Method</span>
+                <p class="font-medium capitalize">{{ paymentMethod.method === 'cod' ? 'Cash on Delivery' : paymentMethod.method }}</p>
               </div>
             </div>
 
@@ -270,29 +354,17 @@
                 :key="hint"
                 class="flex items-center gap-2 text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0">
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
+                <AlertCircle class="w-3 h-3" />
                 {{ hint }}
               </div>
             </div>
           </div>
 
-          <div class="mt-4 flex justify-between">
+          <div class="mt-4 flex justify-between items-center">
             <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               ← Back
             </button>
-            <button
-              @click="handleSubmit"
-              :disabled="isSubmitting || !isFormValid"
-              class="px-8 py-3 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              <span v-if="isSubmitting" class="inline-flex items-center gap-2">
-                <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                Submitting...
-              </span>
-              <span v-else>✅ Place Order</span>
-            </button>
+            
           </div>
         </div>
       </div>
@@ -308,7 +380,7 @@
           :is-cart-order="isCartOrder"
           :payment-method="paymentMethod.method"
           :total-amount="totalAmount"
-          :can-submit="isFormValid"
+          :can-submit="isFormValid && currentStep === getLastStepIndex()"
           :is-submitting="isSubmitting"
           :validation-hints="validationHints"
           @submit="handleSubmit"
@@ -320,11 +392,9 @@
     <div v-if="showSuccess" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="router.push('/customer/orders')">
       <div class="bg-white rounded-2xl p-8 max-w-sm text-center">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-          </svg>
+          <CheckCircle class="w-8 h-8 text-green-600" />
         </div>
-        <h3 class="text-xl font-bold mb-2">Order Submitted! 🎉</h3>
+        <h3 class="text-xl font-bold mb-2">Order Submitted!</h3>
         <p class="text-gray-500 text-sm mb-6">
           We'll contact you within 1-2 business days for design approval and payment confirmation.
         </p>
@@ -337,7 +407,9 @@
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
-        <div v-if="toast.show" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+        <div v-if="toast.show" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2">
+          <AlertCircle v-if="toast.type === 'error'" class="w-4 h-4 text-red-400" />
+          <CheckCircle v-else class="w-4 h-4 text-green-400" />
           {{ toast.message }}
         </div>
       </transition>
@@ -360,6 +432,9 @@ import PlacementManager from '@/components/create-order/PlacementManager.vue'
 import ProductSelector from '@/components/create-order/ProductSelector.vue'
 import { productsApi, ordersApi } from '@/api.js'
 import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
+
+import { ShoppingCart, Package } from 'lucide-vue-next'
+
 
 const route = useRoute()
 const router = useRouter()
@@ -406,30 +481,27 @@ const activeSteps = computed(() => {
   const steps = [
     { key: 'product', label: 'Products', enabled: true }
   ]
-  
-  // Design step is always enabled (even for no-design)
   steps.push({ key: 'design', label: 'Design', enabled: orderProducts.value.length > 0 })
-  
-  // Add placement step for shared design mode with multiple items
   if (designMode.value === 'shared' && orderProducts.value.length > 1) {
     steps.push({ key: 'placement', label: 'Placement', enabled: true })
   }
-  
   steps.push(
     { key: 'info', label: 'Info', enabled: true },
     { key: 'payment', label: 'Payment', enabled: true },
     { key: 'review', label: 'Review', enabled: true }
   )
-  
   return steps
 })
 
 const currentStep = ref(0)
 
-// Helper to get step key at index
 function getStepKey(index) {
   const step = activeSteps.value[index]
   return step?.key || ''
+}
+
+function getLastStepIndex() {
+  return activeSteps.value.length - 1
 }
 
 // ─── COMPUTED ──────────────────────────────────────────────────────────────
@@ -441,7 +513,7 @@ const orderBadgeClass = computed(() =>
   isOwnCups.value ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
 )
 const orderBadgeText = computed(() => 
-  isOwnCups.value ? '📦 Own Cups' : (isCartOrder.value ? '🛒 Multi-Item' : 'Single Product')
+  isOwnCups.value ? 'Own Items' : (isCartOrder.value ? 'Multi-Item' : 'Single Product')
 )
 
 const totalQuantity = computed(() => 

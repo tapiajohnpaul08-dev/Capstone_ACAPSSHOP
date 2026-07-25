@@ -1,7 +1,6 @@
-<!-- components/create-order/DesignManager.vue -->
 <template>
   <div class="space-y-4">
-    <!-- Design Source Toggle (only show if not in no-design mode) -->
+    <!-- Design Source Toggle -->
     <div v-if="!isNoDesignMode" class="grid grid-cols-2 gap-3">
       <button
         @click="setDesignSource('upload')"
@@ -10,7 +9,9 @@
           ? 'border-blue-600 bg-blue-50 text-blue-700'
           : 'border-gray-200 hover:border-gray-300 text-gray-600'"
       >
-        {{ hasFiles ? '📎 Change File' : '📤 Upload Design' }}
+          <Upload class="w-4 h-4 inline mr-1" />
+        {{ hasFiles ? 'Change File' : 'Upload Design' }}
+
       </button>
       <button
         @click="setDesignSource('saved')"
@@ -19,13 +20,14 @@
           ? 'border-blue-600 bg-blue-50 text-blue-700'
           : 'border-gray-200 hover:border-gray-300 text-gray-600'"
       >
-        💾 Saved Template
+              <Library class="w-4 h-4 inline mr-1" />
+
+         Saved Template
       </button>
     </div>
 
     <!-- Upload Panel -->
     <div v-if="designSource === 'upload' && !isNoDesignMode" class="space-y-4">
-      <!-- File Upload Area -->
       <div
         @dragover.prevent="dragging = true"
         @dragleave="dragging = false"
@@ -33,40 +35,28 @@
         class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
         :class="dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50'"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-gray-400 mb-2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/>
-          <line x1="12" x2="12" y1="3" y2="15"/>
-        </svg>
+                <UploadCloud class="w-8 h-8 mx-auto text-gray-400 mb-2" />
+
         <p class="text-sm font-medium text-gray-700">Drag & drop your design file here</p>
         <p class="text-xs text-gray-400 mt-1">PNG, JPG, PDF, AI, PSD · Max 20MB</p>
         <label class="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" x2="12" y1="3" y2="15"/>
-          </svg>
+          <FolderOpen class="w-4 h-4" />
           Browse Files
           <input type="file" accept=".png,.jpg,.jpeg,.pdf,.ai,.psd" class="hidden" @change="handleFileSelect" />
         </label>
       </div>
 
-      <!-- Uploaded File Preview -->
       <div v-if="files.length > 0" class="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
         <div class="w-10 h-10 rounded bg-green-100 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-green-600">
-            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>
+                    <FileCheck class="w-5 h-5 text-green-600" />
+
         </div>
         <div class="flex-1 min-w-0">
           <div class="text-sm font-medium text-gray-800 truncate">{{ files[0].name }}</div>
           <div class="text-xs text-green-600">Ready to use</div>
         </div>
         <button @click="removeFile(0)" class="text-gray-400 hover:text-red-500">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+                    <X class="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -74,11 +64,13 @@
     <!-- Saved Templates -->
     <div v-if="designSource === 'saved' && !isNoDesignMode" class="space-y-3">
       <div v-if="isLoadingTemplates" class="text-center py-6">
-        <div class="inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+        <Loader2 class="w-6 h-6 mx-auto text-blue-600 animate-spin" />
         <p class="text-sm text-gray-500 mt-2">Loading templates...</p>
       </div>
       
       <div v-else-if="templates.length === 0" class="text-center py-6 bg-gray-50 rounded-xl">
+                <LayoutTemplate class="w-8 h-8 mx-auto text-gray-400 mb-2" />
+
         <p class="text-sm text-gray-500">No saved templates yet.</p>
         <p class="text-xs text-gray-400 mt-1">Save a design from a previous order to use it here.</p>
       </div>
@@ -94,16 +86,13 @@
           <div class="flex items-center gap-3">
             <img 
               v-if="template.thumbnail" 
-              :src="getImageUrl(template.thumbnail)" 
+              :src="template.thumbnail" 
               class="w-12 h-12 object-cover rounded"
               @error="handleImageError"
             />
             <div class="w-12 h-12 rounded bg-gray-100 flex items-center justify-center" v-else>
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400">
-                <rect x="2" y="2" width="20" height="20" rx="2.18"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <path d="M21 15l-5-5-6 6-3-3-4 4"/>
-              </svg>
+                           <Image class="w-5 h-5 text-gray-400" />
+
             </div>
             <div class="flex-1">
               <div class="text-sm font-medium">{{ template.name }}</div>
@@ -119,7 +108,7 @@
       </div>
     </div>
 
-    <!-- PRINT PLACEMENT - Always shown for single items or when showPlacement is true -->
+    <!-- Print Placement -->
     <div v-if="showPlacement || isSingleItem" class="space-y-3">
       <div class="border-t pt-3">
         <h5 class="text-sm font-medium text-gray-700 mb-3">Print Placement</h5>
@@ -151,7 +140,7 @@
       </div>
     </div>
 
-    <!-- Design Notes (always shown) -->
+    <!-- Design Notes -->
     <div class="space-y-2">
       <div class="flex items-center justify-between">
         <label class="text-sm font-medium text-gray-700">Design Notes</label>
@@ -164,35 +153,74 @@
         class="field resize-none"
       ></textarea>
       <p class="text-xs text-gray-400">
-        💡 Our design team will use these notes to create or adjust your artwork.
+                <Lightbulb class="w-3 h-3" />
+
+         Our design team will use these notes to create or adjust your artwork.
       </p>
     </div>
 
-    <!-- Save as Template (only when there's content) -->
+    <!-- Save as Template -->
     <div v-if="hasDesignContent && !isNoDesignMode" class="pt-2 border-t">
       <button
         @click="saveAsTemplate"
         :disabled="isSavingTemplate"
         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors"
       >
-        <svg v-if="!isSavingTemplate" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>  
-        </svg>
-        <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        💾 Save as Template
+        <Save v-if="!isSavingTemplate" class="w-4 h-4" />
+        <Loader2 v-else class="w-4 h-4 animate-spin" />
+        {{ isSavingTemplate ? 'Saving...' : 'Save as Template' }}
       </button>
     </div>
+
+    <!-- Save Template Modal -->
+    <SimpleModal
+      v-model:visible="saveModalVisible"
+      title="Save as Template"
+      message="Enter a name for this template"
+      icon-type="info"
+      confirm-label="Save"
+      cancel-label="Cancel"
+      :show-input="true"
+      :input-value="templateName"
+      :input-placeholder="'Enter template name...'"
+      :loading="isSavingTemplate"
+      @update:input-value="templateName = $event"
+      @confirm="confirmSaveTemplate"
+      @close="saveModalVisible = false"
+    />
+
+    <!-- Feedback Modal -->
+   <SimpleModal
+      v-model:visible="feedbackVisible"
+      :title="feedbackTitle"
+      :message="feedbackMessage"
+      :icon-type="feedbackStatus"
+      :show-cancel="false"
+      confirm-label="Got it"
+      @confirm="feedbackVisible = false"
+    />
   </div>
 </template>
 
 <script setup>
+import { 
+  Upload, 
+  Library, 
+  UploadCloud, 
+  FolderOpen, 
+  FileCheck, 
+  X, 
+  Loader2, 
+  LayoutTemplate,
+  Image,
+  Check,
+  Lightbulb,
+  Save,
+  Sparkles
+} from 'lucide-vue-next'
 import { ref, computed, watch, onMounted } from 'vue'
 import { useTemplates } from '@/composables/useTemplates.js'
+import SimpleModal from '@/modals/SimpleModal.vue'
 
 const props = defineProps({
   modelValue: {
@@ -208,7 +236,7 @@ const props = defineProps({
     })
   },
   itemName: { type: String, default: 'Design' },
-  showPlacement: { type: Boolean, default: true }, // Default to true for single items
+  showPlacement: { type: Boolean, default: true },
   isNoDesignMode: { type: Boolean, default: false }
 })
 
@@ -216,9 +244,18 @@ const emit = defineEmits(['update:modelValue'])
 
 const { templates, isLoading: isLoadingTemplates, fetchTemplates, saveAsTemplate: saveTemplate } = useTemplates()
 
-// Local state
+// ── State ──────────────────────────────────────────────────────────────────────
 const dragging = ref(false)
 const isSavingTemplate = ref(false)
+const saveModalVisible = ref(false)
+const templateName = ref('')
+
+// Feedback
+const feedbackVisible = ref(false)
+const feedbackTitle = ref('')
+const feedbackMessage = ref('')
+const feedbackStatus = ref('success')
+const feedbackIcon = ref('')
 
 const designSource = ref(props.modelValue.designSource || 'upload')
 const files = ref(props.modelValue.files || [])
@@ -227,13 +264,7 @@ const localPrintSize = ref(props.modelValue.printSize || '')
 const localPrintPlacement = ref(props.modelValue.printPlacement || '')
 const selectedTemplateId = ref(props.modelValue.selectedTemplateId || null)
 
-// Check if this is a single item (no need for complex logic, just use prop)
-const isSingleItem = computed(() => {
-  // This will be determined by the parent component
-  // For DesignManager, we just check if showPlacement is true
-  return props.showPlacement
-})
-
+const isSingleItem = computed(() => props.showPlacement)
 const hasDesignContent = computed(() => {
   return files.value.length > 0 || 
          localDesignNotes.value.trim() ||
@@ -241,8 +272,22 @@ const hasDesignContent = computed(() => {
          localPrintSize.value.trim() ||
          localPrintPlacement.value
 })
-
 const hasFiles = computed(() => files.value.length > 0)
+
+// ── Functions ──────────────────────────────────────────────────────────────────
+function showFeedback(title, message, status = 'success') {
+  const icons = {
+    'success': '✅',
+    'error': '❌',
+    'warning': '⚠️',
+    'info': 'ℹ️'
+  }
+  feedbackTitle.value = title
+  feedbackMessage.value = message
+  feedbackStatus.value = status
+  feedbackIcon.value = icons[status] || icons['info']
+  feedbackVisible.value = true
+}
 
 // Watch for changes and emit
 watch([designSource, files, localDesignNotes, localPrintSize, localPrintPlacement, selectedTemplateId], () => {
@@ -258,7 +303,7 @@ watch([designSource, files, localDesignNotes, localPrintSize, localPrintPlacemen
     selectedTemplate: selectedTemp ? {
       id: selectedTemp.id,
       name: selectedTemp.name,
-      thumbnail: selectedTemp.imagePath || selectedTemp.thumbnail,
+      thumbnail: selectedTemp.thumbnail,
       printSize: selectedTemp.printSize,
       placement: selectedTemp.placement,
       notes: selectedTemp.notes
@@ -287,11 +332,11 @@ function validateFiles(fileList) {
   
   for (const file of fileList) {
     if (!ALLOWED_TYPES.includes(file.type) && !file.type.startsWith('image/')) {
-      alert(`${file.name}: Invalid file type. Only images and PDFs are allowed.`)
+      showFeedback('Invalid File', `${file.name}: Only images and PDFs are allowed.`, 'error')
       return false
     }
     if (file.size > MAX_SIZE) {
-      alert(`${file.name}: File too large. Max 20MB.`)
+      showFeedback('File Too Large', `${file.name}: Max 20MB.`, 'error')
       return false
     }
   }
@@ -319,38 +364,39 @@ function removeFile(index) {
   files.value.splice(index, 1)
 }
 
-function getImageUrl(path) {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  const base = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-  return `${base}/${path.replace(/^\/+/, '')}`
-}
-
 function handleImageError(e) {
-  e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="%239ca3af" stroke-width="1.5"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpath d="M21 15l-5-5-6 6-3-3-4 4"%3E%3C/path%3E%3C/svg%3E'
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+  e.target.src = `${API_BASE_URL}/uploads/templates/default-template.jpg`
 }
 
+// ── Save as Template ──────────────────────────────────────────────────────────
 async function saveAsTemplate() {
   if (!hasDesignContent.value) {
-    alert('Please add some design content before saving as template')
+    showFeedback('No Content', 'Please add some design content before saving as template.', 'warning')
+    return
+  }
+  
+  // Show the save modal
+  templateName.value = `${props.itemName} Design`
+  saveModalVisible.value = true
+}
+
+async function confirmSaveTemplate() {
+  if (!templateName.value?.trim()) {
+    showFeedback('Invalid Name', 'Please enter a template name.', 'warning')
     return
   }
   
   isSavingTemplate.value = true
+  
   try {
-    const templateName = prompt('Enter a name for this template:', props.itemName + ' Design')
-    if (!templateName) {
-      isSavingTemplate.value = false
-      return
-    }
-    
     let existingImagePath = ''
     if (files.value.length > 0 && files.value[0].path) {
       existingImagePath = files.value[0].path
     }
     
     const templateData = {
-      name: templateName,
+      name: templateName.value.trim(),
       printSize: localPrintSize.value,
       placement: localPrintPlacement.value,
       notes: localDesignNotes.value,
@@ -358,13 +404,19 @@ async function saveAsTemplate() {
     }
     
     const result = await saveTemplate(templateData, props.itemName)
+    
     if (result.success && !result.cancelled) {
-      alert('Template saved successfully!')
+      saveModalVisible.value = false
+      showFeedback('Template Saved', `"${templateName.value.trim()}" has been saved successfully!`, 'success')
       await fetchTemplates()
+    } else if (result.cancelled) {
+      // User cancelled
+    } else {
+      showFeedback('Save Failed', result.message || 'Failed to save template.', 'error')
     }
   } catch (error) {
     console.error('Error saving template:', error)
-    alert('Failed to save template: ' + (error.message || 'Unknown error'))
+    showFeedback('Error', error.message || 'Something went wrong.', 'error')
   } finally {
     isSavingTemplate.value = false
   }

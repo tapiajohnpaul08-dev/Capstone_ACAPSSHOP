@@ -21,7 +21,7 @@
         </span>
         <span v-if="paymentMethod" class="px-2 py-1 rounded-md text-xs font-medium" 
           :class="paymentMethod === 'cod' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'">
-          {{ paymentMethod === 'cod' ? '💵 COD' : '🏦 Bank Transfer' }}
+          {{ paymentMethod === 'cod' ? ' Cash On Delivery' : ' Bank Transfer' }}
         </span>
       </div>
 

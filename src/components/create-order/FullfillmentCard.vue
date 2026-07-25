@@ -1,19 +1,24 @@
 <template>
   <div class="bg-white rounded-xl border">
     <div class="px-6 pt-6 pb-4 border-b">
-      <h4 class="font-semibold text-gray-900">Fulfillment Preference</h4>
+      <div class="flex items-center gap-2">
+        <Truck class="w-4 h-4 text-blue-600" />
+        <h4 class="font-semibold text-gray-900">Fulfillment Preference</h4>
+      </div>
       <p class="text-xs text-gray-500 mt-0.5">How would you like to receive your order?</p>
     </div>
     <div class="px-6 py-5 space-y-4">
-
       <!-- Delivery / Pickup toggle -->
       <div class="grid md:grid-cols-2 gap-3">
         <div
           @click="setMethod('delivery')"
           class="p-4 rounded-lg border-2 cursor-pointer transition-all"
-          :class="modelValue.method === 'delivery'
-            ? 'border-blue-600 bg-blue-50'
-            : 'border-gray-200 hover:border-gray-300'"
+          :class="[
+            modelValue.method === 'delivery'
+              ? 'border-blue-600 bg-blue-50'
+              : 'border-gray-200 hover:border-gray-300',
+            { 'border-red-400 ring-1 ring-red-300': showDeliveryError && modelValue.method === 'delivery' }
+          ]"
         >
           <div class="flex items-start gap-3">
             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
@@ -22,10 +27,7 @@
             </div>
             <div>
               <div class="flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
-                  <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
-                  <circle cx="12" cy="10" r="3"/>
-                </svg>
+                <Truck class="w-4 h-4 text-gray-600" />
                 <span class="text-sm font-semibold text-gray-800">Delivery</span>
               </div>
               <p class="text-xs text-gray-500 mt-0.5">We'll deliver to your address</p>
@@ -47,11 +49,7 @@
             </div>
             <div>
               <div class="flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
-                  <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
-                  <path d="M12 22V12"/>
-                  <polyline points="3.29 7 12 12 20.71 7"/>
-                </svg>
+                <MapPin class="w-4 h-4 text-gray-600" />
                 <span class="text-sm font-semibold text-gray-800">Pick-up</span>
               </div>
               <p class="text-xs text-gray-500 mt-0.5">Pick up from our location</p>
@@ -59,6 +57,12 @@
           </div>
         </div>
       </div>
+
+      <!-- Error message for delivery method -->
+      <p v-if="showDeliveryError && modelValue.method === 'delivery'" class="text-xs text-red-500 flex items-center gap-1">
+        <AlertCircle class="w-3 h-3" />
+        Please fill in the delivery address below
+      </p>
 
       <!-- Delivery address (only when delivery selected) -->
       <div v-if="modelValue.method === 'delivery'" class="space-y-1.5">
@@ -70,16 +74,31 @@
           :value="modelValue.deliveryAddress"
           @input="updateField('deliveryAddress', $event.target.value)"
           @blur="validateDeliveryAddress"
-          placeholder="Enter complete delivery address"
+          placeholder="Enter complete delivery address (Street, Barangay, City, Province)"
           rows="2"
           class="field resize-none"
           :class="{ 
-            'border-red-400 ring-1 ring-red-300': deliveryAddressError,
+            'border-red-400 ring-1 ring-red-300': deliveryAddressError && !isValidDeliveryAddress,
             'border-green-400 ring-1 ring-green-300': isValidDeliveryAddress && modelValue.deliveryAddress
           }"
         ></textarea>
-        <p v-if="deliveryAddressError" class="text-xs text-red-500">{{ deliveryAddressError }}</p>
-        <p v-else-if="isValidDeliveryAddress && modelValue.deliveryAddress" class="text-xs text-green-500">✓ Valid address</p>
+        
+        <!-- Character counter -->
+        <div class="flex justify-between items-center">
+          <div>
+            <p v-if="deliveryAddressError && !isValidDeliveryAddress" class="text-xs text-red-500 flex items-center gap-1">
+              <AlertCircle class="w-3 h-3" />
+              {{ deliveryAddressError }}
+            </p>
+            <p v-else-if="isValidDeliveryAddress && modelValue.deliveryAddress" class="text-xs text-green-500 flex items-center gap-1">
+              <CheckCircle class="w-3 h-3" />
+              Valid address
+            </p>
+          </div>
+          <span class="text-xs text-gray-400" v-if="modelValue.deliveryAddress">
+            {{ modelValue.deliveryAddress.length }}/{{ minAddressLength }}+ characters
+          </span>
+        </div>
         
         <label class="flex items-center gap-2 cursor-pointer select-none w-fit mt-1">
           <input
@@ -88,38 +107,39 @@
             @change="handleSameAsCustomer($event.target.checked)"
             class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
-          <span class="text-xs text-gray-600">Same as customer address</span>
+          <span class="text-xs text-gray-600 flex items-center gap-1">
+            <Copy class="w-3 h-3" />
+            Same as customer address
+          </span>
         </label>
       </div>
 
       <!-- Pickup info -->
       <div v-else class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-600 flex gap-3">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0 mt-0.5">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
+        <MapPin class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
         <div>
           <span class="font-medium text-gray-800">ACAPSHOP — Main Store</span><br/>
           123 Printing Ave., Manila, Philippines<br/>
-          <span class="text-xs text-gray-400">Mon–Sat · 8AM–6PM · (02) 1234-5678</span>
+          <span class="text-xs text-gray-400 flex items-center gap-1 mt-1">
+            <Clock class="w-3 h-3" />
+            Mon–Sat · 8AM–6PM · (02) 1234-5678
+          </span>
         </div>
       </div>
 
       <!-- Preferred Date Selection -->
       <div class="border-t pt-4 mt-4">
         <div class="flex items-center gap-2 mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <h5 class="font-medium text-gray-800 text-sm">Preferred Date</h5>
+          <Calendar class="w-4 h-4 text-blue-500" />
+          <h5 class="font-medium text-gray-800 text-sm">Preferred Date & Time</h5>
           <span class="text-xs text-gray-400">(5-7 business days from today)</span>
         </div>
         
         <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="text-sm font-medium text-gray-700">Date</label>
+            <label class="text-sm font-medium text-gray-700">
+              Date <span class="text-red-500">*</span>
+            </label>
             <input
               type="date"
               :value="modelValue.preferredDate"
@@ -128,45 +148,88 @@
               :max="maxDate"
               class="field"
               :class="{
-                'border-red-400 ring-1 ring-red-300': dateError
+                'border-red-400 ring-1 ring-red-300': dateError && !isValidDate,
+                'border-green-400 ring-1 ring-green-300': isValidDate && modelValue.preferredDate
               }"
             />
-            <p v-if="dateError" class="text-xs text-red-500 mt-1">{{ dateError }}</p>
-            <p v-else-if="modelValue.preferredDate" class="text-xs text-green-500 mt-1">✓ Valid date selected</p>
-            <p class="text-xs text-gray-400 mt-1">
+            <div class="flex justify-between items-center mt-1">
+              <div>
+                <p v-if="dateError && !isValidDate" class="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle class="w-3 h-3" />
+                  {{ dateError }}
+                </p>
+                <p v-else-if="isValidDate && modelValue.preferredDate" class="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle class="w-3 h-3" />
+                  Valid date selected
+                </p>
+              </div>
+              <span class="text-xs text-gray-400">
+                {{ formatDate(modelValue.preferredDate) || 'Select a date' }}
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <Info class="w-3 h-3" />
               Earliest: {{ formatDate(minDate) }} · Latest: {{ formatDate(maxDate) }}
             </p>
           </div>
           <div>
-            <label class="text-sm font-medium text-gray-700">Preferred Time</label>
+            <label class="text-sm font-medium text-gray-700">
+              Preferred Time <span class="text-red-500">*</span>
+            </label>
             <select
               v-model="modelValue.preferredTime"
               @change="updateField('preferredTime', $event.target.value)"
               class="field"
+              :class="{
+                'border-red-400 ring-1 ring-red-300': timeError && !isValidTime,
+                'border-green-400 ring-1 ring-green-300': isValidTime && modelValue.preferredTime
+              }"
             >
               <option value="">Select time slot...</option>
-              <option value="Morning (8AM - 12PM)">Morning (8AM - 12PM)</option>
-              <option value="Afternoon (1PM - 5PM)">Afternoon (1PM - 5PM)</option>
-              <option value="Evening (5PM - 8PM)">Evening (5PM - 8PM)</option>
-              <option value="Anytime">Anytime</option>
+              <option value="Morning (8AM - 12PM)"> Morning (8AM - 12PM)</option>
+              <option value="Afternoon (1PM - 5PM)"> Afternoon (1PM - 5PM)</option>
+              <option value="Evening (5PM - 8PM)"> Evening (5PM - 8PM)</option>
+              <option value="Anytime"> Anytime</option>
             </select>
-            <p class="text-xs text-gray-400 mt-1">Choose your preferred time slot</p>
+            <div class="flex justify-between items-center mt-1">
+              <div>
+                <p v-if="timeError && !isValidTime" class="text-xs text-red-500 flex items-center gap-1">
+                  <AlertCircle class="w-3 h-3" />
+                  {{ timeError }}
+                </p>
+                <p v-else-if="isValidTime && modelValue.preferredTime" class="text-xs text-green-500 flex items-center gap-1">
+                  <CheckCircle class="w-3 h-3" />
+                  Time slot selected
+                </p>
+              </div>
+              <span class="text-xs text-gray-400">
+                {{ modelValue.preferredTime || 'Select a time' }}
+              </span>
+            </div>
+            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+              <Clock class="w-3 h-3" />
+              Choose your preferred time slot
+            </p>
           </div>
         </div>
 
         <!-- Quick selection chips -->
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button
-            v-for="date in quickDates"
-            :key="date.label"
-            @click="selectQuickDate(date.value)"
-            class="px-3 py-1.5 text-xs rounded-full border transition-colors"
-            :class="modelValue.preferredDate === date.value
-              ? 'bg-blue-50 border-blue-500 text-blue-700'
-              : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'"
-          >
-            {{ date.label }}
-          </button>
+        <div class="mt-3">
+          <p class="text-xs text-gray-500 mb-2">Quick select:</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="date in quickDates"
+              :key="date.label"
+              @click="selectQuickDate(date.value)"
+              class="px-3 py-1.5 text-xs rounded-full border transition-colors inline-flex items-center gap-1"
+              :class="modelValue.preferredDate === date.value
+                ? 'bg-blue-50 border-blue-500 text-blue-700'
+                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'"
+            >
+              <Calendar class="w-3 h-3" />
+              {{ date.label }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -174,7 +237,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { 
+  Truck, 
+  MapPin, 
+  CheckCircle, 
+  Copy, 
+  Clock, 
+  Calendar, 
+  Info,
+  AlertCircle
+} from 'lucide-vue-next'
 
 const props = defineProps({
   modelValue: { 
@@ -194,6 +267,9 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+// ─── CONSTANTS ──────────────────────────────────────────────────────────────
+const minAddressLength = 10
+
 // ─── DATE HELPERS ──────────────────────────────────────────────────────────
 function getBusinessDaysFromToday(days) {
   const date = new Date()
@@ -202,7 +278,6 @@ function getBusinessDaysFromToday(days) {
   while (businessDaysAdded < days) {
     date.setDate(date.getDate() + 1)
     const dayOfWeek = date.getDay()
-    // Skip Saturday (6) and Sunday (0)
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
       businessDaysAdded++
     }
@@ -211,19 +286,25 @@ function getBusinessDaysFromToday(days) {
   return date
 }
 
-function formatDate(date) {
-  if (!date) return ''
-  const d = new Date(date)
-  return d.toLocaleDateString('en-PH', { 
-    month: 'short', 
-    day: 'numeric', 
-    year: 'numeric' 
-  })
+function formatDate(dateValue) {
+  if (!dateValue) return ''
+  try {
+    const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue
+    if (isNaN(d.getTime())) return ''
+    return d.toLocaleDateString('en-PH', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    })
+  } catch {
+    return ''
+  }
 }
 
 function toDateInputValue(date) {
   if (!date) return ''
-  const d = new Date(date)
+  const d = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(d.getTime())) return ''
   return d.toISOString().split('T')[0]
 }
 
@@ -241,7 +322,7 @@ const quickDates = computed(() => {
     const date = getBusinessDaysFromToday(i)
     const label = i === 5 ? 'Earliest' : i === 7 ? 'Latest' : `${i} days`
     dates.push({
-      label: `${label} (${formatDate(date)})`,
+      label: `${label}`,
       value: toDateInputValue(date)
     })
   }
@@ -250,15 +331,32 @@ const quickDates = computed(() => {
 
 // ─── VALIDATION ────────────────────────────────────────────────────────────
 const deliveryAddressTouched = ref(false)
+const dateTouched = ref(false)
+const timeTouched = ref(false)
+
+const isValidDate = computed(() => {
+  if (!props.modelValue.preferredDate) return false
+  const selected = new Date(props.modelValue.preferredDate)
+  const min = new Date(minDate.value)
+  const max = new Date(maxDate.value)
+  
+  selected.setHours(0, 0, 0, 0)
+  min.setHours(0, 0, 0, 0)
+  max.setHours(0, 0, 0, 0)
+  
+  return selected >= min && selected <= max
+})
 
 const dateError = computed(() => {
-  if (!props.modelValue.preferredDate) return ''
+  if (!dateTouched.value && !props.errors?.preferredDate) return ''
+  if (!props.modelValue.preferredDate) {
+    return 'Please select a preferred date'
+  }
   
   const selected = new Date(props.modelValue.preferredDate)
   const min = new Date(minDate.value)
   const max = new Date(maxDate.value)
   
-  // Reset time to compare dates only
   selected.setHours(0, 0, 0, 0)
   min.setHours(0, 0, 0, 0)
   max.setHours(0, 0, 0, 0)
@@ -272,23 +370,41 @@ const dateError = computed(() => {
   return ''
 })
 
+const isValidTime = computed(() => {
+  return !!props.modelValue.preferredTime?.trim()
+})
+
+const timeError = computed(() => {
+  if (!timeTouched.value && !props.errors?.preferredTime) return ''
+  if (!props.modelValue.preferredTime) {
+    return 'Please select a preferred time slot'
+  }
+  return ''
+})
+
+const isValidDeliveryAddress = computed(() => {
+  if (props.modelValue.method !== 'delivery') return false
+  const address = props.modelValue.deliveryAddress?.trim() || ''
+  return address.length >= minAddressLength
+})
+
 const deliveryAddressError = computed(() => {
   if (!deliveryAddressTouched.value && !props.errors?.deliveryAddress) return ''
   if (props.modelValue.method !== 'delivery') return ''
-  if (!props.modelValue.deliveryAddress || !props.modelValue.deliveryAddress.trim()) {
+  const address = props.modelValue.deliveryAddress?.trim() || ''
+  if (!address) {
     return 'Delivery address is required'
   }
-  if (props.modelValue.deliveryAddress.trim().length < 5) {
-    return 'Please enter a complete delivery address'
+  if (address.length < minAddressLength) {
+    return `Please enter a complete address (minimum ${minAddressLength} characters)`
   }
   return props.errors?.deliveryAddress || ''
 })
 
-const isValidDeliveryAddress = computed(() => {
+const showDeliveryError = computed(() => {
   return deliveryAddressTouched.value && 
-         props.modelValue.deliveryAddress && 
-         props.modelValue.deliveryAddress.trim().length >= 5 &&
-         !deliveryAddressError.value
+         props.modelValue.method === 'delivery' && 
+         !isValidDeliveryAddress
 })
 
 // ─── METHODS ──────────────────────────────────────────────────────────────
@@ -298,8 +414,16 @@ function validateDeliveryAddress() {
 
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
+  
+  // Touch validation
   if (field === 'deliveryAddress') {
     validateDeliveryAddress()
+  }
+  if (field === 'preferredDate') {
+    dateTouched.value = true
+  }
+  if (field === 'preferredTime') {
+    timeTouched.value = true
   }
 }
 
@@ -314,7 +438,7 @@ function handleSameAsCustomer(checked) {
   updateField('sameAsCustomer', checked)
   if (checked && props.customerAddress) {
     updateField('deliveryAddress', props.customerAddress)
-    validateDeliveryAddress()
+    deliveryAddressTouched.value = true
   } else if (!checked) {
     updateField('deliveryAddress', '')
     deliveryAddressTouched.value = false
@@ -323,13 +447,30 @@ function handleSameAsCustomer(checked) {
 
 function selectQuickDate(dateValue) {
   updateField('preferredDate', dateValue)
+  dateTouched.value = true
 }
 
+// ─── VALIDATE ALL FIELDS ON MOUNT ──────────────────────────────────────
+function validateAllFields() {
+  if (props.modelValue.deliveryAddress) {
+    deliveryAddressTouched.value = true
+  }
+  if (props.modelValue.preferredDate) {
+    dateTouched.value = true
+  }
+  if (props.modelValue.preferredTime) {
+    timeTouched.value = true
+  }
+}
+
+// Run validation on mount and when model changes
+watch(() => props.modelValue, () => {
+  validateAllFields()
+}, { immediate: true })
+
 // ─── INITIALIZE DEFAULT DATE ─────────────────────────────────────────────
-// Set default date to earliest available (5 business days) if not already set
 if (!props.modelValue.preferredDate) {
   const defaultDate = toDateInputValue(getBusinessDaysFromToday(5))
-  // Use nextTick to avoid mutating prop directly during render
   import('vue').then(({ nextTick }) => {
     nextTick(() => {
       if (!props.modelValue.preferredDate) {
@@ -348,6 +489,6 @@ if (!props.modelValue.preferredDate) {
   @apply flex h-9 w-full rounded-md border border-gray-300 px-3 py-1 text-sm bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
 }
 textarea.field {
-  @apply h-auto py-2;
+  @apply h-auto py-2 min-h-[72px];
 }
 </style>

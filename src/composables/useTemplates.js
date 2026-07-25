@@ -11,17 +11,18 @@ export function useTemplates() {
 
   const fetchTemplates = async () => {
     isLoading.value = true
+    error.value = null
     try {
       const response = await templatesApi.getTemplates()
+      console.log('Fetch templates response:', response)
+      
       if (response.success && response.data) {
         templates.value = response.data.map(t => {
-          // Process image path to ensure it's a valid URL
           let thumbnail = ''
           if (t.imagePath) {
             if (t.imagePath.startsWith('http://') || t.imagePath.startsWith('https://')) {
               thumbnail = t.imagePath
             } else {
-              // Clean the path and construct full URL
               const cleanPath = t.imagePath.replace(/^\/+/, '')
               thumbnail = `${API_BASE_URL}/${cleanPath}`
             }
@@ -30,88 +31,93 @@ export function useTemplates() {
           }
           
           return {
-            id: t.templateId,
-            name: t.name,
+            id: t.templateId || t.id,
+            templateId: t.templateId || t.id,
+            name: t.name || 'Untitled Template',
             thumbnail: thumbnail,
-            lastUsed: t.updatedAt || t.createdAt,
-            printSize: t.printSize,
-            placement: t.placement,
-            notes: t.notes,
-            imagePath: t.imagePath
+            imagePath: t.imagePath,
+            printSize: t.printSize || '',
+            placement: t.placement || '',
+            notes: t.notes || '',
+            createdAt: t.createdAt,
+            updatedAt: t.updatedAt
           }
         })
         return { success: true, data: templates.value }
       }
-      return { success: false, message: response.message }
+      return { success: false, message: response.message || 'Failed to fetch templates' }
     } catch (err) {
       error.value = err.message
+      console.error('Fetch templates error:', err)
       return { success: false, message: err.message }
     } finally {
       isLoading.value = false
     }
   }
 
-const saveAsTemplate = async (designData, itemName) => {
-  const templateName = designData.name
-  if (!templateName) {
-    console.error('No template name provided')
-    return { success: false, message: 'Template name is required', cancelled: false }
-  }
+  const saveAsTemplate = async (designData, itemName) => {
+    const templateName = designData.name
+    if (!templateName) {
+      console.error('No template name provided')
+      return { success: false, message: 'Template name is required', cancelled: false }
+    }
 
-  try {
-    // If we have an existingImagePath, send as JSON (not FormData)
-    if (designData.existingImagePath) {
-      console.log('Sending existing image path as JSON:', designData.existingImagePath)
+    try {
+      console.log('Saving template with data:', designData)
       
-      const payload = {
-        name: templateName,
-        printSize: designData.printSize || '',
-        placement: designData.placement || '',
-        notes: designData.notes || '',
-        existingImagePath: designData.existingImagePath
+      if (designData.existingImagePath) {
+        console.log('Sending existing image path as JSON:', designData.existingImagePath)
+        
+        const payload = {
+          name: templateName,
+          printSize: designData.printSize || '',
+          placement: designData.placement || '',
+          notes: designData.notes || '',
+          existingImagePath: designData.existingImagePath
+        }
+        
+        const response = await templatesApi.createTemplate(payload)
+        console.log('Template API response:', response)
+        if (response.success) {
+          await fetchTemplates()
+          return { success: true, data: response.data }
+        }
+        return { success: false, message: response.message || 'Failed to save template' }
       }
       
-      const response = await templatesApi.createTemplate(payload)
-      console.log('Template API response:', response)
+      const formData = new FormData()
+      formData.append('name', templateName)
+      formData.append('printSize', designData.printSize || '')
+      formData.append('placement', designData.placement || '')
+      formData.append('notes', designData.notes || '')
+      
+      if (designData.imageFile) {
+        formData.append('image', designData.imageFile)
+      }
+      
+      const response = await templatesApi.createTemplate(formData)
+      console.log('Template API response (formdata):', response)
       if (response.success) {
         await fetchTemplates()
         return { success: true, data: response.data }
       }
-      return { success: false, message: response.message }
+      return { success: false, message: response.message || 'Failed to save template' }
+    } catch (err) {
+      console.error('Save template error:', err)
+      return { success: false, message: err.message, cancelled: false }
     }
-    
-    // Otherwise, use FormData for file upload
-    const formData = new FormData()
-    formData.append('name', templateName)
-    formData.append('printSize', designData.printSize || '')
-    formData.append('placement', designData.placement || '')
-    formData.append('notes', designData.notes || '')
-    
-    if (designData.imageFile) {
-      formData.append('image', designData.imageFile)
-    }
-    
-    const response = await templatesApi.createTemplate(formData)
-    if (response.success) {
-      await fetchTemplates()
-      return { success: true, data: response.data }
-    }
-    return { success: false, message: response.message }
-  } catch (err) {
-    console.error('Save template error:', err)
-    return { success: false, message: err.message }
   }
-}
 
   const deleteTemplate = async (templateId) => {
     try {
       const response = await templatesApi.deleteTemplate(templateId)
       if (response.success) {
-        templates.value = templates.value.filter(t => t.id !== templateId)
+        templates.value = templates.value.filter(t => t.id !== templateId && t.templateId !== templateId)
         return { success: true }
       }
-      return { success: false, message: response.message }
+      return { success: false, message: response.message || 'Failed to delete template' }
     } catch (err) {
+      console.error('Delete template error:', err)
       return { success: false, message: err.message }
     }
   }
@@ -123,8 +129,23 @@ const saveAsTemplate = async (designData, itemName) => {
         await fetchTemplates()
         return { success: true, data: response.data }
       }
-      return { success: false, message: response.message }
+      return { success: false, message: response.message || 'Failed to update template' }
     } catch (err) {
+      console.error('Update template error:', err)
+      return { success: false, message: err.message }
+    }
+  }
+
+  const renameTemplate = async (templateId, newName) => {
+    try {
+      const response = await templatesApi.updateTemplate(templateId, { name: newName })
+      if (response.success) {
+        await fetchTemplates()
+        return { success: true }
+      }
+      return { success: false, message: response.message || 'Failed to rename template' }
+    } catch (err) {
+      console.error('Rename template error:', err)
       return { success: false, message: err.message }
     }
   }
@@ -136,6 +157,7 @@ const saveAsTemplate = async (designData, itemName) => {
     fetchTemplates, 
     saveAsTemplate,
     deleteTemplate,
-    updateTemplate
+    updateTemplate,
+    renameTemplate
   }
 }

@@ -1,29 +1,19 @@
 // src/composables/useDesigns.js
 import { ref } from 'vue'
-import { designsApi } from '@/api.js'
-
-const designs = ref([])
+import { useTemplates } from './useTemplates.js'
 
 export function useDesigns() {
-  async function fetchDesigns() {
-    const res = await designsApi.getDesigns()
-    if (res.success) designs.value = res.designs
-    return res
+  const { templates, isLoading, fetchTemplates, deleteTemplate, renameTemplate, updateTemplate } = useTemplates()
+  
+  // Alias for backward compatibility
+  const designs = templates
+  
+  return {
+    designs,
+    isLoading,
+    fetchDesigns: fetchTemplates,
+    deleteDesign: deleteTemplate,
+    renameDesign: renameTemplate,
+    updateDesign: updateTemplate
   }
-
-  async function renameDesign(id, name) {
-    const res = await designsApi.renameDesign(id, name)
-    if (res.success) { const d = designs.value.find((x) => x.id === id); if (d) d.name = name }
-    return res
-  }
-
-  async function deleteDesign(id) {
-    const res = await designsApi.deleteDesign(id)
-    if (res.success) designs.value = designs.value.filter((d) => d.id !== id)
-    return res
-  }
-
-  async function uploadDesign(file) { return designsApi.uploadDesign(file) }
-
-  return { designs, fetchDesigns, renameDesign, deleteDesign, uploadDesign }
 }
