@@ -1,22 +1,24 @@
 // src/services/axios.js
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// Use VITE_API_BASE_URL (not VITE_API_URL)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+
 console.log('API Base URL:', API_BASE_URL);
+
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  withCredentials: true, // Keep this for sessions
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-// Add a request interceptor to log requests
+// Request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Log the request for debugging
     console.log(`🚀 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     
     const token = localStorage.getItem('customerToken') || localStorage.getItem('token');
@@ -24,7 +26,6 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Important: Don't set Content-Type for FormData
     if (config.data instanceof FormData) {
       delete config.headers['Content-Type'];
     }
@@ -50,9 +51,10 @@ axiosInstance.interceptors.response.use(
       console.error('Network error - check if backend is running');
     } else if (error.response?.status === 401) {
       console.error('Unauthorized - redirecting to login');
-      // window.location.href = '/customer/login';
-    } else if (error.response) {
-      console.error(`HTTP ${error.response.status}:`, error.response.data);
+      localStorage.removeItem('customerToken');
+      localStorage.removeItem('token');
+      localStorage.removeItem('currentUser');
+      window.location.href = '/customer/login';
     }
     
     return Promise.reject(error);
