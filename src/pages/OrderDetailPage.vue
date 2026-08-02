@@ -324,12 +324,21 @@
         </button>
         
         <button 
-          v-if="order.status?.toLowerCase() === 'pending' || order.status?.toLowerCase() === 'scheduled'" 
+          v-if="order.status?.toLowerCase() === 'pending' " 
           @click="showCancelConfirm = true" 
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
         >
           <XCircle class="w-3.5 h-3.5" />
           Cancel Order
+        </button>
+
+        <button 
+          v-if="order.status?.toLowerCase() === 'completed'" 
+          @click="showCancelConfirm = true" 
+          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
+        >
+          <CheckCircleIcon class="w-3.5 h-3.5" />
+          Order Received
         </button>
         
         <button 
