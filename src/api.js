@@ -105,10 +105,15 @@ export const otpApi = {
 // ─── OAuth Routes ──────────────────────────────────────────────────────────
 export const oauthApi = {
   googleLogin() {
-    window.location.href = 'http://localhost:3001/api/v1/auth/google';
+    // Use environment variable instead of hardcoded localhost
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
+    const baseUrl = backendUrl.replace(/\/api\/v1$/, '');
+    window.location.href = `${baseUrl}/api/v1/auth/google`;
   },
   facebookLogin() {
-    window.location.href = 'http://localhost:3001/api/v1/auth/facebook';
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1';
+    const baseUrl = backendUrl.replace(/\/api\/v1$/, '');
+    window.location.href = `${baseUrl}/api/v1/auth/facebook`;
   },
   handleCallback() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -116,11 +121,16 @@ export const oauthApi = {
     const userDataParam = urlParams.get('user');
     
     if (token && userDataParam) {
-      const userData = JSON.parse(decodeURIComponent(userDataParam));
-      localStorage.setItem('customerToken', token);
-      localStorage.setItem('currentUser', JSON.stringify(userData));
-      localStorage.setItem('token', token);
-      return { success: true, token, user: userData };
+      try {
+        const userData = JSON.parse(decodeURIComponent(userDataParam));
+        localStorage.setItem('customerToken', token);
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+        localStorage.setItem('token', token);
+        return { success: true, token, user: userData };
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+        return { success: false, message: 'Invalid user data' };
+      }
     }
     return { success: false, message: 'OAuth callback failed' };
   },

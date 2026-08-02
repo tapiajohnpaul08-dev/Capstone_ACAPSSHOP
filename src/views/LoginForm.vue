@@ -153,22 +153,20 @@ export default {
     },
 
     handleSocialLogin(provider) {
-      this.socialLoading = provider
-      
-      // ✅ Use environment variable for backend URL
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
-      
-      // ✅ Remove trailing /api/v1 if present to avoid double prefix
-      const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
-      
-      console.log(`Redirecting to ${provider} OAuth login at: ${baseUrl}/api/v1/auth/${provider}`)
+  this.socialLoading = provider
+  
+  // ✅ This is correct - uses environment variable
+  const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+  const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
+  
+  console.log(`Redirecting to ${provider} OAuth login at: ${baseUrl}/api/v1/auth/${provider}`)
 
-      if (provider === 'google') {
-        window.location.href = `${baseUrl}/api/v1/auth/google`
-      } else if (provider === 'facebook') {
-        window.location.href = `${baseUrl}/api/v1/auth/facebook`
-      }
-    },
+  if (provider === 'google') {
+    window.location.href = `${baseUrl}/api/v1/auth/google`
+  } else if (provider === 'facebook') {
+    window.location.href = `${baseUrl}/api/v1/auth/facebook`
+  }
+},
 
     handleOAuthCallback()  {
       const urlParams = new URLSearchParams(window.location.search)
