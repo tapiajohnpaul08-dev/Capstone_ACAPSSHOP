@@ -1,8 +1,10 @@
 // src/services/axios.js
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3001/api/v1',
+  baseURL: API_BASE_URL,
   timeout: 30000,
   withCredentials: true, // Keep this for sessions
   headers: {
