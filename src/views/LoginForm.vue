@@ -118,8 +118,15 @@ export default {
     }
   },
 
+  // ✅ Remove handleOAuthCallback from mounted
   mounted() {
-    this.handleOAuthCallback()
+    // Check if there's an error from OAuth
+    const urlParams = new URLSearchParams(window.location.search)
+    const error = urlParams.get('error')
+    if (error) {
+      alert('Login failed. Please try again.')
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
   },
 
   methods: {
@@ -153,98 +160,17 @@ export default {
     },
 
     handleSocialLogin(provider) {
-  this.socialLoading = provider
-  
-  // ✅ This is correct - uses environment variable
-  const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
-  const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
-  
-  console.log(`Redirecting to ${provider} OAuth login at: ${baseUrl}/api/v1/auth/${provider}`)
-
-  if (provider === 'google') {
-    window.location.href = `${baseUrl}/api/v1/auth/google`
-  } else if (provider === 'facebook') {
-    window.location.href = `${baseUrl}/api/v1/auth/facebook`
-  }
-},
-
-    handleOAuthCallback()  {
-      const urlParams = new URLSearchParams(window.location.search)
-      const token = urlParams.get('token')
-      const error = urlParams.get('error')
-      const userDataParam = urlParams.get('user')
+      this.socialLoading = provider
       
-      console.log('OAuth Callback - Token:', token ? 'Present' : 'Not found')
-      console.log('OAuth Callback - Error:', error)
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+      const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
       
-      if (error) {
-        console.error('OAuth Error:', error)
-        alert('Login with Google failed. Please try again.')
-        window.history.replaceState({}, document.title, window.location.pathname)
-        this.socialLoading = null
-        return
-      }
-      
-      if (token) {
-        try {
-          console.log('OAuth Token found, processing login...')
-          
-          localStorage.setItem('customerToken', token)
-          localStorage.setItem('token', token)
-          
-          if (userDataParam) {
-            try {
-              const userData = JSON.parse(decodeURIComponent(userDataParam))
-              localStorage.setItem('currentUser', JSON.stringify(userData))
-              localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
-              localStorage.setItem('userEmail', userData.email)
-              console.log('User data saved from URL')
-              
-              // If we have user data, redirect directly to dashboard
-              window.history.replaceState({}, document.title, window.location.pathname)
-              this.$router.push('/customer/dashboard')
-              return
-            } catch (e) {
-              console.error('Error parsing user data:', e)
-            }
-          }
-          
-          // If no user data, fetch it
-          window.history.replaceState({}, document.title, window.location.pathname)
-          this.fetchUserData()
-          
-        } catch (error) {
-          console.error('OAuth callback error:', error)
-          alert('Login with Google failed. Please try again.')
-          this.socialLoading = null
-        }
-      }
-    },
+      console.log(`Redirecting to ${provider} OAuth login at: ${baseUrl}/api/v1/auth/${provider}`)
 
-    async fetchUserData() {
-      try {
-        const response = await authApi.getProfile()
-        
-        console.log('Profile response:', response)
-        
-        if (response.success && response.data) {
-          const userData = response.data
-          
-          localStorage.setItem('currentUser', JSON.stringify(userData))
-          localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
-          localStorage.setItem('userEmail', userData.email)
-          
-          console.log('User data fetched successfully:', userData)
-          this.$router.push('/customer/dashboard')
-        } else {
-          console.error('Failed to fetch user data:', response)
-          this.$router.push('/customer/dashboard')
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error)
-        this.$router.push('/customer/dashboard')
-      } finally {
-        this.socialLoading = null
+      if (provider === 'google') {
+        window.location.href = `${baseUrl}/api/v1/auth/google`
+      } else if (provider === 'facebook') {
+        window.location.href = `${baseUrl}/api/v1/auth/facebook`
       }
     },
 

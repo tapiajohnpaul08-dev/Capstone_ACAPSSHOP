@@ -95,42 +95,37 @@
       </div>
 
       <!-- Products Grid -->
-<div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-  <div
-    v-for="product in filteredProducts"
-  :key="product.id"
-  @click="goToProductDetail(product)"
-  class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer group"
->
-    <!-- Image -->
-    <div class="relative">
-      <img 
-        :src="getImageUrl(product.image)" 
-        :alt="product.name" 
-        class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" 
-        @error="handleImageError"
-        loading="lazy"
-      />
-      <div class="absolute inset-0 bg-gray-100 animate-pulse -z-10"></div>
-    </div>
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div
+          v-for="product in filteredProducts"
+          :key="product.id"
+          @click="goToProductDetail(product)"
+          class="bg-white rounded-xl border overflow-hidden transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer group"
+        >
+          <!-- Image -->
+          <div class="relative">
+            <img 
+              :src="getImageUrl(product.image)" 
+              :alt="product.name" 
+              class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300" 
+              @error="handleImageError"
+              loading="lazy"
+            />
+            <div class="absolute inset-0 bg-gray-100 animate-pulse -z-10"></div>
+          </div>
 
-    <!-- Info -->
-    <div class="p-3">
-      <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
-      <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
-      <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
-      <div class="mt-2 flex items-center justify-between">
-        <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
-        <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
+          <!-- Info -->
+          <div class="p-3">
+            <div class="text-xs text-gray-400 mb-0.5">{{ product.category }}</div>
+            <h3 class="text-sm font-semibold text-gray-800 line-clamp-2 leading-snug">{{ product.name }}</h3>
+            <div class="text-xs text-gray-500 mt-1">{{ getSizeOptions(product) }}</div>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="text-sm font-bold text-blue-600">{{ formatPrice(product) }}</span>
+              <span class="text-[10px] text-gray-400">min {{ product.minOrder }}pcs</span>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-
-<!-- Remove the buttons - remove this part -->
-<!-- The buttons are removed, now clicking the whole card navigates to detail page -->
-
-
 
       <!-- Empty state -->
       <div v-if="!loading && filteredProducts.length === 0" class="text-center py-16">
@@ -226,13 +221,16 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { productsApi, ordersApi } from '@/api'
+import { useRouter, useRoute } from 'vue-router'
+import { productsApi, ordersApi, authApi } from '@/api'
 
 const router = useRouter()
+const route = useRoute()
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
+// ✅ Fix: Use VITE_API_BASE_URL instead of VITE_API_URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+// Remove /api/v1 for static files
+const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
 
 // State
 const searchQuery = ref('')
@@ -242,6 +240,7 @@ const cart = ref([])
 const toast = ref({ show: false, message: '' })
 const products = ref([])
 const loading = ref(true)
+const user = ref(null)
 
 const howItWorks = [
   { number: 1, title: 'Place Your Order', description: 'Pick a product or bring your own cups, upload your design.' },
@@ -270,10 +269,10 @@ const filteredProducts = computed(() => {
   return list
 })
 
-// Methods
+// ✅ FIXED: Image URL helper
 function getImageUrl(imagePath) {
   if (!imagePath) {
-    return `${API_BASE_URL}/uploads/products/default-product.jpg`
+    return `${STATIC_BASE_URL}/uploads/products/default-product.jpg`
   }
   
   // If it's already a full URL, return as is
@@ -281,28 +280,27 @@ function getImageUrl(imagePath) {
     return imagePath
   }
   
-  // Clean the path - remove any leading slashes and ensure proper format
-  let cleanPath = imagePath.replace(/^\/+/, '') // Remove leading slashes
+  // Clean the path - remove any leading slashes
+  let cleanPath = imagePath.replace(/^\/+/, '')
   
   // If the path already starts with 'uploads/', use it directly
   if (cleanPath.startsWith('uploads/')) {
-    return `${API_BASE_URL}/${cleanPath}`
+    return `${STATIC_BASE_URL}/${cleanPath}`
   }
   
   // If the path starts with 'products/' (from multer destination)
   if (cleanPath.startsWith('products/')) {
-    return `${API_BASE_URL}/uploads/${cleanPath}`
+    return `${STATIC_BASE_URL}/uploads/${cleanPath}`
   }
   
   // Default: assume it's just a filename in the products folder
-  // Your multer saves to 'uploads/products/' with filename like 'product-123456789-123456789.jpg'
-  return `${API_BASE_URL}/uploads/products/${cleanPath}`
+  return `${STATIC_BASE_URL}/uploads/products/${cleanPath}`
 }
 
 function handleImageError(event) {
   console.error('Image failed to load:', event.target.src)
   // Set a fallback image
-  event.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
+  event.target.src = `${STATIC_BASE_URL}/uploads/products/default-product.jpg`
   // If even default fails, use a placeholder
   event.target.onerror = () => {
     event.target.src = 'https://via.placeholder.com/300x200?text=No+Image'
@@ -335,7 +333,6 @@ function formatPriceAmount(amount) {
 }
 
 async function addToCart(product) {
-  // Find the first size that has stock
   const availableSize = product.sizes?.find(s => s.stock > 0);
   
   if (!availableSize) {
@@ -345,7 +342,6 @@ async function addToCart(product) {
   
   const defaultSize = availableSize.name;
   
-  // Calculate estimated price
   let estimatedTotal = null;
   if (defaultSize && product.minOrder) {
     const priceResult = await productsApi.calculatePrice(product.id, defaultSize, product.minOrder);
@@ -373,7 +369,6 @@ async function addToCart(product) {
   showToast(`${product.name} (${defaultSize}) added to cart!`);
 }
 
-// Add this function
 function goToProductDetail(product) {
   router.push(`/customer/product/${product.id}`)
 }
@@ -405,7 +400,6 @@ function openCart() {
 }
 
 async function proceedToOrder() {
-  // Check if user is logged in
   const token = localStorage.getItem('customerToken')
   if (!token) {
     showToast('Please login to proceed with your order')
@@ -415,7 +409,6 @@ async function proceedToOrder() {
     return
   }
   
-  // Enrich cart items with all required fields including design info
   const enrichedCart = cart.value.map(item => ({
     productId: item.productId,
     name: item.name,
@@ -431,14 +424,13 @@ async function proceedToOrder() {
     selectedTemplateId: item.selectedTemplateId || null,
     selectedTemplate: item.selectedTemplate || null,
     estimatedTotal: item.estimatedTotal
-    
   }))
   
-  console.log('Saving enriched cart to session:', enrichedCart)
   sessionStorage.setItem('pendingCart', JSON.stringify(enrichedCart))
   showCart.value = false
   router.push('/customer/orders/create?type=company-product&source=cart')
 }
+
 function showToast(message) {
   toast.value = { show: true, message }
   setTimeout(() => { toast.value.show = false }, 2500)
@@ -456,16 +448,36 @@ function createOwnCupsOrder() {
   router.push('/customer/orders/create?type=own-cups')
 }
 
-function orderCompanyProduct(product) {
-  const token = localStorage.getItem('customerToken')
-  if (!token) {
-    showToast('Please login to place an order')
-    setTimeout(() => {
-      router.push('/customer/login')
-    }, 1500)
-    return
+// ✅ Handle OAuth token in URL
+function handleOAuthToken() {
+  const token = route.query.token
+  const userDataParam = route.query.user
+  
+  if (token) {
+    console.log('🔑 OAuth token found in URL')
+    
+    // Store token
+    localStorage.setItem('customerToken', token)
+    localStorage.setItem('token', token)
+    
+    if (userDataParam) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userDataParam))
+        localStorage.setItem('currentUser', JSON.stringify(userData))
+        localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
+        localStorage.setItem('userEmail', userData.email)
+        user.value = userData
+        console.log('✅ User data saved from URL')
+      } catch (e) {
+        console.error('Error parsing user data:', e)
+      }
+    }
+    
+    // Clean URL
+    router.replace({ path: '/customer/dashboard', query: {} })
+    return true
   }
-  router.push(`/customer/orders/create?type=company-product&productId=${product.id}`)
+  return false
 }
 
 // Load products from backend
@@ -473,14 +485,12 @@ async function loadProducts() {
   loading.value = true
   try {
     const response = await productsApi.getAllProducts()
-    console.log('Products response:', response) // Debug log
+    console.log('Products response:', response)
     
     if (response.success && response.data) {
       products.value = response.data
-      // Debug: log first product's image path
       if (response.data.length > 0) {
         console.log('First product image path:', response.data[0].image)
-        console.log('Full image URL:', getImageUrl(response.data[0].image))
       }
     } else {
       console.error('Failed to load products:', response.message)
@@ -494,10 +504,48 @@ async function loadProducts() {
   }
 }
 
+// ✅ Handle user info from localStorage
+function loadUserInfo() {
+  const storedUser = localStorage.getItem('currentUser')
+  if (storedUser) {
+    try {
+      user.value = JSON.parse(storedUser)
+      console.log('✅ User loaded from localStorage:', user.value.firstName)
+    } catch (e) {
+      console.error('Error parsing user data:', e)
+    }
+  }
+}
+
 // Lifecycle
-onMounted(() => {
-  loadProducts()
+onMounted(async () => {
+  console.log('📊 Dashboard mounted')
+  
+  // ✅ First: Handle OAuth token if present
+  const tokenHandled = handleOAuthToken()
+  
+  // ✅ Second: Load user info
+  loadUserInfo()
+  
+  // ✅ Third: Load products
+  await loadProducts()
+  
+  // ✅ Fourth: Load cart
   loadCartFromLocalStorage()
+  
+  // ✅ If token was handled, fetch fresh user data
+  if (tokenHandled) {
+    try {
+      const response = await authApi.getProfile()
+      if (response.success && response.data) {
+        user.value = response.data
+        localStorage.setItem('currentUser', JSON.stringify(response.data))
+        console.log('✅ User data refreshed from API')
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }
 })
 </script>
 
@@ -517,4 +565,12 @@ onMounted(() => {
 /* Toast */
 .toast-enter-active, .toast-leave-active { transition: all 0.25s ease; }
 .toast-enter-from, .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(12px); }
+
+/* Animation */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
 </style>

@@ -1,9 +1,17 @@
+// router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+
+    {
+      path: '/oauth/callback',
+      name: 'OAuthCallback',
+      component: () => import('@/views/OAuthCallback.vue'),
+      meta: { requiresAuth: false },
+    },
     // Login route - outside MainLayout (no navigation bar)
     {
       path: '/customer/login',
@@ -148,56 +156,62 @@ function isTokenExpired(token) {
   if (!token) return true
   
   try {
-    // JWT tokens are composed of three parts: header.payload.signature
     const parts = token.split('.')
     if (parts.length !== 3) return true
-    
-    // Decode the payload (second part)
     const payload = JSON.parse(atob(parts[1]))
-    
-    // Check if token has expiration claim
-    if (!payload.exp) return false // No expiration set, assume valid
-    
-    // Check if token is expired (exp is in seconds, Date.now() is in milliseconds)
+    if (!payload.exp) return false
     const currentTime = Math.floor(Date.now() / 1000)
     return payload.exp < currentTime
   } catch (error) {
     console.error('Error decoding token:', error)
-    return true // If we can't decode the token, treat as expired
+    return true
   }
 }
 
 // Helper function to check authentication status
-function isAuthenticated() {
-  // Check for token in localStorage
-  const token = localStorage.getItem('customerToken')
+function isAuthenticated(to) {
+  // ✅ FIRST: Check for token in URL parameters (for OAuth callback)
+  const urlParams = new URLSearchParams(to.query)
+  const urlToken = urlParams.get('token')
   
-  // If no token found, check for legacy currentUser
-  if (!token) {
-    const currentUser = localStorage.getItem('currentUser')
-    if (currentUser) {
-      try {
-        const user = JSON.parse(currentUser)
-        return user && user.token ? !isTokenExpired(user.token) : false
-      } catch {
-        return false
-      }
-    }
-    return false
+  if (urlToken && !isTokenExpired(urlToken)) {
+    console.log('✅ Valid token found in URL parameters')
+    return true
   }
   
-  // Check if token is expired
-  return !isTokenExpired(token)
+  // ✅ SECOND: Check for token in localStorage
+  const token = localStorage.getItem('customerToken')
+  if (token && !isTokenExpired(token)) {
+    return true
+  }
+  
+  // Check legacy currentUser
+  const currentUser = localStorage.getItem('currentUser')
+  if (currentUser) {
+    try {
+      const user = JSON.parse(currentUser)
+      if (user && user.token && !isTokenExpired(user.token)) {
+        return true
+      }
+    } catch {
+      return false
+    }
+  }
+  
+  return false
 }
 
 // Navigation guard with token validation
 router.beforeEach((to, from) => {
-  console.log('Navigating to:', to.path)
+  console.log('📍 Navigating to:', to.path)
+  console.log('🔑 Query params:', to.query)
   
-  const authenticated = isAuthenticated()
+  const authenticated = isAuthenticated(to)
   
   // If route requires authentication and user is not authenticated, redirect to login
   if (to.meta.requiresAuth && !authenticated) {
+    console.log('❌ Not authenticated, redirecting to login')
+    
     // Clear any invalid auth data
     localStorage.removeItem('customerToken')
     localStorage.removeItem('currentUser')
@@ -213,25 +227,21 @@ router.beforeEach((to, from) => {
   
   // If user is authenticated and tries to access login/signup pages, redirect to dashboard
   if ((to.path === '/customer/login' || to.path === '/customer/signup' || to.path === '/customer/verify-otp' || to.path === '/') && authenticated) {
+    console.log('✅ Already authenticated, redirecting to dashboard')
     return '/customer/dashboard'
   }
   
   return true
 })
 
-// Optional: Set up a response interceptor for API calls to handle 401 responses
-// This can be used in your axios instance
 export function setupAuthInterceptor(axiosInstance) {
   axiosInstance.interceptors.response.use(
     (response) => response,
     (error) => {
       if (error.response && error.response.status === 401) {
-        // Token expired or invalid
         localStorage.removeItem('customerToken')
         localStorage.removeItem('currentUser')
         localStorage.removeItem('user')
-        
-        // Redirect to login page
         router.push('/customer/login')
       }
       return Promise.reject(error)
