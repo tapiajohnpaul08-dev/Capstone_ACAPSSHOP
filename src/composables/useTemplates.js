@@ -8,7 +8,7 @@ export function useTemplates() {
   const error = ref(null)
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
+  console.log('API Base URL in useTemplates:', API_BASE_URL)
   const fetchTemplates = async () => {
     isLoading.value = true
     error.value = null
