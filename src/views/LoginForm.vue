@@ -79,20 +79,8 @@
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Google
+            Continue with Google
           </button>
-
-          <!-- <button
-            @click="handleSocialLogin('facebook')"
-            :disabled="socialLoading === 'facebook'"
-            class="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 h-9 px-4 py-2 w-full disabled:opacity-50"
-          >
-            <span v-if="socialLoading === 'facebook'" class="inline-block w-4 h-4 border-2 border-gray-700 border-t-transparent rounded-full animate-spin"></span>
-            <svg v-else class="mr-2 h-4 w-4" viewBox="0 0 24 24" width="24" height="24">
-              <path fill="#1877F2" d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/>
-            </svg>
-            Facebook
-          </button> -->
         </div>
 
         <div class="text-center text-sm">
@@ -131,7 +119,6 @@ export default {
   },
 
   mounted() {
-    // Check for OAuth callback when component mounts
     this.handleOAuthCallback()
   },
 
@@ -145,7 +132,6 @@ export default {
         const result = await authApi.login(this.form.email, this.form.password)
         
         if (result.success) {
-          // Save token and user data
           if (result.data?.token) {
             localStorage.setItem('customerToken', result.data.token)
             localStorage.setItem('token', result.data.token)
@@ -169,43 +155,98 @@ export default {
     handleSocialLogin(provider) {
       this.socialLoading = provider
       
-      // Redirect to backend OAuth endpoint
+      // ✅ Use environment variable for backend URL
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+      
+      // ✅ Remove trailing /api/v1 if present to avoid double prefix
+      const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
+      
+      console.log(`Redirecting to ${provider} OAuth login at: ${baseUrl}/api/v1/auth/${provider}`)
+
       if (provider === 'google') {
-        window.location.href = 'http://localhost:3001/api/v1/auth/google'
+        window.location.href = `${baseUrl}/api/v1/auth/google`
       } else if (provider === 'facebook') {
-        window.location.href = 'http://localhost:3001/api/v1/auth/facebook'
+        window.location.href = `${baseUrl}/api/v1/auth/facebook`
       }
     },
 
-    handleOAuthCallback() {
-      // Get token and user from URL parameters
+    handleOAuthCallback()  {
       const urlParams = new URLSearchParams(window.location.search)
       const token = urlParams.get('token')
+      const error = urlParams.get('error')
       const userDataParam = urlParams.get('user')
       
-      if (token && userDataParam) {
+      console.log('OAuth Callback - Token:', token ? 'Present' : 'Not found')
+      console.log('OAuth Callback - Error:', error)
+      
+      if (error) {
+        console.error('OAuth Error:', error)
+        alert('Login with Google failed. Please try again.')
+        window.history.replaceState({}, document.title, window.location.pathname)
+        this.socialLoading = null
+        return
+      }
+      
+      if (token) {
         try {
-          const userData = JSON.parse(decodeURIComponent(userDataParam))
+          console.log('OAuth Token found, processing login...')
           
-          console.log('OAuth Callback - User Data:', userData)
-          console.log('OAuth Callback - Token:', token)
-          
-          // Save to localStorage
           localStorage.setItem('customerToken', token)
           localStorage.setItem('token', token)
+          
+          if (userDataParam) {
+            try {
+              const userData = JSON.parse(decodeURIComponent(userDataParam))
+              localStorage.setItem('currentUser', JSON.stringify(userData))
+              localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
+              localStorage.setItem('userEmail', userData.email)
+              console.log('User data saved from URL')
+              
+              // If we have user data, redirect directly to dashboard
+              window.history.replaceState({}, document.title, window.location.pathname)
+              this.$router.push('/customer/dashboard')
+              return
+            } catch (e) {
+              console.error('Error parsing user data:', e)
+            }
+          }
+          
+          // If no user data, fetch it
+          window.history.replaceState({}, document.title, window.location.pathname)
+          this.fetchUserData()
+          
+        } catch (error) {
+          console.error('OAuth callback error:', error)
+          alert('Login with Google failed. Please try again.')
+          this.socialLoading = null
+        }
+      }
+    },
+
+    async fetchUserData() {
+      try {
+        const response = await authApi.getProfile()
+        
+        console.log('Profile response:', response)
+        
+        if (response.success && response.data) {
+          const userData = response.data
+          
           localStorage.setItem('currentUser', JSON.stringify(userData))
           localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
           localStorage.setItem('userEmail', userData.email)
           
-          // Clear URL parameters without refreshing
-          window.history.replaceState({}, document.title, window.location.pathname)
-          
-          // Redirect to dashboard
+          console.log('User data fetched successfully:', userData)
           this.$router.push('/customer/dashboard')
-        } catch (error) {
-          console.error('OAuth callback error:', error)
-          alert('Login with social media failed. Please try again.')
+        } else {
+          console.error('Failed to fetch user data:', response)
+          this.$router.push('/customer/dashboard')
         }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+        this.$router.push('/customer/dashboard')
+      } finally {
+        this.socialLoading = null
       }
     },
 
@@ -219,7 +260,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 @keyframes spin { 
   to { transform: rotate(360deg); } 
