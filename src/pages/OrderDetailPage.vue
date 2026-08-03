@@ -71,12 +71,10 @@
                 <h3 class="font-semibold text-sm">Order Timeline</h3>
               </div>
               <div class="flex items-center gap-3 flex-wrap">
-                <!-- Production Schedule Badge -->
                 <span v-if="order.productionSchedule" class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Calendar class="w-3 h-3" />
                   Production: {{ formatProductionDate(order.productionSchedule) }}
                 </span>
-                <!-- Delivery Driver Info -->
                 <span v-if="order.driverDetails && isDelivery" class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Truck class="w-3 h-3" />
                   {{ order.driverDetails.driverName }}
@@ -90,16 +88,13 @@
             <!-- Timeline Content -->
             <div class="p-5">
               <div v-if="filteredStatusHistory && filteredStatusHistory.length > 0" class="relative">
-                <!-- Vertical Line -->
                 <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                 
                 <div v-for="(event, index) in filteredStatusHistory" :key="index" class="relative pl-10 pb-6 last:pb-0">
-                  <!-- Timeline Dot with Icon -->
                   <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-white" :class="getTimelineIconColor(event.status, index)">
                     <component :is="getTimelineIcon(event.status)" class="w-3 h-3" />
                   </div>
                   
-                  <!-- Timeline Content -->
                   <div class="flex flex-wrap items-start justify-between gap-2">
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2 flex-wrap">
@@ -107,19 +102,16 @@
                         <span class="text-xs text-gray-400">{{ formatDateShort(event.timestamp) }}</span>
                       </div>
                       
-                      <!-- Customer-Friendly Status Description -->
                       <div class="mt-1">
                         <p class="text-sm text-gray-600">
                           {{ getStatusDescription(event.status) }}
                         </p>
                       </div>
                       
-                      <!-- Custom Notes (if any) -->
                       <p v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'" class="text-sm text-gray-500 mt-0.5 italic">
                         "{{ event.notes }}"
                       </p>
                       
-                      <!-- Production Schedule on Scheduled -->
                       <div v-if="event.status === 'Scheduled' && event.productionSchedule" class="mt-1 flex items-center gap-1.5">
                         <Calendar class="w-3 h-3 text-blue-500" />
                         <span class="text-xs text-blue-600 font-medium">
@@ -127,11 +119,10 @@
                         </span>
                       </div>
                       
-                      <!-- Driver Details on Out for Delivery -->
                       <div v-if="event.status === 'Out for Delivery' && order.driverDetails && isDelivery" class="mt-1 flex flex-wrap items-center gap-2">
                         <span class="text-xs text-gray-500 flex items-center gap-1">
                           <User class="w-3 h-3" />
-                          Driver: {{ order.driverDetails.driverName }}
+                          Driver: {{ order.driverDetails.driverName || 'N/A' }}
                         </span>
                         <span class="text-xs text-gray-500 flex items-center gap-1">
                           <Phone class="w-3 h-3" />
@@ -144,7 +135,6 @@
                       </div>
                     </div>
                     
-                    <!-- Status Badge -->
                     <span v-if="index === 0" class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-medium whitespace-nowrap flex items-center gap-1">
                       <CheckCircle class="w-3 h-3" />
                       Current
@@ -256,7 +246,6 @@
                 </div>
               </div>
               
-              <!-- Driver Details -->
               <div v-if="order.driverDetails && isDelivery" class="mt-2 p-3 bg-green-50 rounded border border-green-200">
                 <div class="text-xs font-medium text-green-800 flex items-center gap-1.5">
                   <Truck class="w-3.5 h-3.5" />
@@ -324,7 +313,7 @@
         </button>
         
         <button 
-          v-if="order.status?.toLowerCase() === 'pending' " 
+          v-if="['pending', 'scheduled'].includes(order.status?.toLowerCase())" 
           @click="showCancelConfirm = true" 
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
         >
@@ -332,17 +321,29 @@
           Cancel Order
         </button>
 
+        <!-- ✅ ORDER RECEIVED BUTTON - Shows when Out for Delivery and not yet received -->
         <button 
-          v-if="order.status?.toLowerCase() === 'completed'" 
-          @click="showCancelConfirm = true" 
+          v-if="order.status?.toLowerCase() === 'out for delivery' && !order.isReceived" 
+          @click="handleToggleReceived"
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
         >
-          <CheckCircleIcon class="w-3.5 h-3.5" />
+          <CheckCircle class="w-3.5 h-3.5" />
           Order Received
         </button>
-        
+
+        <!-- ✅ Show disabled when already received -->
         <button 
-          v-if="order.status?.toLowerCase() === 'cancelled'" 
+          v-if="order.status?.toLowerCase() === 'out for delivery' && order.isReceived" 
+          disabled
+          class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg cursor-not-allowed text-xs font-medium inline-flex items-center gap-1.5"
+        >
+          <CheckCircle class="w-3.5 h-3.5" />
+          Received ✓
+        </button>
+
+        <!-- Order Again for completed orders -->
+        <button 
+          v-if="order.status?.toLowerCase() === 'completed' || order.status?.toLowerCase() === 'cancelled'" 
           @click="orderAgain" 
           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
         >
@@ -359,6 +360,61 @@
         </button>
       </div>
 
+      <!-- Out for Delivery - Awaiting Confirmation -->
+      <div v-if="order.status?.toLowerCase() === 'out for delivery' && !order.isReceived" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <Truck class="w-5 h-5 text-blue-600 mt-0.5" />
+          <div>
+            <h4 class="font-semibold text-blue-800 text-sm">Your Order is Out for Delivery!</h4>
+            <p class="text-sm text-blue-700">
+              Your order is on its way! 
+              <span v-if="order.driverDetails && isDelivery">
+                Driver <strong>{{ order.driverDetails.driverName }}</strong> is delivering your items.
+              </span>
+              <span v-else>Please wait for our delivery team.</span>
+            </p>
+            <div v-if="order.driverDetails && isDelivery" class="mt-2 flex flex-wrap gap-3 text-xs text-blue-600">
+              <span class="flex items-center gap-1">
+                <Phone class="w-3 h-3" />
+                Driver: {{ order.driverDetails.driverPhone || 'N/A' }}
+              </span>
+              <span class="flex items-center gap-1">
+                <Truck class="w-3 h-3" />
+                {{ order.driverDetails.truckDescription || order.driverDetails.plateNumber || 'N/A' }}
+              </span>
+            </div>
+            <div class="mt-2 text-xs text-blue-600">
+              ⚡ Please click the <strong>"Order Received"</strong> button above once you have received your items.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Received Confirmation -->
+      <div v-if="order.status?.toLowerCase() === 'out for delivery' && order.isReceived" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <CheckCircle class="w-5 h-5 text-green-600 mt-0.5" />
+          <div>
+            <h4 class="font-semibold text-green-800 text-sm">Order Received!</h4>
+            <p class="text-sm text-green-700">
+              Thank you for confirming receipt of your order. 
+              <span v-if="isDelivery">The driver has delivered your items.</span>
+              <span v-else>You have picked up your items.</span>
+            </p>
+            <div class="mt-2 flex flex-wrap gap-3 text-xs text-green-600">
+              <span class="flex items-center gap-1">
+                <Calendar class="w-3 h-3" />
+                Confirmed: {{ formatDate(order.updatedAt) }}
+              </span>
+              <span v-if="order.driverDetails && isDelivery" class="flex items-center gap-1">
+                <User class="w-3 h-3" />
+                Delivered by: {{ order.driverDetails.driverName }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Completed Order Summary -->
       <div v-if="order.status?.toLowerCase() === 'completed'" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
         <div class="flex items-start gap-3">
@@ -366,7 +422,7 @@
           <div>
             <h4 class="font-semibold text-green-800 text-sm">Order Completed</h4>
             <p class="text-sm text-green-700">
-              Your order has been successfully completed on {{ formatDate(order.updatedAt || order.completedAt) }}.
+              Your order has been successfully completed.
               <span v-if="isDelivery">It has been delivered to your address.</span>
               <span v-else>It is ready for pickup at our store.</span>
             </p>
@@ -421,6 +477,7 @@
 import { ref, computed, onMounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useOrders } from '@/composables/useOrders.js'
+import { ordersApi } from '@/api'
 import ConfirmationModal from '@/modals/ConfirmationModal.vue'
 import FeedbackModal from '@/modals/FeedbackModal.vue'
 import { 
@@ -443,7 +500,8 @@ import {
   User
 } from 'lucide-vue-next'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
 
 // ─── TIMELINE ICONS ──────────────────────────────────────────────────────
 const ClockIcon = { render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('circle', { cx: '12', cy: '12', r: '10' }), h('polyline', { points: '12 6 12 12 16 14' })]) }
@@ -478,7 +536,6 @@ const isDelivery = computed(() => {
 const filteredStatusHistory = computed(() => {
   if (!order.value?.statusHistory) return []
   
-  // Filter out "Out for Delivery" if receiving method is not delivery
   return order.value.statusHistory.filter(event => {
     if (event.status === 'Out for Delivery' && !isDelivery.value) {
       return false
@@ -560,17 +617,17 @@ function getTimelineIconColor(status, index) {
 
 // ─── FORMATTING FUNCTIONS ────────────────────────────────────────────
 function getImageUrl(imagePath) {
-  if (!imagePath) return '/placeholder-image.png'
+  if (!imagePath) return `${STATIC_BASE_URL}/uploads/products/default-product.jpg`
   if (imagePath.startsWith('http')) return imagePath
   const cleanPath = imagePath.replace(/^\/+/, '')
   if (cleanPath.startsWith('uploads/')) {
-    return `${API_BASE_URL}/${cleanPath}`
+    return `${STATIC_BASE_URL}/${cleanPath}`
   }
-  return `${API_BASE_URL}/uploads/products/${cleanPath}`
+  return `${STATIC_BASE_URL}/uploads/products/${cleanPath}`
 }
 
 function handleImageError(event) {
-  event.target.src = '/placeholder-image.png'
+  event.target.src = `${STATIC_BASE_URL}/uploads/products/default-product.jpg`
 }
 
 function formatStatus(status) {
@@ -739,8 +796,49 @@ function orderAgain() {
   }
 }
 
-function submitFeedback() {
-  alert('Feedback feature coming soon!')
+// ✅ HANDLE ORDER RECEIVED
+async function handleToggleReceived() {
+  if (!order.value?.orderId) {
+    showFeedback('error', 'Error', 'Order ID not found');
+    return;
+  }
+  
+  try {
+    const response = await ordersApi.toggleReceivedStatus(
+      order.value.orderId, 
+      true // isReceived = true
+    );
+    
+    if (response.success) {
+      // Update local order data
+      order.value.isReceived = true;
+      order.value.status = 'Completed';
+      
+      // Add to status history
+      if (!order.value.statusHistory) {
+        order.value.statusHistory = [];
+      }
+      order.value.statusHistory.push({
+        status: 'Completed',
+        timestamp: new Date(),
+        notes: 'Order marked as received by customer'
+      });
+      
+      showFeedback('success', 'Order Received!', 'Thank you for confirming receipt of your order.');
+    } else {
+      showFeedback('error', 'Failed', response.message || 'Could not mark order as received');
+    }
+  } catch (error) {
+    console.error('Error marking order as received:', error);
+    showFeedback('error', 'Error', 'An unexpected error occurred');
+  }
+}
+
+function showFeedback(status, title, message) {
+  feedbackStatus.value = status;
+  feedbackTitle.value = title;
+  feedbackMessage.value = message;
+  feedbackVisible.value = true;
 }
 
 async function handleCancel() {
@@ -750,15 +848,10 @@ async function handleCancel() {
   showCancelConfirm.value = false
   if (res.success) {
     order.value.status = 'cancelled'
-    feedbackTitle.value = 'Order Cancelled'
-    feedbackMessage.value = 'Your cancellation request has been processed.'
-    feedbackStatus.value = 'success'
+    showFeedback('success', 'Order Cancelled', 'Your cancellation request has been processed.')
   } else {
-    feedbackTitle.value = 'Cancellation Failed'
-    feedbackMessage.value = res.message || 'Something went wrong.'
-    feedbackStatus.value = 'error'
+    showFeedback('error', 'Cancellation Failed', res.message || 'Something went wrong.')
   }
-  feedbackVisible.value = true
 }
 
 // ─── LIFECYCLE ────────────────────────────────────────────────────────
@@ -766,6 +859,10 @@ onMounted(async () => {
   const res = await fetchOrder(route.params.id)
   if (res.success) {
     order.value = res.order
+    console.log('Order loaded:', order.value)
+    console.log('Order status:', order.value?.status)
+    console.log('Is received:', order.value?.isReceived)
+    
     if (!order.value.items && order.value.product) {
       order.value.items = [{
         name: order.value.product,

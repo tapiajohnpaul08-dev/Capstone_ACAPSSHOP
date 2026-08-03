@@ -94,6 +94,25 @@ export function useOrders() {
     }
   }
 
+  const toggleReceivedStatus = async (orderId, received, user) => {
+    try {
+      const response = await ordersApi.toggleReceivedStatus(orderId, received, user)
+      if (response.success) {
+        // Update local orders list
+        const index = orders.value.findIndex(o => o.id === orderId || o.orderId === orderId)
+        if (index !== -1) {
+          orders.value[index].received = received
+        }
+        return { success: true, message: response.message }
+      } else {
+        return { success: false, message: response.message }
+      }
+    }
+    catch(err) {
+      return { success: false, message: err.message }
+    }
+  }
+
   // Transform backend order to frontend format
   const transformOrderToFrontend = (backendOrder) => {
     // Determine status value for UI
@@ -183,6 +202,7 @@ export function useOrders() {
     fetchOrders,
     fetchOrder,
     cancelOrder,
-    submitOrder
+    submitOrder,
+    toggleReceivedStatus
   }
 }

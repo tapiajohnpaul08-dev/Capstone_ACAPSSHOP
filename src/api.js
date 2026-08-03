@@ -239,6 +239,16 @@ export const ordersApi = {
       axiosInstance.put(`/order/customer/orders/${orderId}`, updateData)
     );
   },
+
+   async toggleReceivedStatus(orderId, received, user) {
+    return handleResponse(
+      axiosInstance.patch(`/order/customer/orders/${orderId}/mark-received`, { 
+        isReceived: received,
+        user: user 
+      })
+    );
+  },
+
    uploadDesignFiles: async (formData) => {
     return handleResponse(
       axiosInstance.post('/designs/upload-design', formData, {
