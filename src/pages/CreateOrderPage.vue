@@ -94,10 +94,11 @@
         <!-- STEP 1: DESIGN MODE SELECTION -->
         <div v-if="currentStep === 1">
           <DesignModeSelector
-            v-model="designMode"
-            :item-count="orderProducts.length"
-            :has-design-required="false"
-          />
+  v-model="designMode"
+  :item-count="orderProducts.length"
+  :has-design-required="false"
+  :is-own-cups="isOwnCups"
+/>
 
           <!-- Design Upload -->
           <div v-if="designMode !== 'no-design'" class="mt-4">
@@ -139,26 +140,11 @@
             <div class="flex items-start gap-3">
               <FileText class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
               <div>
-                <h4 class="font-semibold text-gray-900">Design by Description</h4>
+                <h4 class="font-semibold text-gray-900">No Design</h4>
                 <p class="text-sm text-gray-500">
-                  Describe what you want in the notes below. Our design team will create the artwork for you.
+                  The product will be produced plain, as is, with no print or design applied.
                 </p>
               </div>
-            </div>
-            <div class="mt-4">
-              <label class="text-sm font-medium text-gray-700">Design Instructions <span class="text-red-500">*</span></label>
-              <textarea
-                v-model="designNotes"
-                rows="4"
-                placeholder="Describe your design in detail: colors, style, text, references, sample images, etc."
-                class="field resize-none"
-                :class="{
-                  'border-red-400 ring-1 ring-red-300': !designNotes?.trim() && step1Errors.length > 0
-                }"
-              ></textarea>
-              <p v-if="!designNotes?.trim() && step1Errors.length > 0" class="text-xs text-red-500 mt-1">
-                Please provide design instructions
-              </p>
             </div>
           </div>
 
@@ -228,8 +214,12 @@
         <!-- STEP 3: CUSTOMER & DELIVERY -->
         <div v-if="getStepKey(currentStep) === 'info'" class="space-y-5">
           <CustomerInfoCard v-model="customerInfo" :errors="errors.customer" />
-          <FulfillmentCard v-model="fulfillment" :customer-address="customerInfo.address" :errors="errors.fulfillment" />
-          
+<FulfillmentCard 
+  v-model="fulfillment" 
+  :customer-address="customerInfo.address" 
+  :errors="errors.fulfillment"
+  :is-own-cups="isOwnCups"
+/>          
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -461,7 +451,8 @@ const sharedDesign = ref({
 })
 const itemVariantSettings = ref([])
 const placementSettings = ref([])
-const designNotes = ref('') // For 'no-design' mode
+// Fixed note applied automatically when the customer chooses 'no-design' (plain product, as is)
+const NO_DESIGN_FIXED_NOTE = 'No design - plain product, as is.'
 const customerInfo = ref({ 
   name: '', 
   company: '', 
@@ -476,7 +467,7 @@ const paymentMethod = ref({ method: 'cod', bankName: '', referenceNumber: '', pa
 const errors = ref({ customer: {}, fulfillment: {} })
 
 // ─── DESIGN MODE ───────────────────────────────────────────────────────────
-const designMode = ref('no-design')
+const designMode = ref('individual')
 
 // ─── STEPS ──────────────────────────────────────────────────────────────────
 const activeSteps = computed(() => {
@@ -611,10 +602,7 @@ const step1Errors = computed(() => {
   const errorsList = []
   
   if (designMode.value === 'no-design') {
-    // No design mode - just check if there's at least some description
-    if (!designNotes.value?.trim()) {
-      errorsList.push('Please provide design instructions or notes')
-    }
+    // No design mode - plain product as is, nothing to validate
     return errorsList
   }
   
@@ -855,7 +843,7 @@ async function handleSubmit() {
           selectedTemplate: null,
           printSize: '',
           printPlacement: '',
-          designNotes: designNotes.value || 'No specific design uploaded. Customer provided description.',
+          designNotes: NO_DESIGN_FIXED_NOTE,
           files: []
         })
         itemsArray.push(item)
@@ -942,6 +930,7 @@ async function handleSubmit() {
       customerPhone: customerInfo.value.phone,
       notes: generateOrderNotes(),
       preferredTime: fulfillment.value.preferredTime || '',
+      fromCustomerToCompanyDeliveryDate: fulfillment.value.ownCupsDeliveryDate || '',
       customer: {
         name: customerInfo.value.name,
         email: customerInfo.value.email,
@@ -1050,7 +1039,7 @@ function getDesignImage(design) {
 
 function generateOrderNotes() {
   const modeLabels = {
-    'no-design': 'No design uploaded - Design by description',
+    'no-design': 'No Design - Plain product as is',
     'individual': 'Individual Designs',
     'shared': 'Shared Design'
   }
@@ -1269,8 +1258,16 @@ onMounted(async () => {
       printPlacement: '',
       designNotes: ''
     }]
-    // For own cups, default to no-design mode since they're bringing their own items
-    designMode.value = 'no-design'
+    // For own cups, default to individual mode since they're bringing their own items and must provide design
+    designMode.value = 'individual'
+
+    const pendingOwnCups = sessionStorage.getItem('pendingOwnCups')
+    if (pendingOwnCups) {
+      const data = JSON.parse(pendingOwnCups)
+      if (data.ownCupsDeliveryDate) {
+        fulfillment.value.ownCupsDeliveryDate = data.ownCupsDeliveryDate
+      }
+    }
   }
 
   // Load saved customer info

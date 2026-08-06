@@ -76,9 +76,11 @@
             <span class="font-medium text-gray-800">{{ sizes }}</span>
           </div>
           <div v-if="designSource" class="flex justify-between">
-            <span class="text-gray-500">Design</span>
-            <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
-          </div>
+  <span class="text-gray-500">Design</span>
+  <span class="font-medium text-gray-800">
+    {{ designSource === 'upload' ? 'New Upload' : designSource === 'saved' ? 'Saved Template' : 'No Design' }}
+  </span>
+</div>
           <div class="flex justify-between">
             <span class="text-gray-500">Estimated Delivery</span>
             <span class="font-medium text-gray-800">{{ estimatedETA }}</span>

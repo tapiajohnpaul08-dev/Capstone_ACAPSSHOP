@@ -50,57 +50,52 @@ import {
 const props = defineProps({
   modelValue: { 
     type: String, 
-    default: 'no-design',
+    default: 'individual',
     validator: (val) => ['no-design', 'individual', 'shared'].includes(val)
   },
   itemCount: { type: Number, default: 1 },
-  hasDesignRequired: { type: Boolean, default: false }
+  hasDesignRequired: { type: Boolean, default: false },
+  isOwnCups: { type: Boolean, default: false } // ✅ New prop
 })
 
 const emit = defineEmits(['update:modelValue'])
 
-// Use a local ref to track the current mode
 const currentMode = ref(props.modelValue)
 
-// Watch for prop changes and update local ref
 watch(() => props.modelValue, (newVal) => {
   currentMode.value = newVal
 })
 
-// Define modes with icon components
+// ✅ Define modes - No Design hidden for Own Cups
 const availableModes = computed(() => {
   const modes = []
   
-  // Always show No Design option
-  modes.push(
-    { 
-      value: 'no-design', 
-      label: 'No Design', 
+  // ✅ Only show No Design for company products (not own cups)
+  if (!props.isOwnCups) {
+    modes.push({
+      value: 'no-design',
+      label: 'No Design',
       icon: Paintbrush,
-      tooltip: 'Skip design upload, just text/notes only'
-    }
-  )
+      tooltip: 'Plain product, as is - no design or print applied'
+    })
+  }
   
   // Individual mode - always available
-  modes.push(
-    { 
-      value: 'individual', 
-      label: 'Individual', 
-      icon: Palette,
-      tooltip: 'Each item has its own design'
-    }
-  )
+  modes.push({
+    value: 'individual',
+    label: 'Individual',
+    icon: Palette,
+    tooltip: 'Each item has its own design'
+  })
   
   // Shared mode - only for multiple items
   if (props.itemCount > 1) {
-    modes.push(
-      { 
-        value: 'shared', 
-        label: 'Shared Design', 
-        icon: Layers,
-        tooltip: 'One design for all items'
-      }
-    )
+    modes.push({
+      value: 'shared',
+      label: 'Shared Design',
+      icon: Layers,
+      tooltip: 'One design for all items'
+    })
   }
   
   return modes
@@ -108,7 +103,7 @@ const availableModes = computed(() => {
 
 const modeDescription = computed(() => {
   const descriptions = {
-    'no-design': 'Skip design upload - just provide text instructions',
+    'no-design': 'Plain product, as is - no design or print',
     'individual': `Each of ${props.itemCount} item${props.itemCount > 1 ? 's' : ''} has its own design`,
     'shared': `Upload one design for all ${props.itemCount} items`
   }
@@ -135,7 +130,7 @@ const modeHelpIcon = computed(() => {
 
 const modeHelpText = computed(() => {
   const texts = {
-    'no-design': 'You can provide text descriptions, notes, or reference images. Our design team will help you create the final artwork.',
+    'no-design': 'The product ships plain and as is - no artwork, print, or design will be applied.',
     'individual': 'Upload a separate design file for each item. Perfect when each product needs unique artwork.',
     'shared': 'Upload one design file that will be used for all items. You can adjust placement per item.'
   }
@@ -143,13 +138,10 @@ const modeHelpText = computed(() => {
 })
 
 function selectMode(value) {
-  // Update local ref
   currentMode.value = value
-  // Emit to parent
   emit('update:modelValue', value)
 }
 
-// Also update local ref when props change from parent
 watch(() => props.modelValue, (newVal) => {
   if (newVal && newVal !== currentMode.value) {
     currentMode.value = newVal

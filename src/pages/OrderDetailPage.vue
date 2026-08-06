@@ -20,6 +20,11 @@
               {{ displayStatus }}
             </span>
             <span class="text-[10px] text-gray-400">{{ formatDate(order.createdAt || order.date) }}</span>
+
+            <span v-if="order.isProvided" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-600">
+              Please bring your Item at {{ formatDateShort(order.fromCustomerToCompanyDeliveryDate) }}
+                
+            </span>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right">
@@ -48,7 +53,7 @@
           </div>
           <div class="flex items-center gap-1">
             <Calendar class="w-3 h-3 text-gray-400" />
-            <span class="text-gray-600">{{ order.preferredDate ? formatDateShort(order.preferredDate) : 'TBD' }}</span>
+            <span class="text-gray-600">{{ order.expectedDelivery ? formatDateShort(order.expectedDelivery) : 'TBD' }}</span>
           </div>
           <div v-if="order.driverDetails && isDelivery" class="flex items-center gap-1">
             <User class="w-3 h-3 text-gray-400" />
@@ -687,8 +692,7 @@ function formatDate(dateValue) {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric',
     })
   } catch {
     return ''
@@ -703,8 +707,7 @@ function formatDateShort(dateValue) {
     return date.toLocaleDateString('en-PH', {
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      year: 'numeric'
     })
   } catch {
     return ''

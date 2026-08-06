@@ -187,7 +187,7 @@
     </div>
 
     <!-- Save as Template -->
-    <div v-if="hasDesignContent && !isNoDesignMode" class="pt-2 border-t">
+    <div v-if="hasDesignContent && !isNoDesignMode && designSource !== 'saved'" class="pt-2 border-t">
       <button
         @click="saveAsTemplate"
         :disabled="isSavingTemplate"
@@ -429,12 +429,36 @@ watch([designSource, rawFiles, uploadedFilesData, localDesignNotes, localPrintSi
 
 function setDesignSource(source) {
   designSource.value = source
+  
+  // ✅ When switching to upload, clear selected template
+  if (source === 'upload') {
+    selectedTemplateId.value = null
+    // Clear any template data
+    const designData = {
+      designSource: 'upload',
+      files: rawFiles.value.length > 0 ? rawFiles.value : uploadedFilesData.value,
+      designNotes: localDesignNotes.value,
+      printSize: localPrintSize.value,
+      printPlacement: localPrintPlacement.value,
+      selectedTemplateId: null,
+      selectedTemplate: null
+    }
+    emit('update:modelValue', designData)
+    emit('design-changed', designData)
+  }
+  
   if (source === 'saved' && templates.value.length === 0) {
     fetchTemplates()
   }
 }
 
+
+// ✅ When selecting a template, clear uploaded files
 function selectTemplate(template) {
+  // Clear any uploaded files
+  rawFiles.value = []
+  uploadedFilesData.value = []
+  
   selectedTemplateId.value = template.id || template.templateId
   localDesignNotes.value = template.notes || localDesignNotes.value
   localPrintSize.value = template.printSize || localPrintSize.value

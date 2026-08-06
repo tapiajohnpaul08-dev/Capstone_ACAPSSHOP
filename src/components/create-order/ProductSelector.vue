@@ -177,12 +177,20 @@ function handleImageError(e) {
   e.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
 }
 
-// Get sizes for a specific item - uses cached sizes or fetches
 function getSizesForItem(item) {
-  // If item already has sizes array, use it
+  // ✅ Check if item has sizes from product data
   if (item.sizes && Array.isArray(item.sizes) && item.sizes.length > 0) {
     return item.sizes
   }
+  
+  // ✅ If item has productId but no sizes, fetch them
+  if (item.productId) {
+    const index = props.modelValue.findIndex(i => i.productId === item.productId)
+    if (index !== -1 && !loadingSizes.value[item.productId]) {
+      fetchAndUpdateSizes(item, index)
+    }
+  }
+  
   return []
 }
 
@@ -334,6 +342,15 @@ watch(() => props.selectedProduct, (newProduct) => {
       selectedSize.value = newProduct.sizes[0]?.name || ''
       console.log('✅ Using first available size:', selectedSize.value)
     }
+
+    const currentItems = props.modelValue
+    if (currentItems.length > 0 && !currentItems[0].sizes) {
+      const updatedItems = currentItems.map(item => ({
+        ...item,
+        sizes: newProduct.sizes
+      }))
+      emit('update:modelValue', updatedItems)
+    }
     
     // Set quantity if not already set
     if (!singleQuantity.value || singleQuantity.value < (newProduct.minOrder || 500)) {
@@ -341,7 +358,11 @@ watch(() => props.selectedProduct, (newProduct) => {
       singleQuantity.value = modelQuantity || newProduct.minOrder || 500
     }
   }
+
+  
 }, { immediate: true, deep: true })
+
+
 
 // Watch for own cups data changes
 watch(ownCupsData, (newVal) => {

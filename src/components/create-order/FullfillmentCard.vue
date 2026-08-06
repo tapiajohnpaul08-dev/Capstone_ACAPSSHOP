@@ -1,3 +1,4 @@
+<!-- FulfillmentCard.vue - Fixed with proper date fields -->
 <template>
   <div class="bg-white rounded-xl border">
     <div class="px-6 pt-6 pb-4 border-b">
@@ -127,12 +128,45 @@
         </div>
       </div>
 
-      <!-- Preferred Date Selection -->
+      <!-- ============================================================ -->
+      <!-- ✅ CUSTOMER DELIVERY DATE - ONLY FOR OWN CUPS (isOwnCups)      -->
+      <!-- This is when the customer will bring their items to the company -->
+      <!-- ============================================================ -->
+      <div v-if="isOwnCups" class="border-t pt-4 mt-4">
+        <div class="flex items-center gap-2 mb-3">
+          <Calendar class="w-4 h-4 text-green-600" />
+          <h5 class="font-medium text-gray-800 text-sm">When will you deliver your items to us?</h5>
+          <!-- <span class="text-xs text-gray-400">(Own Items Only)</span> -->
+        </div>
+        <div>
+          <label class="text-sm font-medium text-gray-700">
+            Date You'll Bring Your Items <span class="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            :value="modelValue.ownCupsDeliveryDate"
+            @input="updateField('ownCupsDeliveryDate', $event.target.value)"
+            :min="todayDate"
+            class="field"
+          />
+          <p class="text-xs text-gray-400 mt-1">
+            Select the date you'll bring your items to our store. 
+            <span class="text-blue-600">This is separate from your preferred completion date.</span>
+          </p>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- ✅ EXPECTED DELIVERY / COMPLETION DATE - FOR ALL ORDERS       -->
+      <!-- This is when the customer wants to receive the finished items  -->
+      <!-- ============================================================ -->
       <div class="border-t pt-4 mt-4">
         <div class="flex items-center gap-2 mb-3">
           <Calendar class="w-4 h-4 text-blue-500" />
-          <h5 class="font-medium text-gray-800 text-sm">Preferred Date & Time</h5>
-          <span class="text-xs text-gray-400">(5-7 business days from today)</span>
+          <h5 class="font-medium text-gray-800 text-sm">
+            {{ isOwnCups ? 'When do you want to receive your finished items?' : 'When do you want to receive your order?' }}
+          </h5>
+          <span class="text-xs text-gray-400">({{ isOwnCups ? 'Completion Date' : 'Delivery Date' }})</span>
         </div>
         
         <div class="grid md:grid-cols-2 gap-4">
@@ -170,6 +204,13 @@
             <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
               <Info class="w-3 h-3" />
               Earliest: {{ formatDate(minDate) }} · Latest: {{ formatDate(maxDate) }}
+            </p>
+            <p v-if="isOwnCups && modelValue.ownCupsDeliveryDate && modelValue.preferredDate" class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+              <Info class="w-3 h-3" />
+              Note: Your items must be delivered to us before we can start production.
+              <span v-if="new Date(modelValue.ownCupsDeliveryDate) > new Date(modelValue.preferredDate)" class="text-red-500 font-medium">
+                (Delivery date is after completion date!)
+              </span>
             </p>
           </div>
         </div>
@@ -219,11 +260,13 @@ const props = defineProps({
       deliveryAddress: '',
       sameAsCustomer: false,
       preferredDate: '',
-      preferredTime: ''
+      preferredTime: '',
+      ownCupsDeliveryDate: '' // ✅ Only used for Own Cups
     })
   },
   customerAddress: { type: String, default: '' },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  isOwnCups: { type: Boolean, default: false } // ✅ Determines if ownCupsDeliveryDate is shown
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -269,12 +312,18 @@ function toDateInputValue(date) {
   return d.toISOString().split('T')[0]
 }
 
+function getTodayDate() {
+  const today = new Date()
+  return toDateInputValue(today)
+}
+
 // ─── DATE RANGE ────────────────────────────────────────────────────────────
 const minDateObj = getBusinessDaysFromToday(5)
 const maxDateObj = getBusinessDaysFromToday(7)
 
 const minDate = computed(() => toDateInputValue(minDateObj))
 const maxDate = computed(() => toDateInputValue(maxDateObj))
+const todayDate = computed(() => getTodayDate())
 
 // Quick select dates
 const quickDates = computed(() => {
@@ -331,18 +380,6 @@ const dateError = computed(() => {
   return ''
 })
 
-const isValidTime = computed(() => {
-  return !!props.modelValue.preferredTime?.trim()
-})
-
-const timeError = computed(() => {
-  if (!timeTouched.value && !props.errors?.preferredTime) return ''
-  if (!props.modelValue.preferredTime) {
-    return 'Please select a preferred time slot'
-  }
-  return ''
-})
-
 const isValidDeliveryAddress = computed(() => {
   if (props.modelValue.method !== 'delivery') return false
   const address = props.modelValue.deliveryAddress?.trim() || ''
@@ -376,15 +413,11 @@ function validateDeliveryAddress() {
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
   
-  // Touch validation
   if (field === 'deliveryAddress') {
     validateDeliveryAddress()
   }
   if (field === 'preferredDate') {
     dateTouched.value = true
-  }
-  if (field === 'preferredTime') {
-    timeTouched.value = true
   }
 }
 
@@ -411,7 +444,6 @@ function selectQuickDate(dateValue) {
   dateTouched.value = true
 }
 
-// ─── VALIDATE ALL FIELDS ON MOUNT ──────────────────────────────────────
 function validateAllFields() {
   if (props.modelValue.deliveryAddress) {
     deliveryAddressTouched.value = true
@@ -419,12 +451,8 @@ function validateAllFields() {
   if (props.modelValue.preferredDate) {
     dateTouched.value = true
   }
-  if (props.modelValue.preferredTime) {
-    timeTouched.value = true
-  }
 }
 
-// Run validation on mount and when model changes
 watch(() => props.modelValue, () => {
   validateAllFields()
 }, { immediate: true })
