@@ -133,33 +133,36 @@
                       This message was unsent
                     </p>
                     
-                    <!-- Attachments -->
-                    <div v-if="msg.attachments && msg.attachments.length > 0 && !msg.isDeleted">
-                      <div v-for="(file, idx) in msg.attachments" :key="idx">
-                        <div v-if="isImageFile(file)" class="mt-2">
-                          <img 
-                            :src="getFileUrl(file)" 
-                            :alt="file.name"
-                            class="max-w-full max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                            @click="openImageViewer(getFileUrl(file))"
-                            @error="handleImageError"
-                          />
-                          <p class="text-xs mt-1" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
-                            📷 {{ file.name }}
-                          </p>
-                        </div>
-                        <div v-else class="mt-2 flex items-center gap-2 p-2 rounded-lg bg-gray-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                          <a :href="getFileUrl(file)" target="_blank" class="text-sm text-blue-600 hover:underline truncate">
-                            {{ file.name }}
-                          </a>
-                          <span class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</span>
-                        </div>
-                      </div>
-                    </div>
+<!-- Attachments -->
+<div v-if="msg.attachments && msg.attachments.length > 0 && !msg.isDeleted">
+  <div v-for="(file, idx) in msg.attachments" :key="idx">
+    <div v-if="isImageFile(file)" class="mt-2">
+      <img 
+        :src="getFileUrl(file)" 
+        :alt="file.name"
+        class="max-w-full max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+        @click="openImageViewer(getFileUrl(file))"
+        @error="handleImageError"
+        :data-cloudinary="isCloudinaryUrl(getFileUrl(file))"
+      />
+      <p class="text-xs mt-1" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
+        📷 {{ file.name }}
+        <span v-if="isCloudinaryUrl(getFileUrl(file))" class="text-[10px] text-green-400 ml-1">(Cloudinary)</span>
+      </p>
+    </div>
+    <div v-else class="mt-2 flex items-center gap-2 p-2 rounded-lg bg-gray-100">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
+        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <a :href="getFileUrl(file)" target="_blank" class="text-sm text-blue-600 hover:underline truncate">
+        {{ file.name }}
+      </a>
+      <span class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</span>
+      <span v-if="isCloudinaryUrl(getFileUrl(file))" class="text-[10px] text-green-400">(Cloudinary)</span>
+    </div>
+  </div>
+</div>
                     
                     <!-- Time and Status -->
                     <div class="flex items-center gap-1 mt-1" :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'">
@@ -245,29 +248,31 @@
 
       <!-- Input Area - Fixed at bottom -->
       <div class="border-t bg-white p-4 shrink-0">
-        <!-- Attachment Preview -->
-        <div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
-          <div v-for="(file, idx) in pendingAttachments" :key="idx" class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
-            <svg v-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
-              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5-6 6-3-3-4 4"/>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <div class="max-w-[150px]">
-              <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
-              <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
-            </div>
-            <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-              </svg>
-            </button>
-          </div>
-        </div>
+        <!-- Attachment Preview - Updated -->
+<div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
+  <div v-for="(file, idx) in pendingAttachments" :key="idx" class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
+    <!-- Show image preview if available -->
+    <img v-if="file.previewUrl" :src="file.previewUrl" class="w-10 h-10 object-cover rounded" />
+    <svg v-else-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
+      <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <path d="M21 15l-5-5-6 6-3-3-4 4"/>
+    </svg>
+    <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+    <div class="max-w-[150px]">
+      <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
+      <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
+    </div>
+    <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+      </svg>
+    </button>
+  </div>
+</div>
         
         <div class="flex gap-2 items-center">
           <!-- Attachment Button -->
@@ -498,6 +503,7 @@ function formatDateHeader(dateValue) {
   return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+
 function formatFileSize(bytes) {
   if (!bytes) return ''
   if (bytes < 1024) return `${bytes} B`
@@ -510,14 +516,36 @@ function isImageFile(file) {
 }
 
 function getFileUrl(file) {
-  if (file.url) return file.url
-  if (file.path) {
+  if (!file) return ''
+  
+  // If it's already a full URL
+  if (file.url && file.url.startsWith('http')) {
+    return file.url
+  }
+  if (file.path && file.path.startsWith('http')) {
+    return file.path
+  }
+  
+  // Check if it's a Cloudinary public_id format (beverage/chat/...)
+  if (file.path && (file.path.startsWith('beverage/') || file.path.includes('beverage/chat/'))) {
+    const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'vwrxijez'
+    const cleanPath = file.path.replace(/^\/+/, '')
+    return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${cleanPath}`
+  }
+  
+  // Check if it's an old local path format (uploads/...)
+  if (file.path && file.path.startsWith('uploads/')) {
     const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
     const cleanPath = file.path.replace(/^\/+/, '')
-    if (cleanPath.startsWith('uploads/')) return `${baseURL}/${cleanPath}`
-    return `${baseURL}/uploads/chat/${cleanPath}`
+    return `${baseURL}/${cleanPath}`
   }
-  return ''
+  
+  // Fallback
+  return file.path || file.url || ''
+}
+
+function isCloudinaryUrl(url) {
+  return url && (url.includes('cloudinary.com') || url.includes('res.cloudinary.com'))
 }
 
 function handleImageError(e) {
@@ -559,12 +587,31 @@ function handleFileSelect(event) {
       showToast('error', `${file.name} exceeds 10MB limit`)
       continue
     }
-    pendingAttachments.value.push(file)
+    
+    // ✅ Store the actual File object with preview URL
+    const fileData = {
+      file: file, // Store the actual File object
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: file.lastModified
+    }
+    
+    // Add preview URL for images
+    if (file.type?.startsWith('image/')) {
+      fileData.previewUrl = URL.createObjectURL(file)
+    }
+    
+    pendingAttachments.value.push(fileData)
   }
   event.target.value = ''
 }
 
 function removeAttachment(index) {
+  // Revoke the object URL to prevent memory leaks
+  if (pendingAttachments.value[index]?.previewUrl) {
+    URL.revokeObjectURL(pendingAttachments.value[index].previewUrl)
+  }
   pendingAttachments.value.splice(index, 1)
 }
 
@@ -675,17 +722,29 @@ async function sendMessage() {
     
     if (pendingAttachments.value.length > 0) {
       try {
-        const uploadResult = await chatApi.uploadFiles(pendingAttachments.value)
+        // ✅ Extract the actual File objects from our stored data
+        const filesToUpload = pendingAttachments.value
+          .map(f => f.file || f) // Get the actual File object
+          .filter(f => f instanceof File || f.name) // Filter out invalid files
+        
+        if (filesToUpload.length === 0) {
+          showToast('error', 'Invalid files selected')
+          isSending.value = false
+          return
+        }
+        
+        const uploadResult = await chatApi.uploadFiles(filesToUpload)
         if (uploadResult.success && uploadResult.files) {
           uploadedFiles = uploadResult.files
+          console.log('✅ Files uploaded to Cloudinary:', uploadedFiles)
         } else {
-          showToast('error', 'Failed to upload files')
+          showToast('error', uploadResult.message || 'Failed to upload files')
           isSending.value = false
           return
         }
       } catch (error) {
         console.error('File upload error:', error)
-        showToast('error', 'Failed to upload files')
+        showToast('error', error.message || 'Failed to upload files')
         isSending.value = false
         return
       }
@@ -697,7 +756,8 @@ async function sendMessage() {
     const replyToMsg = replyToMessage.value
     const replyToMessageId = replyToMsg?.messageId || null
     
-    console.log('🔵 SENDING REPLY - replyToMessageId:', replyToMessageId)
+    // Create temp message
+    const tempAttachments = uploadedFiles.length > 0 ? uploadedFiles : []
     
     const tempMessage = {
       messageId: tempId,
@@ -705,7 +765,7 @@ async function sendMessage() {
       senderType: 'customer',
       senderId: customerId.value,
       content: content || (uploadedFiles.length > 0 ? '📎 Sent an attachment' : ''),
-      attachments: uploadedFiles,
+      attachments: tempAttachments,
       createdAt: new Date().toISOString(),
       isPending: true,
       isRead: false,
@@ -718,14 +778,16 @@ async function sendMessage() {
     messages.value.push(tempMessage)
     newMessage.value = ''
     clearReply()
+    
+    // Clear pending attachments
     pendingAttachments.value = []
     await scrollToBottom()
     
     const messageContent = content || (uploadedFiles.length > 0 ? '📎 Attachment' : '')
     
-    // ✅ ONLY send via socket (not both)
+    // Send via socket or REST
     if (isSocketConnected.value && conversationId.value) {
-      console.log('🔵 Sending via socket only')
+      console.log('🔵 Sending via socket with files:', uploadedFiles)
       const sent = sendSocketMessage(
         conversationId.value,
         messageContent,
@@ -733,7 +795,6 @@ async function sendMessage() {
         replyToMessageId
       )
       
-      // If socket fails, fallback to REST
       if (!sent) {
         console.log('🔵 Socket failed, using REST fallback')
         const response = await chatApi.sendMessage(
@@ -751,7 +812,6 @@ async function sendMessage() {
         }
       }
     } else {
-      // REST fallback when socket is not connected
       console.log('🔵 Socket not connected, using REST')
       const response = await chatApi.sendMessage(
         conversationId.value,

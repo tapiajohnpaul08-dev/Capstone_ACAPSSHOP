@@ -8,7 +8,8 @@ export function useTemplates() {
   const error = ref(null)
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-  console.log('API Base URL in useTemplates:', API_BASE_URL)
+  const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'vwrxijez'
+  
   const fetchTemplates = async () => {
     isLoading.value = true
     error.value = null
@@ -20,13 +21,20 @@ export function useTemplates() {
         templates.value = response.data.map(t => {
           let thumbnail = ''
           if (t.imagePath) {
+            // ✅ Check if it's already a Cloudinary URL
             if (t.imagePath.startsWith('http://') || t.imagePath.startsWith('https://')) {
+              // Already a full URL (Cloudinary or other)
               thumbnail = t.imagePath
+            } else if (t.imagePath.startsWith('beverage/')) {
+              // Cloudinary public ID format
+              thumbnail = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${t.imagePath}`
             } else {
+              // Local path - prepend API base URL
               const cleanPath = t.imagePath.replace(/^\/+/, '')
               thumbnail = `${API_BASE_URL}/${cleanPath}`
             }
           } else {
+            // Default template image
             thumbnail = `${API_BASE_URL}/uploads/templates/default-template.jpg`
           }
           
@@ -65,8 +73,9 @@ export function useTemplates() {
     try {
       console.log('Saving template with data:', designData)
       
+      // ✅ If we have an existing image path that's already a Cloudinary URL
       if (designData.existingImagePath) {
-        console.log('Sending existing image path as JSON:', designData.existingImagePath)
+        console.log('Sending existing image path:', designData.existingImagePath)
         
         const payload = {
           name: templateName,
@@ -85,6 +94,7 @@ export function useTemplates() {
         return { success: false, message: response.message || 'Failed to save template' }
       }
       
+      // ✅ If we have a file to upload, use FormData
       const formData = new FormData()
       formData.append('name', templateName)
       formData.append('printSize', designData.printSize || '')

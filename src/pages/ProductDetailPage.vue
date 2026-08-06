@@ -348,8 +348,41 @@ function orderNow() {
     return
   }
   
-  // Pass both product ID and selected size/quantity
-  router.push(`/customer/orders/create?type=company-product&productId=${product.value.id}&size=${selectedSize.value?.name || ''}&quantity=${quantity.value}`)
+  if (!selectedSize.value) {
+    showToast('Please select a size')
+    return
+  }
+  
+  // ✅ Debug log
+  console.log('📦 Order Now - Selected Size:', selectedSize.value)
+  console.log('📦 Order Now - Quantity:', quantity.value)
+  
+  // ✅ Pass ALL product details
+  router.push({
+    path: '/customer/orders/create',
+    query: {
+      type: 'company-product',
+      source: 'product-detail',
+      productId: product.value.id,
+      productName: product.value.name,
+      productImage: product.value.image || '',
+      productCategory: product.value.category || '',
+      minOrder: product.value.minOrder || 500,
+      size: selectedSize.value.name || selectedSize.value, // ✅ Ensure size is passed
+      sizePrice: selectedSize.value.price || '',
+      sizeStock: selectedSize.value.stock || '',
+      quantity: quantity.value,
+      productData: JSON.stringify({
+        id: product.value.id,
+        name: product.value.name,
+        image: product.value.image,
+        category: product.value.category,
+        minOrder: product.value.minOrder,
+        sizes: product.value.sizes,
+        description: product.value.description || ''
+      })
+    }
+  })
 }
 
 onMounted(async () => {

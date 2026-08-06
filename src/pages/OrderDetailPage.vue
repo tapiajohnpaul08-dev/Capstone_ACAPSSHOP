@@ -1,303 +1,283 @@
 <template>
-  <div class="container mx-auto px-4 py-6 max-w-6xl">
+  <div class="container mx-auto px-4 py-4 max-w-6xl">
     <div v-if="isLoading" class="flex justify-center py-12">
       <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
     <template v-else-if="order">
       <!-- Back Button -->
-      <button @click="goBack" class="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors text-sm">
-        <ArrowLeft class="w-4 h-4" />
-        Back to Orders
+      <button @click="goBack" class="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 mb-3 transition-colors text-xs">
+        <ArrowLeft class="w-3.5 h-3.5" />
+        Back
       </button>
 
-      <!-- Order Header -->
-      <div class="bg-white rounded-xl border overflow-hidden mb-4">
-        <div class="px-5 py-4 bg-gradient-to-r from-blue-50 to-white">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="flex items-center gap-3 flex-wrap">
-              <h1 class="text-lg font-bold">{{ order.orderNumber || order.orderId || 'Order #' + order.id }}</h1>
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-medium" :class="statusBadgeClass">
-                {{ formatStatus(order.status) }}
-              </span>
-              <span class="text-xs text-gray-500">{{ formatDate(order.createdAt || order.date) }}</span>
+      <!-- Order Header - Compact -->
+      <div class="bg-white rounded-xl border overflow-hidden mb-3">
+        <div class="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-white flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-sm font-bold">{{ order.orderNumber || order.orderId || 'Order #' + order.id }}</h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" :class="statusBadgeClass">
+              {{ displayStatus }}
+            </span>
+            <span class="text-[10px] text-gray-400">{{ formatDate(order.createdAt || order.date) }}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="text-right">
+              <div class="text-[10px] text-gray-400">Total</div>
+              <div class="text-base font-bold text-blue-600">{{ formatPrice(order.totalAmount || order.amount) }}</div>
             </div>
-            <div class="flex items-center gap-4">
-              <div class="text-right">
-                <div class="text-xs text-gray-500">Total</div>
-                <div class="text-lg font-bold text-blue-600">{{ formatPrice(order.totalAmount || order.amount) }}</div>
-              </div>
-              <span class="px-2 py-0.5 rounded text-xs font-medium" :class="paymentBadgeClass">
-                {{ order.paymentStatus }}
-              </span>
-            </div>
+            <span class="px-1.5 py-0.5 rounded text-[10px] font-medium" :class="paymentBadgeClass">
+              {{ order.paymentStatus || 'Unpaid' }}
+            </span>
           </div>
         </div>
 
-        <!-- Quick Stats Row -->
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-2 px-5 py-2.5 bg-gray-50 text-xs">
-          <div class="flex items-center gap-1.5">
-            <Package class="w-3.5 h-3.5 text-gray-500" />
+        <!-- Quick Stats Row - Compact -->
+        <div class="grid grid-cols-3 md:grid-cols-5 gap-1 px-4 py-1.5 bg-gray-50 text-[10px]">
+          <div class="flex items-center gap-1">
+            <Package class="w-3 h-3 text-gray-400" />
             <span class="text-gray-600">{{ order.items?.length || 1 }} items</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <Layers class="w-3.5 h-3.5 text-gray-500" />
+          <div class="flex items-center gap-1">
+            <Layers class="w-3 h-3 text-gray-400" />
             <span class="text-gray-600">{{ getTotalQuantity().toLocaleString() }} pcs</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <Truck class="w-3.5 h-3.5 text-gray-500" />
+          <div class="flex items-center gap-1">
+            <Truck class="w-3 h-3 text-gray-400" />
             <span class="text-gray-600">{{ order.receivingMode || order.deliveryMethod || 'Pick-up' }}</span>
           </div>
-          <div class="flex items-center gap-1.5">
-            <Calendar class="w-3.5 h-3.5 text-gray-500" />
-            <span class="text-gray-600">{{ order.preferredDate ? formatDate(order.preferredDate) : 'TBD' }}</span>
+          <div class="flex items-center gap-1">
+            <Calendar class="w-3 h-3 text-gray-400" />
+            <span class="text-gray-600">{{ order.preferredDate ? formatDateShort(order.preferredDate) : 'TBD' }}</span>
           </div>
-          <div v-if="order.driverDetails && isDelivery" class="flex items-center gap-1.5">
-            <User class="w-3.5 h-3.5 text-gray-500" />
-            <span class="text-gray-600">{{ order.driverDetails.driverName }}</span>
+          <div v-if="order.driverDetails && isDelivery" class="flex items-center gap-1">
+            <User class="w-3 h-3 text-gray-400" />
+            <span class="text-gray-600 truncate">{{ order.driverDetails.driverName }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Two Column Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <!-- Two Column Layout - Compact -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <!-- Left Column: Order Timeline -->
         <div class="lg:col-span-2">
           <div class="bg-white rounded-xl border overflow-hidden">
-            <!-- Timeline Header -->
-            <div class="px-5 py-3 border-b bg-gray-50 flex items-center justify-between flex-wrap gap-2">
-              <div class="flex items-center gap-2">
-                <Clock class="w-4 h-4 text-blue-600" />
-                <h3 class="font-semibold text-sm">Order Timeline</h3>
+            <!-- Timeline Header - Compact -->
+            <div class="px-4 py-2 border-b bg-gray-50 flex items-center justify-between flex-wrap gap-1">
+              <div class="flex items-center gap-1.5">
+                <Clock class="w-3.5 h-3.5 text-blue-600" />
+                <h3 class="font-semibold text-xs">Timeline</h3>
               </div>
-              <div class="flex items-center gap-3 flex-wrap">
-                <span v-if="order.productionSchedule" class="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Calendar class="w-3 h-3" />
-                  Production: {{ formatProductionDate(order.productionSchedule) }}
+              <div class="flex items-center gap-2 flex-wrap">
+                <span v-if="order.productionSchedule" class="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <Calendar class="w-2.5 h-2.5" />
+                  {{ formatProductionDate(order.productionSchedule) }}
                 </span>
-                <span v-if="order.driverDetails && isDelivery" class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Truck class="w-3 h-3" />
+                <span v-if="order.driverDetails && isDelivery" class="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                  <Truck class="w-2.5 h-2.5" />
                   {{ order.driverDetails.driverName }}
                 </span>
-                <span class="text-xs text-gray-500">
-                  {{ order.statusHistory?.length || 0 }} updates
-                </span>
+                <span class="text-[10px] text-gray-400">{{ order.statusHistory?.length || 0 }} updates</span>
               </div>
             </div>
 
-            <!-- Timeline Content -->
-            <div class="p-5">
+            <!-- Timeline Content - Compact -->
+            <div class="p-3 max-h-[280px] overflow-y-auto">
               <div v-if="filteredStatusHistory && filteredStatusHistory.length > 0" class="relative">
-                <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                 
-                <div v-for="(event, index) in filteredStatusHistory" :key="index" class="relative pl-10 pb-6 last:pb-0">
-                  <div class="absolute left-0 top-0.5 w-6 h-6 rounded-full flex items-center justify-center z-10 border-2 border-white" :class="getTimelineIconColor(event.status, index)">
-                    <component :is="getTimelineIcon(event.status)" class="w-3 h-3" />
+                <div v-for="(event, index) in filteredStatusHistory" :key="index" class="relative pl-7 pb-3 last:pb-0">
+                  <div class="absolute left-0 top-0 w-4 h-4 rounded-full flex items-center justify-center z-10 border border-white" :class="getTimelineIconColor(event.status, index)">
+                    <component :is="getTimelineIcon(event.status)" class="w-2 h-2" />
                   </div>
                   
-                  <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div class="flex flex-wrap items-start justify-between gap-1">
                     <div class="flex-1 min-w-0">
-                      <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-semibold text-sm text-gray-900">{{ formatStatus(event.status) }}</span>
-                        <span class="text-xs text-gray-400">{{ formatDateShort(event.timestamp) }}</span>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="font-semibold text-xs text-gray-900">{{ formatStatusForDisplay(event.status) }}</span>
+                        <span class="text-[10px] text-gray-400">{{ formatDateShort(event.timestamp) }}</span>
                       </div>
-                      
-                      <div class="mt-1">
-                        <p class="text-sm text-gray-600">
-                          {{ getStatusDescription(event.status) }}
-                        </p>
-                      </div>
-                      
-                      <p v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'" class="text-sm text-gray-500 mt-0.5 italic">
+                      <p class="text-[11px] text-gray-500 mt-0.5">{{ getStatusDescription(event.status) }}</p>
+                      <p v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'" class="text-[11px] text-gray-400 mt-0.5 italic truncate">
                         "{{ event.notes }}"
                       </p>
-                      
-                      <div v-if="event.status === 'Scheduled' && event.productionSchedule" class="mt-1 flex items-center gap-1.5">
-                        <Calendar class="w-3 h-3 text-blue-500" />
-                        <span class="text-xs text-blue-600 font-medium">
-                          Production scheduled: {{ formatProductionDate(event.productionSchedule) }}
-                        </span>
-                      </div>
-                      
-                      <div v-if="event.status === 'Out for Delivery' && order.driverDetails && isDelivery" class="mt-1 flex flex-wrap items-center gap-2">
-                        <span class="text-xs text-gray-500 flex items-center gap-1">
-                          <User class="w-3 h-3" />
-                          Driver: {{ order.driverDetails.driverName || 'N/A' }}
-                        </span>
-                        <span class="text-xs text-gray-500 flex items-center gap-1">
-                          <Phone class="w-3 h-3" />
-                          {{ order.driverDetails.driverPhone || 'N/A' }}
-                        </span>
-                        <span class="text-xs text-gray-500 flex items-center gap-1">
-                          <Truck class="w-3 h-3" />
-                          {{ order.driverDetails.truckDescription || order.driverDetails.plateNumber || 'N/A' }}
-                        </span>
+                      <div v-if="event.status === 'Scheduled' && event.productionSchedule" class="mt-0.5 flex items-center gap-1">
+                        <Calendar class="w-2.5 h-2.5 text-blue-500" />
+                        <span class="text-[10px] text-blue-600">Scheduled: {{ formatProductionDate(event.productionSchedule) }}</span>
                       </div>
                     </div>
-                    
-                    <span v-if="index === 0" class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-[10px] font-medium whitespace-nowrap flex items-center gap-1">
-                      <CheckCircle class="w-3 h-3" />
-                      Current
-                    </span>
-                    <span v-else-if="event.status === 'Completed'" class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-[10px] font-medium whitespace-nowrap flex items-center gap-1">
-                      <CheckCircle class="w-3 h-3" />
-                      Done
-                    </span>
                   </div>
                 </div>
               </div>
-              <div v-else class="text-center text-gray-500 py-6 text-sm">
+              <div v-else class="text-center text-gray-400 py-3 text-xs">
                 No timeline updates yet
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Right Column: Order Details -->
-        <div class="space-y-3">
-          <!-- Items Summary -->
+        <!-- Right Column: Order Details - Compact -->
+        <div class="space-y-2">
+          <!-- Items Summary - Compact -->
           <div class="bg-white rounded-xl border overflow-hidden">
-            <div class="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <ShoppingBag class="w-4 h-4 text-blue-600" />
-                <h4 class="font-semibold text-sm">Items</h4>
+            <div class="px-3 py-1.5 border-b bg-gray-50 flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <ShoppingBag class="w-3.5 h-3.5 text-blue-600" />
+                <h4 class="font-semibold text-xs">Items</h4>
               </div>
-              <span class="text-xs text-gray-500">{{ order.items?.length || 1 }}</span>
+              <span class="text-[10px] text-gray-400">{{ order.items?.length || 1 }}</span>
             </div>
-            <div class="max-h-48 overflow-y-auto divide-y">
-              <div v-for="(item, idx) in (order.items || [])" :key="idx" class="px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                <div class="flex items-center gap-3">
+            <div class="max-h-32 overflow-y-auto divide-y">
+              <div v-for="(item, idx) in (order.items || [])" :key="idx" class="px-3 py-1.5 hover:bg-gray-50 transition-colors">
+                <div class="flex items-center gap-2">
                   <img 
                     v-if="!order.isProvided"
                     :src="getImageUrl(item.image || order.image)" 
                     :alt="item.name"
-                    class="w-10 h-10 object-cover rounded border"
+                    class="w-7 h-7 object-cover rounded border"
                     @error="handleImageError"
                   />
-                  <div v-else class="w-10 h-10 bg-purple-100 rounded border flex items-center justify-center">
-                    <Package class="w-4 h-4 text-purple-600" />
+                  <div v-else class="w-7 h-7 bg-purple-100 rounded border flex items-center justify-center">
+                    <Package class="w-3 h-3 text-purple-600" />
                   </div>
                   <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium truncate">{{ item.name }}</div>
-                    <div class="text-xs text-gray-500 flex items-center gap-2 flex-wrap">
+                    <div class="text-xs font-medium truncate">{{ item.name }}</div>
+                    <div class="text-[10px] text-gray-400 flex items-center gap-1 flex-wrap">
                       <span>{{ item.size || 'N/A' }}</span>
                       <span class="text-gray-300">•</span>
                       <span>{{ formatNumber(item.quantity) }} pcs</span>
-                      <span v-if="item.printPlacement" class="text-blue-500">• {{ formatPlacement(item.printPlacement) }}</span>
                     </div>
                   </div>
                   <div class="text-right">
-                    <span class="text-sm font-semibold text-blue-600">{{ formatPrice(item.estimatedTotal || item.totalPrice) }}</span>
+                    <span class="text-xs font-semibold text-blue-600">{{ formatPrice(item.estimatedTotal || item.totalPrice) }}</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="px-4 py-2 border-t bg-gray-50 flex justify-between font-semibold text-sm">
+            <div class="px-3 py-1 border-t bg-gray-50 flex justify-between font-semibold text-xs">
               <span>Subtotal</span>
               <span class="text-blue-600">{{ formatPrice(order.totalAmount || order.amount) }}</span>
             </div>
           </div>
 
-          <!-- Customer & Delivery Info -->
+          <!-- ✅ PAYMENT BREAKDOWN - Compact -->
           <div class="bg-white rounded-xl border overflow-hidden">
-            <button 
-              @click="showDetails = !showDetails"
-              class="w-full px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
-            >
-              <div class="flex items-center gap-2">
-                <Info class="w-4 h-4 text-blue-600" />
-                <span class="font-semibold text-sm">Order Details</span>
+            <div class="px-3 py-1.5 border-b bg-gray-50 flex items-center gap-1.5">
+              <DollarSign class="w-3.5 h-3.5 text-blue-600" />
+              <h4 class="font-semibold text-xs">Payment</h4>
+              <span class="ml-auto text-[10px] font-medium" :class="paymentBadgeClass">
+                {{ order.paymentStatus || 'Unpaid' }}
+              </span>
+            </div>
+            <div class="p-2.5 space-y-1 text-xs">
+              <!-- Products Total -->
+              <div class="flex justify-between">
+                <span class="text-gray-500">Products</span>
+                <span class="font-medium">{{ formatPrice(productsTotal) }}</span>
               </div>
-              <ChevronDown :class="['w-4 h-4 transition-transform', showDetails ? 'rotate-180' : '']" />
-            </button>
-            <div v-show="showDetails" class="p-4 space-y-2 text-sm">
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <div class="text-xs text-gray-500">Customer</div>
-                  <div class="font-medium truncate">{{ order.customerName || order.customer?.name || 'N/A' }}</div>
+
+              <!-- Design Fee -->
+              <div v-if="hasDesignDetails" class="flex justify-between">
+                <span class="text-gray-500">Design Fee</span>
+                <span class="font-medium">{{ formatPrice(designFee) }}</span>
+              </div>
+
+              <!-- Printing Service Fee -->
+              <div v-if="order.isProvided" class="flex justify-between">
+                <span class="text-gray-500">Printing Service</span>
+                <span class="font-medium">{{ formatPrice(printingServiceFee) }}</span>
+              </div>
+
+              <!-- Total -->
+              <div class="flex justify-between pt-1 border-t border-gray-200 font-bold text-xs">
+                <span>Total</span>
+                <span class="text-blue-600">{{ formatPrice(calculatedTotal) }}</span>
+              </div>
+
+              <!-- Partial Payments -->
+              <div v-if="order.partialPayments && order.partialPayments.length > 0" class="pt-1 border-t border-gray-100">
+                <div class="flex justify-between text-[10px]">
+                  <span class="text-gray-400">Paid</span>
+                  <span class="font-medium text-green-600">{{ formatPrice(getTotalPaid) }}</span>
                 </div>
-                <div>
-                  <div class="text-xs text-gray-500">Email</div>
-                  <div class="font-medium truncate text-blue-600">{{ order.customerEmail || order.customer?.email || 'N/A' }}</div>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500">Phone</div>
-                  <div class="font-medium">{{ order.customerPhone || order.customer?.phone || 'N/A' }}</div>
-                </div>
-                <div>
-                  <div class="text-xs text-gray-500">Supply Type</div>
-                  <div class="font-medium">{{ order.isProvided ? 'Own Cups' : 'Company Cups' }}</div>
-                </div>
-                <div class="col-span-2">
-                  <div class="text-xs text-gray-500">Address</div>
-                  <div class="font-medium">{{ order.address || order.customer?.address || order.deliveryAddress || 'N/A' }}</div>
-                </div>
-                <div v-if="order.preferredTime">
-                  <div class="text-xs text-gray-500">Preferred Time</div>
-                  <div class="font-medium">{{ order.preferredTime }}</div>
-                </div>
-                <div v-if="order.expectedDelivery">
-                  <div class="text-xs text-gray-500">Expected Delivery</div>
-                  <div class="font-medium">{{ formatDate(order.expectedDelivery) }}</div>
-                </div>
-                <div v-if="order.productionSchedule">
-                  <div class="text-xs text-gray-500">Production Schedule</div>
-                  <div class="font-medium text-blue-600">{{ formatProductionDate(order.productionSchedule) }}</div>
+                <div v-if="order.paymentStatus === 'Partial'" class="flex justify-between text-[10px]">
+                  <span class="text-gray-400">Balance</span>
+                  <span class="font-medium text-red-500">{{ formatPrice(getRemainingBalance) }}</span>
                 </div>
               </div>
-              
-              <div v-if="order.driverDetails && isDelivery" class="mt-2 p-3 bg-green-50 rounded border border-green-200">
-                <div class="text-xs font-medium text-green-800 flex items-center gap-1.5">
-                  <Truck class="w-3.5 h-3.5" />
-                  Delivery Driver Details
-                </div>
-                <div class="grid grid-cols-2 gap-1 mt-1 text-xs">
-                  <div>
-                    <span class="text-gray-500">Driver:</span>
-                    <span class="font-medium">{{ order.driverDetails.driverName }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Phone:</span>
-                    <span class="font-medium">{{ order.driverDetails.driverPhone || 'N/A' }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Vehicle:</span>
-                    <span class="font-medium">{{ order.driverDetails.truckDescription || 'N/A' }}</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Plate #:</span>
-                    <span class="font-medium">{{ order.driverDetails.plateNumber || 'N/A' }}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div v-if="order.notes" class="mt-2 p-2 bg-yellow-50 rounded border border-yellow-200">
-                <div class="text-xs font-medium text-yellow-800">Order Notes</div>
-                <div class="text-sm text-yellow-700">{{ order.notes }}</div>
+
+              <!-- Fee Notes -->
+              <div class="mt-1 p-1.5 bg-gray-50 rounded text-[9px] text-gray-400 leading-tight">
+                <span v-if="hasDesignDetails && !order.isProvided">* ₱500 design fee for custom artwork</span>
+                <span v-else-if="order.isProvided">* ₱500 printing service fee</span>
+                <span v-else class="text-gray-300">No additional fees</span>
               </div>
             </div>
           </div>
 
-          <!-- Design Summary -->
+          <!-- Customer Info - Compact (Collapsible) -->
+          <div class="bg-white rounded-xl border overflow-hidden">
+            <button 
+              @click="showDetails = !showDetails"
+              class="w-full px-3 py-1.5 border-b bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
+            >
+              <div class="flex items-center gap-1.5">
+                <Info class="w-3.5 h-3.5 text-blue-600" />
+                <span class="font-semibold text-xs">Details</span>
+              </div>
+              <ChevronDown :class="['w-3.5 h-3.5 transition-transform', showDetails ? 'rotate-180' : '']" />
+            </button>
+            <div v-show="showDetails" class="p-2.5 space-y-1 text-xs">
+              <div class="grid grid-cols-2 gap-1">
+                <div>
+                  <div class="text-[10px] text-gray-400">Customer</div>
+                  <div class="font-medium truncate">{{ order.customerName || order.customer?.name || 'N/A' }}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-gray-400">Email</div>
+                  <div class="font-medium truncate text-blue-600">{{ order.customerEmail || order.customer?.email || 'N/A' }}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-gray-400">Phone</div>
+                  <div class="font-medium">{{ order.customerPhone || order.customer?.phone || 'N/A' }}</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-gray-400">Type</div>
+                  <div class="font-medium">{{ order.isProvided ? 'Own Cups' : 'Company Cups' }}</div>
+                </div>
+              </div>
+              <div class="text-[10px] text-gray-400">Address</div>
+              <div class="font-medium text-xs">{{ order.address || order.customer?.address || order.deliveryAddress || 'N/A' }}</div>
+              <div v-if="order.driverDetails && isDelivery" class="mt-1 p-1.5 bg-green-50 rounded border border-green-200 text-[10px]">
+                <span class="font-medium text-green-700">Driver:</span> {{ order.driverDetails.driverName }}
+                <span class="ml-2 text-gray-500">•</span>
+                <span class="text-gray-500">{{ order.driverDetails.driverPhone || 'N/A' }}</span>
+              </div>
+              <div v-if="order.notes" class="mt-1 p-1.5 bg-yellow-50 rounded border border-yellow-200 text-[10px] text-yellow-700">
+                {{ order.notes }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Design Summary - Compact (Collapsible) -->
           <div v-if="hasDesignDetails" class="bg-white rounded-xl border overflow-hidden">
             <button 
               @click="showDesign = !showDesign"
-              class="w-full px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
+              class="w-full px-3 py-1.5 border-b bg-gray-50 flex items-center justify-between hover:bg-gray-100 transition-colors"
             >
-              <div class="flex items-center gap-2">
-                <Palette class="w-4 h-4 text-blue-600" />
-                <span class="font-semibold text-sm">Design Info</span>
+              <div class="flex items-center gap-1.5">
+                <Palette class="w-3.5 h-3.5 text-blue-600" />
+                <span class="font-semibold text-xs">Design</span>
               </div>
-              <ChevronDown :class="['w-4 h-4 transition-transform', showDesign ? 'rotate-180' : '']" />
+              <ChevronDown :class="['w-3.5 h-3.5 transition-transform', showDesign ? 'rotate-180' : '']" />
             </button>
-            <div v-show="showDesign" class="p-3 space-y-2 text-sm max-h-40 overflow-y-auto">
-              <div v-for="(item, idx) in order.items" :key="idx" class="border-b last:border-0 pb-2 last:pb-0">
-                <div class="text-xs text-gray-500">{{ item.name }}</div>
-                <div class="flex flex-wrap gap-2 text-xs">
-                  <span class="px-2 py-0.5 bg-gray-100 rounded">{{ getDesignSourceLabel(item.designSource || item.design?.source) }}</span>
-                  <span v-if="item.printPlacement" class="px-2 py-0.5 bg-gray-100 rounded">{{ formatPlacement(item.printPlacement) }}</span>
-                  <span v-if="item.printSize" class="px-2 py-0.5 bg-gray-100 rounded">{{ item.printSize }}</span>
-                  <span v-if="item.selectedTemplate?.name" class="px-2 py-0.5 bg-gray-100 rounded">Template: {{ item.selectedTemplate.name }}</span>
+            <div v-show="showDesign" class="p-2 space-y-1 text-xs max-h-24 overflow-y-auto">
+              <div v-for="(item, idx) in order.items" :key="idx" class="border-b last:border-0 pb-1 last:pb-0">
+                <div class="text-[10px] text-gray-400">{{ item.name }}</div>
+                <div class="flex flex-wrap gap-1 text-[10px]">
+                  <span class="px-1.5 py-0.5 bg-gray-100 rounded">{{ getDesignSourceLabel(item.designSource || item.design?.source) }}</span>
+                  <span v-if="item.printPlacement" class="px-1.5 py-0.5 bg-gray-100 rounded">{{ formatPlacement(item.printPlacement) }}</span>
+                  <span v-if="item.printSize" class="px-1.5 py-0.5 bg-gray-100 rounded">{{ item.printSize }}</span>
                 </div>
               </div>
             </div>
@@ -305,137 +285,90 @@
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap gap-2 mt-4">
-        <button @click="contactSupport" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-xs font-medium inline-flex items-center gap-1.5">
-          <Phone class="w-3.5 h-3.5" />
+      <!-- Action Buttons - Compact -->
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        <button @click="contactSupport" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1">
+          <Phone class="w-3 h-3" />
           Support
         </button>
         
         <button 
           v-if="['pending', 'scheduled'].includes(order.status?.toLowerCase())" 
           @click="showCancelConfirm = true" 
-          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
+          class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
         >
-          <XCircle class="w-3.5 h-3.5" />
-          Cancel Order
+          <XCircle class="w-3 h-3" />
+          Cancel
         </button>
 
-        <!-- ✅ ORDER RECEIVED BUTTON - Shows when Out for Delivery and not yet received -->
         <button 
-          v-if="order.status?.toLowerCase() === 'out for delivery' && !order.isReceived" 
+          v-if="isOutForDelivery && !order.isReceived" 
           @click="handleToggleReceived"
-          class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
+          class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
         >
-          <CheckCircle class="w-3.5 h-3.5" />
-          Order Received
+          <CheckCircle class="w-3 h-3" />
+          {{ isDelivery ? 'Received' : 'Picked Up' }}
         </button>
 
-        <!-- ✅ Show disabled when already received -->
         <button 
-          v-if="order.status?.toLowerCase() === 'out for delivery' && order.isReceived" 
+          v-if="isOutForDelivery && order.isReceived" 
           disabled
-          class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg cursor-not-allowed text-xs font-medium inline-flex items-center gap-1.5"
+          class="px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed text-[10px] font-medium inline-flex items-center gap-1"
         >
-          <CheckCircle class="w-3.5 h-3.5" />
-          Received ✓
+          <CheckCircle class="w-3 h-3" />
+          {{ isDelivery ? 'Received ✓' : 'Picked Up ✓' }}
         </button>
 
-        <!-- Order Again for completed orders -->
         <button 
           v-if="order.status?.toLowerCase() === 'completed' || order.status?.toLowerCase() === 'cancelled'" 
           @click="orderAgain" 
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
+          class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
         >
-          <RefreshCw class="w-3.5 h-3.5" />
-          Order Again
+          <RefreshCw class="w-3 h-3" />
+          Reorder
         </button>
 
         <button 
           @click="printOrder" 
-          class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-xs font-medium inline-flex items-center gap-1.5"
+          class="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
         >
-          <Printer class="w-3.5 h-3.5" />
+          <Printer class="w-3 h-3" />
           Print
         </button>
       </div>
 
-      <!-- Out for Delivery - Awaiting Confirmation -->
-      <div v-if="order.status?.toLowerCase() === 'out for delivery' && !order.isReceived" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <div class="flex items-start gap-3">
-          <Truck class="w-5 h-5 text-blue-600 mt-0.5" />
+      <!-- Status Messages - Compact -->
+      <div v-if="isOutForDelivery && !order.isReceived" class="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <Truck class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 class="font-semibold text-blue-800 text-sm">Your Order is Out for Delivery!</h4>
-            <p class="text-sm text-blue-700">
-              Your order is on its way! 
-              <span v-if="order.driverDetails && isDelivery">
+            <h4 class="font-semibold text-blue-800 text-xs">{{ isDelivery ? 'Out for Delivery!' : 'Ready for Pickup!' }}</h4>
+            <p class="text-xs text-blue-700">
+              <span v-if="isDelivery && order.driverDetails">
                 Driver <strong>{{ order.driverDetails.driverName }}</strong> is delivering your items.
               </span>
-              <span v-else>Please wait for our delivery team.</span>
+              <span v-else>Your order is ready for pickup.</span>
             </p>
-            <div v-if="order.driverDetails && isDelivery" class="mt-2 flex flex-wrap gap-3 text-xs text-blue-600">
-              <span class="flex items-center gap-1">
-                <Phone class="w-3 h-3" />
-                Driver: {{ order.driverDetails.driverPhone || 'N/A' }}
-              </span>
-              <span class="flex items-center gap-1">
-                <Truck class="w-3 h-3" />
-                {{ order.driverDetails.truckDescription || order.driverDetails.plateNumber || 'N/A' }}
-              </span>
-            </div>
-            <div class="mt-2 text-xs text-blue-600">
-              ⚡ Please click the <strong>"Order Received"</strong> button above once you have received your items.
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Received Confirmation -->
-      <div v-if="order.status?.toLowerCase() === 'out for delivery' && order.isReceived" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <div class="flex items-start gap-3">
-          <CheckCircle class="w-5 h-5 text-green-600 mt-0.5" />
+      <div v-if="isOutForDelivery && order.isReceived" class="mt-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <CheckCircle class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 class="font-semibold text-green-800 text-sm">Order Received!</h4>
-            <p class="text-sm text-green-700">
-              Thank you for confirming receipt of your order. 
-              <span v-if="isDelivery">The driver has delivered your items.</span>
-              <span v-else>You have picked up your items.</span>
-            </p>
-            <div class="mt-2 flex flex-wrap gap-3 text-xs text-green-600">
-              <span class="flex items-center gap-1">
-                <Calendar class="w-3 h-3" />
-                Confirmed: {{ formatDate(order.updatedAt) }}
-              </span>
-              <span v-if="order.driverDetails && isDelivery" class="flex items-center gap-1">
-                <User class="w-3 h-3" />
-                Delivered by: {{ order.driverDetails.driverName }}
-              </span>
-            </div>
+            <h4 class="font-semibold text-green-800 text-xs">{{ isDelivery ? 'Order Received!' : 'Picked Up!' }}</h4>
+            <p class="text-xs text-green-700">{{ isDelivery ? 'Thank you for confirming receipt.' : 'Thank you for picking up your order.' }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Completed Order Summary -->
-      <div v-if="order.status?.toLowerCase() === 'completed'" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <div class="flex items-start gap-3">
-          <CheckCircle class="w-5 h-5 text-green-600 mt-0.5" />
+      <div v-if="order.status?.toLowerCase() === 'completed'" class="mt-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
+        <div class="flex items-start gap-2">
+          <CheckCircle class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
           <div>
-            <h4 class="font-semibold text-green-800 text-sm">Order Completed</h4>
-            <p class="text-sm text-green-700">
-              Your order has been successfully completed.
-              <span v-if="isDelivery">It has been delivered to your address.</span>
-              <span v-else>It is ready for pickup at our store.</span>
-            </p>
-            <div class="mt-2 flex flex-wrap gap-3 text-xs text-green-600">
-              <span class="flex items-center gap-1">
-                <Calendar class="w-3 h-3" />
-                Completed: {{ formatDate(order.updatedAt || order.completedAt) }}
-              </span>
-              <span v-if="order.driverDetails && isDelivery" class="flex items-center gap-1">
-                <User class="w-3 h-3" />
-                Delivered by: {{ order.driverDetails.driverName }}
-              </span>
-            </div>
+            <h4 class="font-semibold text-green-800 text-xs">Order Completed</h4>
+            <p class="text-xs text-green-700">{{ isDelivery ? 'Delivered successfully.' : 'Pickup completed.' }}</p>
           </div>
         </div>
       </div>
@@ -444,26 +377,24 @@
     <!-- Order Not Found -->
     <div v-else class="text-center py-12">
       <Package class="w-12 h-12 mx-auto text-gray-300 mb-4" />
-      <p class="text-gray-500 text-lg">Order not found</p>
-      <p class="text-gray-400 text-sm mt-1">The order you're looking for doesn't exist or has been removed.</p>
-      <button @click="goBack" class="mt-4 text-blue-600 hover:underline">Back to Orders</button>
+      <p class="text-gray-500">Order not found</p>
+      <button @click="goBack" class="mt-2 text-blue-600 hover:underline text-sm">Back to Orders</button>
     </div>
 
-    <!-- Cancel Confirmation Modal -->
+    <!-- Modals -->
     <ConfirmationModal
       v-model:visible="showCancelConfirm"
       title="Cancel Order"
-      :message="`Are you sure you want to cancel ${order?.orderNumber || order?.orderId}? This cannot be undone.`"
+      :message="`Cancel ${order?.orderNumber || order?.orderId}?`"
       type="danger"
-      close-label="Keep Order"
-      confirm-label="Cancel Order"
+      close-label="Keep"
+      confirm-label="Cancel"
       confirm-loading-label="Cancelling..."
       :is-loading="isCancelling"
       @confirm="handleCancel"
       @close="showCancelConfirm = false"
     />
 
-    <!-- Feedback Modal -->
     <FeedbackModal
       v-model:visible="feedbackVisible"
       :title="feedbackTitle"
@@ -472,6 +403,7 @@
     />
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed, onMounted, h } from 'vue'
@@ -497,7 +429,8 @@ import {
   Printer,
   CheckCircle,
   AlertCircle,
-  User
+  User,
+  DollarSign
 } from 'lucide-vue-next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
@@ -533,11 +466,25 @@ const isDelivery = computed(() => {
   return method.toLowerCase() === 'delivery'
 })
 
+const isOutForDelivery = computed(() => {
+  if (!order.value) return false
+  const status = order.value.status?.toLowerCase() || ''
+  return status === 'out for delivery'
+})
+
+const displayStatus = computed(() => {
+  if (!order.value) return 'Pending'
+  const status = order.value.status || 'Pending'
+  if (status === 'Out for Delivery' && order.value.receivingMode === 'Pick-up') {
+    return 'Ready to Pick-up'
+  }
+  return status
+})
+
 const filteredStatusHistory = computed(() => {
   if (!order.value?.statusHistory) return []
-  
   return order.value.statusHistory.filter(event => {
-    if (event.status === 'Out for Delivery' && !isDelivery.value) {
+    if (event.status === 'Out for Delivery' && order.value.receivingMode === 'Pick-up') {
       return false
     }
     return true
@@ -556,17 +503,59 @@ const hasDesignDetails = computed(() => {
   )
 })
 
+// ─── PAYMENT BREAKDOWN COMPUTED ──────────────────────────────────────
+const DESIGN_FEE = 500
+const PRINTING_SERVICE_FEE = 500
+
+const productsTotal = computed(() => {
+  if (!order.value?.items) return 0
+  let total = 0
+  for (const item of order.value.items) {
+    total += (item.estimatedTotal || item.totalPrice || 0)
+  }
+  return total
+})
+
+const designFee = computed(() => {
+  return hasDesignDetails.value ? DESIGN_FEE : 0
+})
+
+const printingServiceFee = computed(() => {
+  return order.value?.isProvided ? PRINTING_SERVICE_FEE : 0
+})
+
+const calculatedTotal = computed(() => {
+  return productsTotal.value + designFee.value + printingServiceFee.value
+})
+
+const getTotalPaid = computed(() => {
+  if (!order.value?.partialPayments) return 0
+  return order.value.partialPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+})
+
+const getRemainingBalance = computed(() => {
+  const total = order.value?.totalAmount || order.value?.amount || 0
+  return total - getTotalPaid.value
+})
+
 // ─── STATUS DESCRIPTIONS ──────────────────────────────────────────────
 function getStatusDescription(status) {
+  const displayStatus = status === 'Out for Delivery' && order.value?.receivingMode === 'Pick-up' 
+    ? 'Ready to Pick-up' 
+    : status
+    
   const descriptions = {
     'pending': 'Your order has been placed and is waiting for review by our team.',
     'scheduled': 'Your order has been reviewed and scheduled for production.',
     'in production': 'Your order is now in production. Our team is working on it.',
-    'out for delivery': 'Your order is on its way! A driver has been assigned for delivery.',
+    'out for delivery': order.value?.receivingMode === 'Pick-up' 
+      ? 'Your order is ready for pickup at our store.' 
+      : 'Your order is on its way! A driver has been assigned for delivery.',
+    'ready to pick-up': 'Your order is ready for pickup at our store. Please visit us to collect your items.',
     'completed': 'Your order has been successfully completed.',
     'cancelled': 'This order has been cancelled.'
   }
-  return descriptions[status?.toLowerCase()] || 'Status update'
+  return descriptions[status?.toLowerCase()] || descriptions[displayStatus?.toLowerCase()] || 'Status update'
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────
@@ -585,12 +574,17 @@ function getDesignSourceLabel(source) {
 }
 
 function getTimelineIcon(status) {
-  const statusLower = status?.toLowerCase() || ''
+  const displayStatus = status === 'Out for Delivery' && order.value?.receivingMode === 'Pick-up' 
+    ? 'Ready to Pick-up' 
+    : status
+    
+  const statusLower = displayStatus?.toLowerCase() || status?.toLowerCase() || ''
   const icons = {
     'pending': ClockIcon,
     'scheduled': CalendarIcon,
     'in production': PackageIcon,
     'out for delivery': TruckIcon,
+    'ready to pick-up': TruckIcon,
     'completed': CheckCircleIcon,
     'cancelled': XIcon
   }
@@ -609,6 +603,7 @@ function getTimelineIconColor(status, index) {
     'scheduled': 'bg-blue-100 text-blue-600',
     'in production': 'bg-purple-100 text-purple-600',
     'out for delivery': 'bg-green-100 text-green-600',
+    'ready to pick-up': 'bg-green-100 text-green-600',
     'completed': 'bg-green-500 text-white',
     'cancelled': 'bg-red-100 text-red-600'
   }
@@ -636,10 +631,28 @@ function formatStatus(status) {
     'scheduled': 'Scheduled',
     'in production': 'In Production',
     'out for delivery': 'Out for Delivery',
+    'ready to pick-up': 'Ready to Pick-up',
     'completed': 'Completed',
     'cancelled': 'Cancelled'
   }
   return statusMap[status?.toLowerCase()] || status || 'Pending'
+}
+
+function formatStatusForDisplay(status) {
+  const displayStatus = status === 'Out for Delivery' && order.value?.receivingMode === 'Pick-up' 
+    ? 'Ready to Pick-up' 
+    : status
+    
+  const statusMap = {
+    'pending': 'Pending',
+    'scheduled': 'Scheduled',
+    'in production': 'In Production',
+    'out for delivery': order.value?.receivingMode === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
+    'ready to pick-up': 'Ready to Pick-up',
+    'completed': 'Completed',
+    'cancelled': 'Cancelled'
+  }
+  return statusMap[displayStatus?.toLowerCase()] || displayStatus || 'Pending'
 }
 
 function formatPlacement(placement) {
@@ -715,12 +728,13 @@ function formatProductionDate(dateValue) {
 
 // ─── BADGE CLASSES ────────────────────────────────────────────────────
 const statusBadgeClass = computed(() => {
-  const status = order.value?.status?.toLowerCase() || ''
+  const status = displayStatus.value?.toLowerCase() || ''
   const classes = {
     'pending': 'bg-yellow-100 text-yellow-800',
     'scheduled': 'bg-blue-100 text-blue-800',
     'in production': 'bg-purple-100 text-purple-800',
     'out for delivery': 'bg-green-100 text-green-800',
+    'ready to pick-up': 'bg-green-100 text-green-800',
     'completed': 'bg-green-100 text-green-800',
     'cancelled': 'bg-red-100 text-red-800'
   }
@@ -796,7 +810,6 @@ function orderAgain() {
   }
 }
 
-// ✅ HANDLE ORDER RECEIVED
 async function handleToggleReceived() {
   if (!order.value?.orderId) {
     showFeedback('error', 'Error', 'Order ID not found');
@@ -806,25 +819,28 @@ async function handleToggleReceived() {
   try {
     const response = await ordersApi.toggleReceivedStatus(
       order.value.orderId, 
-      true // isReceived = true
+      true
     );
     
     if (response.success) {
-      // Update local order data
       order.value.isReceived = true;
       order.value.status = 'Completed';
       
-      // Add to status history
       if (!order.value.statusHistory) {
         order.value.statusHistory = [];
       }
       order.value.statusHistory.push({
         status: 'Completed',
         timestamp: new Date(),
-        notes: 'Order marked as received by customer'
+        notes: isDelivery.value ? 'Order marked as received by customer' : 'Customer picked up the order'
       });
       
-      showFeedback('success', 'Order Received!', 'Thank you for confirming receipt of your order.');
+      showFeedback('success', 
+        isDelivery.value ? 'Order Received!' : 'Order Picked Up!', 
+        isDelivery.value 
+          ? 'Thank you for confirming receipt of your order.' 
+          : 'Thank you for picking up your order. We hope you enjoy your items!'
+      );
     } else {
       showFeedback('error', 'Failed', response.message || 'Could not mark order as received');
     }
@@ -860,8 +876,10 @@ onMounted(async () => {
   if (res.success) {
     order.value = res.order
     console.log('Order loaded:', order.value)
-    console.log('Order status:', order.value?.status)
-    console.log('Is received:', order.value?.isReceived)
+    console.log('Products total:', productsTotal.value)
+    console.log('Design fee:', designFee.value)
+    console.log('Printing fee:', printingServiceFee.value)
+    console.log('Calculated total:', calculatedTotal.value)
     
     if (!order.value.items && order.value.product) {
       order.value.items = [{
@@ -882,7 +900,21 @@ onMounted(async () => {
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 0.7s linear infinite; }
 
-/* Print Styles */
+/* Scrollbar styling */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 3px;
+}
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
 @media print {
   .container {
     max-width: 100% !important;
@@ -895,17 +927,8 @@ onMounted(async () => {
   .bg-gray-50 {
     background-color: #f9fafb !important;
   }
-  .bg-gradient-to-r {
-    background: #f9fafb !important;
-  }
   button, .action-buttons {
     display: none !important;
-  }
-  .border-b {
-    border-bottom: 1px solid #e5e7eb !important;
-  }
-  .p-6, .px-6, .py-6 {
-    padding: 1rem !important;
   }
 }
 </style>

@@ -6,7 +6,7 @@
     <div class="px-6 py-5 space-y-4">
 
       <!-- Order type badge -->
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <span class="px-2 py-1 rounded-md text-xs font-semibold"
           :class="orderType === 'own-cups'
             ? 'bg-purple-100 text-purple-700'
@@ -21,33 +21,36 @@
         </span>
         <span v-if="paymentMethod" class="px-2 py-1 rounded-md text-xs font-medium" 
           :class="paymentMethod === 'cod' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'">
-          {{ paymentMethod === 'cod' ? ' Cash On Delivery' : ' Bank Transfer' }}
+          {{ paymentMethod === 'cod' ? 'Cash On Delivery' : 'Bank Transfer' }}
+        </span>
+        <span v-if="hasDesign" class="px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-700">
+          🎨 With Design
         </span>
       </div>
 
       <!-- Cart Items Section -->
- <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
-  <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
-  <div class="space-y-3 max-h-64 overflow-y-auto">
-    <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
-      <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
-        <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" @error="handleImageError" />
+      <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
+        <div class="space-y-3 max-h-64 overflow-y-auto">
+          <div v-for="(item, idx) in cartItems" :key="idx" class="flex gap-2 text-sm">
+            <div class="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+              <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" @error="handleImageError" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
+              <p class="text-xs text-gray-500">{{ item.size || 'Select size' }} · {{ (item.quantity || 0).toLocaleString() }} pcs</p>
+              <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="border-t pt-2 flex justify-between font-semibold">
+          <span>Subtotal</span>
+          <span class="text-blue-600">{{ cartSubtotal }}</span>
+        </div>
       </div>
-      <div class="flex-1 min-w-0">
-        <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
-        <p class="text-xs text-gray-500">{{ item.size || 'Select size' }} · {{ (item.quantity || 0).toLocaleString() }} pcs</p>
-        <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
-      </div>
-      <div class="text-right">
-        <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
-      </div>
-    </div>
-  </div>
-  <div class="border-t pt-2 flex justify-between font-semibold">
-    <span>Subtotal</span>
-    <span class="text-blue-600">{{ cartSubtotal }}</span>
-  </div>
-</div>
 
       <!-- Single Product Section -->
       <div v-else>
@@ -76,7 +79,6 @@
             <span class="text-gray-500">Design</span>
             <span class="font-medium text-gray-800">{{ designSource === 'upload' ? 'New Upload' : 'Saved Template' }}</span>
           </div>
-          <!-- ETA Display - FIXED -->
           <div class="flex justify-between">
             <span class="text-gray-500">Estimated Delivery</span>
             <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
@@ -94,10 +96,40 @@
               <span class="text-gray-700">{{ getUnitPrice() }}</span>
             </div>
           </div>
-          <!-- Estimated Total - FIXED -->
-          <div class="flex justify-between items-center pt-2">
-            <span class="font-semibold text-gray-900">Estimated Total</span>
-            <span class="text-xl font-bold text-blue-600">{{ estimatedTotalDisplay }}</span>
+
+          <!-- ✅ Payment Breakdown -->
+          <div class="space-y-1.5 pt-2 border-t border-gray-100">
+            <!-- Product Total -->
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Products Total</span>
+              <span class="font-medium text-gray-800">{{ productTotalDisplay }}</span>
+            </div>
+
+            <!-- Design Fee -->
+            <div class="flex justify-between text-sm">
+              <span class="text-gray-500">Design Fee</span>
+              <span class="font-medium text-gray-800">{{ designFeeDisplay }}</span>
+            </div>
+
+            <!-- Printing Service Fee -->
+            <div v-if="orderType === 'own-cups'" class="flex justify-between text-sm">
+              <span class="text-gray-500">Printing Service</span>
+              <span class="font-medium text-gray-800">₱500.00</span>
+            </div>
+
+            <!-- Total -->
+            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+              <span class="font-semibold text-gray-900">Estimated Total</span>
+              <span class="text-xl font-bold text-blue-600">{{ estimatedTotalDisplay }}</span>
+            </div>
+
+            <!-- Breakdown note -->
+            <p v-if="hasDesign" class="text-[10px] text-gray-400 italic">
+              * Includes ₱500 design fee and printing service fee for custom artwork
+            </p>
+            <p v-else-if="orderType === 'own-cups'" class="text-[10px] text-gray-400 italic">
+              * Includes ₱500 printing service fee for custom printing
+            </p>
           </div>
         </div>
       </div>
@@ -161,10 +193,15 @@ const props = defineProps({
   isSubmitting: { type: Boolean, default: false },
   validationHints: { type: Array, default: () => [] },
   cartItems: { type: Array, default: () => [] },
-  isCartOrder: { type: Boolean, default: false }
+  isCartOrder: { type: Boolean, default: false },
+  hasDesign: { type: Boolean, default: false } // ✅ New prop to indicate if design exists
 })
 
 const emit = defineEmits(['submit'])
+
+// ✅ Constants
+const DESIGN_FEE = 500
+const PRINTING_SERVICE_FEE = 500
 
 function getImageUrl(imagePath) {
   if (!imagePath) return `${API_BASE_URL}/uploads/products/default-product.jpg`
@@ -215,6 +252,7 @@ function calculateCartItemTotal(item) {
   
   return '₱0'
 }
+
 const cartSubtotal = computed(() => {
   let total = 0
   for (const item of props.cartItems) {
@@ -262,21 +300,19 @@ function getUnitPrice() {
   return `₱${unitPrice.toFixed(2)}`
 }
 
-// Estimated total display - FIXED
-const estimatedTotalDisplay = computed(() => {
-  // For own cups orders
+// ✅ Product Total (without fees)
+const productTotalDisplay = computed(() => {
+  // For own cups orders - no product cost
   if (props.orderType === 'own-cups') {
-    return '₱0 (Price upon review)'
+    return '₱0.00'
   }
   
   // For cart orders (multi-item)
   if (props.cartItems && props.cartItems.length > 0) {
     let total = 0
     for (const item of props.cartItems) {
-      // Calculate price per item based on quantity and bulk pricing
-      let itemTotal = 0
       if (item.estimatedTotal && item.estimatedTotal > 0) {
-        itemTotal = item.estimatedTotal
+        total += item.estimatedTotal
       } else if (item.sizes && item.size) {
         const size = item.sizes.find(s => s.name === item.size)
         if (size) {
@@ -291,17 +327,16 @@ const estimatedTotalDisplay = computed(() => {
           } else if (qty >= 500 && size.bulkPrices?.[500]) {
             unitPrice = size.bulkPrices[500] / 500
           }
-          itemTotal = unitPrice * qty
+          total += unitPrice * qty
         }
       }
-      total += itemTotal
     }
     return `₱${total.toLocaleString()}`
   }
   
   // For single product orders
   const qty = Number(props.quantity)
-  if (!qty || isNaN(qty)) return '₱0'
+  if (!qty || isNaN(qty)) return '₱0.00'
   
   const size = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
              ?? props.selectedProduct?.sizes?.[0]
@@ -317,7 +352,38 @@ const estimatedTotalDisplay = computed(() => {
     return `₱${(unitPrice * qty).toLocaleString()}`
   }
   
-  return '₱0'
+  return '₱0.00'
+})
+
+// ✅ Design Fee Display
+const designFeeDisplay = computed(() => {
+  // Only charge design fee if there's a design
+  if (props.hasDesign) {
+    return `₱${DESIGN_FEE.toLocaleString()}`
+  }
+  return '₱0.00'
+})
+
+// ✅ Total with all fees
+const estimatedTotalDisplay = computed(() => {
+  let total = 0
+  
+  // Parse product total
+  const productTotalStr = productTotalDisplay.value.replace(/[₱,]/g, '')
+  const productTotal = parseFloat(productTotalStr) || 0
+  total += productTotal
+  
+  // Add design fee
+  if (props.hasDesign) {
+    total += DESIGN_FEE
+  }
+  
+  // Add printing service fee for own cups
+  if (props.orderType === 'own-cups') {
+    total += PRINTING_SERVICE_FEE
+  }
+  
+  return `₱${total.toLocaleString()}`
 })
 </script>
 

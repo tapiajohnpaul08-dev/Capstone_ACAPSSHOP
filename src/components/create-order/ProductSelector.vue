@@ -212,14 +212,27 @@ async function fetchAndUpdateSizes(item, index) {
   }
 }
 
-// Watch for cart items and fetch sizes if needed
 watch(() => props.modelValue, (newItems) => {
-  if (props.isCartOrder && newItems.length > 0) {
-    newItems.forEach((item, index) => {
-      if (item.productId && (!item.sizes || item.sizes.length === 0)) {
-        fetchAndUpdateSizes(item, index)
+  if (newItems && newItems.length > 0) {
+    const item = newItems[0]
+    console.log('📦 ProductSelector watching modelValue:', item)
+    
+    // ✅ Set size from model if available and valid
+    if (item.size && item.sizes?.find(s => s.name === item.size)) {
+      selectedSize.value = item.size
+      console.log('✅ Size set from model:', item.size)
+    } else if (item.size) {
+      // Size is set but not in sizes array - try to find it or use first
+      console.warn('⚠️ Size not found in sizes array:', item.size)
+      if (item.sizes && item.sizes.length > 0) {
+        selectedSize.value = item.sizes[0].name
       }
-    })
+    }
+    
+    // Set quantity
+    if (item.quantity) {
+      singleQuantity.value = item.quantity
+    }
   }
 }, { immediate: true, deep: true })
 
@@ -254,14 +267,17 @@ function removeItem(index) {
 
 function onSizeChange() {
   const minOrder = selectedProductData.value?.minOrder || 500
-  singleQuantity.value = minOrder
+  // If quantity is less than min order, set to min order
+  if (singleQuantity.value < minOrder) {
+    singleQuantity.value = minOrder
+  }
   
   const updatedProduct = {
     productId: selectedProductData.value?.id,
     name: selectedProductData.value?.name,
     image: selectedProductData.value?.image,
     category: selectedProductData.value?.category,
-    size: selectedSize.value,
+    size: selectedSize.value, // ✅ Use the selected size
     quantity: singleQuantity.value,
     minOrder: selectedProductData.value?.minOrder,
     sizes: selectedProductData.value?.sizes
@@ -269,14 +285,13 @@ function onSizeChange() {
   emit('update:modelValue', [updatedProduct])
   emit('product-changed', [updatedProduct])
 }
-
 function onQuantityChange() {
   const updatedProduct = {
     productId: selectedProductData.value?.id,
     name: selectedProductData.value?.name,
     image: selectedProductData.value?.image,
     category: selectedProductData.value?.category,
-    size: selectedSize.value,
+    size: selectedSize.value, // ✅ Use the selected size
     quantity: singleQuantity.value,
     minOrder: selectedProductData.value?.minOrder,
     sizes: selectedProductData.value?.sizes
@@ -303,13 +318,30 @@ function updateOwnCupsQuantity(delta) {
   }
 }
 
-// Initialize single product data when selectedProduct changes
 watch(() => props.selectedProduct, (newProduct) => {
   if (newProduct && newProduct.sizes && newProduct.sizes.length > 0) {
-    selectedSize.value = newProduct.sizes[0]?.name || ''
-    singleQuantity.value = newProduct.minOrder || 500
+    console.log('📦 ProductSelector watching selectedProduct:', newProduct)
+    
+    // ✅ Check if we already have a size from the model
+    const modelSize = props.modelValue[0]?.size
+    
+    if (modelSize && newProduct.sizes.find(s => s.name === modelSize)) {
+      // Use the size from the model
+      selectedSize.value = modelSize
+      console.log('✅ Using size from model:', modelSize)
+    } else {
+      // Use first available size
+      selectedSize.value = newProduct.sizes[0]?.name || ''
+      console.log('✅ Using first available size:', selectedSize.value)
+    }
+    
+    // Set quantity if not already set
+    if (!singleQuantity.value || singleQuantity.value < (newProduct.minOrder || 500)) {
+      const modelQuantity = props.modelValue[0]?.quantity
+      singleQuantity.value = modelQuantity || newProduct.minOrder || 500
+    }
   }
-}, { immediate: true })
+}, { immediate: true, deep: true })
 
 // Watch for own cups data changes
 watch(ownCupsData, (newVal) => {

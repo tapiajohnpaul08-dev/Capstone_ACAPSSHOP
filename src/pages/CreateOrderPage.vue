@@ -384,6 +384,8 @@
           :is-submitting="isSubmitting"
           :validation-hints="validationHints"
           @submit="handleSubmit"
+          :has-design="hasDesign"
+
         />
       </div>
     </div>
@@ -491,6 +493,32 @@ const activeSteps = computed(() => {
     { key: 'review', label: 'Review', enabled: true }
   )
   return steps
+})
+
+const hasDesign = computed(() => {
+  // Check if design mode is not 'no-design'
+  if (designMode.value === 'no-design') return false
+  
+  // Check shared design
+  if (designMode.value === 'shared') {
+    const design = sharedDesign.value
+    return !!(design.designSource === 'upload' && design.files?.length > 0) ||
+           !!(design.designSource === 'saved' && design.selectedTemplateId)
+  }
+  
+  // Check individual designs
+  if (designMode.value === 'individual') {
+    for (const design of itemDesigns.value) {
+      if (design.designSource === 'upload' && design.files?.length > 0) {
+        return true
+      }
+      if (design.designSource === 'saved' && design.selectedTemplateId) {
+        return true
+      }
+    }
+  }
+  
+  return false
 })
 
 const currentStep = ref(0)
@@ -913,7 +941,6 @@ async function handleSubmit() {
       customerEmail: customerInfo.value.email,
       customerPhone: customerInfo.value.phone,
       notes: generateOrderNotes(),
-      preferredDate: fulfillment.value.preferredDate || null,
       preferredTime: fulfillment.value.preferredTime || '',
       customer: {
         name: customerInfo.value.name,
@@ -947,7 +974,33 @@ async function handleSubmit() {
   }
 }
 
+// In CreateOrderPage.vue - Fix the buildItemPayload function
+
 function buildItemPayload(product, design) {
+  // Get the design image URL from the uploaded files
+  let designImage = ''
+  let designFiles = []
+  
+  if (design.designSource === 'upload') {
+    // Check if we have uploaded files with Cloudinary URLs
+    if (design.files && design.files.length > 0) {
+      // The files should now have path/url from Cloudinary
+      const firstFile = design.files[0]
+      designImage = firstFile.path || firstFile.url || ''
+      
+      // Store all files with their Cloudinary URLs
+      designFiles = design.files.map(f => ({
+        name: f.name || '',
+        size: f.size || 0,
+        type: f.type || '',
+        path: f.path || f.url || '',
+        url: f.url || f.path || ''
+      }))
+    }
+  } else if (design.designSource === 'saved' && design.selectedTemplate) {
+    designImage = design.selectedTemplate.imagePath || design.selectedTemplate.thumbnail || ''
+  }
+  
   if (isOwnCups.value) {
     return {
       productId: null,
@@ -955,7 +1008,14 @@ function buildItemPayload(product, design) {
       category: 'Customer Provided',
       size: product.sizes || 'Custom',
       quantity: product.quantity || 500,
-      ...design,
+      designSource: design.designSource || 'upload',
+      designImage: designImage,
+      printSize: design.printSize || '',
+      printPlacement: design.printPlacement || '',
+      designNotes: design.designNotes || '',
+      files: designFiles,
+      selectedTemplateId: design.selectedTemplateId || null,
+      selectedTemplate: design.selectedTemplate || null,
       estimatedTotal: 0
     }
   }
@@ -966,7 +1026,14 @@ function buildItemPayload(product, design) {
     category: product.category,
     size: product.size,
     quantity: product.quantity,
-    ...design
+    designSource: design.designSource || 'upload',
+    designImage: designImage,
+    printSize: design.printSize || '',
+    printPlacement: design.printPlacement || '',
+    designNotes: design.designNotes || '',
+    files: designFiles,
+    selectedTemplateId: design.selectedTemplateId || null,
+    selectedTemplate: design.selectedTemplate || null
   }
 }
 
@@ -1005,8 +1072,36 @@ watch(orderProducts, (newProducts) => {
   }
 }, { immediate: true })
 
+
+// ✅ Helper to parse product data from query params
+function parseProductDataFromQuery() {
+  const productId = route.query.productId
+  const productName = route.query.productName
+  const productImage = route.query.productImage
+  const productCategory = route.query.productCategory
+  const minOrder = parseInt(route.query.minOrder) || 500
+  const size = route.query.size
+  const quantity = parseInt(route.query.quantity) || minOrder
+  
+  // Parse product data if available
+  let productData = null
+  if (route.query.productData) {
+    try {
+      productData = JSON.parse(route.query.productData)
+    } catch (e) {
+      console.error('Error parsing product data:', e)
+    }
+  }
+  
+  return { productId, productName, productImage, productCategory, minOrder, size, quantity, productData }
+}
+
 // ─── LIFECYCLE ────────────────────────────────────────────────────────────
 onMounted(async () => {
+
+  // ✅ Check if coming from product detail page with params
+  const { productId, productName, productImage, productCategory, minOrder, size, quantity, productData } = parseProductDataFromQuery()
+
   // Load cart data
   if (isCartOrder.value) {
     const pendingCart = sessionStorage.getItem('pendingCart')
@@ -1057,25 +1152,82 @@ onMounted(async () => {
     }))
   }
 
-  // Single product order
+ // ✅ Single product order from Product Detail Page
   if (!isCartOrder.value && orderType.value === 'company-product') {
-    const productId = route.query.productId
-    if (productId) {
+    // If we have product data from query params, use it
+    if (productId && productData) {
+      selectedProductData.value = productData
+      
+      // ✅ Use the size from query, fallback to first available
+      let defaultSize = size
+      
+      // If size is not provided or invalid, use first available
+      if (!defaultSize || !productData.sizes?.find(s => s.name === defaultSize)) {
+        defaultSize = productData.sizes?.[0]?.name || ''
+      }
+      
+      // ✅ Set the quantity
+      const defaultQuantity = quantity || minOrder || productData.minOrder || 500
+      
+      console.log('🔧 Setting default values:', { defaultSize, defaultQuantity })
+      
+      // Find the unit price for the selected size
+      const selectedSizeObj = productData.sizes?.find(s => s.name === defaultSize)
+      
+      orderProducts.value = [{
+        productId: productId,
+        name: productName || productData.name,
+        image: productImage || productData.image,
+        category: productCategory || productData.category,
+        size: defaultSize, // ✅ Set the size from query
+        quantity: defaultQuantity,
+        minOrder: minOrder || productData.minOrder || 500,
+        sizes: productData.sizes || [],
+        unitPrice: selectedSizeObj?.price || 0
+      }]
+      
+      // ✅ Set design mode to individual for single product
+      designMode.value = 'individual'
+      
+      // Initialize designs
+      itemDesigns.value = [{
+        designSource: 'upload',
+        printSize: '',
+        printPlacement: '',
+        designNotes: '',
+        files: [],
+        selectedTemplateId: null,
+        selectedTemplate: null
+      }]
+      
+      console.log('✅ Order products set:', orderProducts.value)
+      
+    } else if (productId) {
+      // Fallback: fetch product from API
       const response = await productsApi.getProductById(productId)
       if (response.success && response.data) {
         selectedProductData.value = response.data
-        const firstSize = response.data.sizes?.[0]?.name || ''
+        
+        // ✅ Use size from query or fallback to first
+        let defaultSize = size
+        if (!defaultSize || !response.data.sizes?.find(s => s.name === defaultSize)) {
+          defaultSize = response.data.sizes?.[0]?.name || ''
+        }
+        
+        const defaultQuantity = quantity || response.data.minOrder || 500
+        
         orderProducts.value = [{
           productId: response.data.id,
           name: response.data.name,
           image: response.data.image,
           category: response.data.category,
-          size: firstSize,
-          quantity: response.data.minOrder || 500,
+          size: defaultSize,
+          quantity: defaultQuantity,
           minOrder: response.data.minOrder,
           sizes: response.data.sizes,
-          unitPrice: response.data.sizes?.[0]?.price || 0
+          unitPrice: response.data.sizes?.find(s => s.name === defaultSize)?.price || 0
         }]
+        
         itemDesigns.value = [{
           designSource: 'upload',
           printSize: '',
@@ -1085,21 +1237,11 @@ onMounted(async () => {
           selectedTemplateId: null,
           selectedTemplate: null
         }]
-        itemVariantSettings.value = [{
-          printSize: '',
-          printPlacement: '',
-          designNotes: ''
-        }]
-        placementSettings.value = [{
-          printSize: '',
-          printPlacement: '',
-          designNotes: ''
-        }]
-        // Set design mode to individual for single product
         designMode.value = 'individual'
       }
     }
   }
+
 
   // Own cups
   if (isOwnCups.value) {

@@ -118,8 +118,8 @@
       <div v-else class="p-4 bg-gray-50 rounded-lg border text-sm text-gray-600 flex gap-3">
         <MapPin class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
         <div>
-          <span class="font-medium text-gray-800">ACAPSHOP — Main Store</span><br/>
-          123 Printing Ave., Manila, Philippines<br/>
+          <span class="font-medium text-gray-800">ACAPS Trading — Main Store</span><br/>
+          5051 QUE Grande Ext. Valenzuela, 1440 Manila, Philippines<br/>
           <span class="text-xs text-gray-400 flex items-center gap-1 mt-1">
             <Clock class="w-3 h-3" />
             Mon–Sat · 8AM–6PM · (02) 1234-5678
@@ -170,45 +170,6 @@
             <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
               <Info class="w-3 h-3" />
               Earliest: {{ formatDate(minDate) }} · Latest: {{ formatDate(maxDate) }}
-            </p>
-          </div>
-          <div>
-            <label class="text-sm font-medium text-gray-700">
-              Preferred Time <span class="text-red-500">*</span>
-            </label>
-            <select
-              v-model="modelValue.preferredTime"
-              @change="updateField('preferredTime', $event.target.value)"
-              class="field"
-              :class="{
-                'border-red-400 ring-1 ring-red-300': timeError && !isValidTime,
-                'border-green-400 ring-1 ring-green-300': isValidTime && modelValue.preferredTime
-              }"
-            >
-              <option value="">Select time slot...</option>
-              <option value="Morning (8AM - 12PM)"> Morning (8AM - 12PM)</option>
-              <option value="Afternoon (1PM - 5PM)"> Afternoon (1PM - 5PM)</option>
-              <option value="Evening (5PM - 8PM)"> Evening (5PM - 8PM)</option>
-              <option value="Anytime"> Anytime</option>
-            </select>
-            <div class="flex justify-between items-center mt-1">
-              <div>
-                <p v-if="timeError && !isValidTime" class="text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle class="w-3 h-3" />
-                  {{ timeError }}
-                </p>
-                <p v-else-if="isValidTime && modelValue.preferredTime" class="text-xs text-green-500 flex items-center gap-1">
-                  <CheckCircle class="w-3 h-3" />
-                  Time slot selected
-                </p>
-              </div>
-              <span class="text-xs text-gray-400">
-                {{ modelValue.preferredTime || 'Select a time' }}
-              </span>
-            </div>
-            <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
-              <Clock class="w-3 h-3" />
-              Choose your preferred time slot
             </p>
           </div>
         </div>
