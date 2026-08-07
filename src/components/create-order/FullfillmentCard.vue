@@ -329,8 +329,8 @@ function getTodayDate() {
 // ─── DATE RANGE ────────────────────────────────────────────────────────────
 // Production takes 3-7 business days, so the completion/delivery date must
 // always be at least 7 business days out to safely cover that window.
-const MIN_LEAD_DAYS = 7
-const MAX_LEAD_DAYS = 14 // gives customers a 2-week window to pick from
+const MIN_LEAD_DAYS = 3
+const MAX_LEAD_DAYS = 10 // gives customers a 2-week window to pick from
 
 // For "own items" orders, the clock starts when the customer drops their
 // items off with us — not today. If they haven't picked that date yet,

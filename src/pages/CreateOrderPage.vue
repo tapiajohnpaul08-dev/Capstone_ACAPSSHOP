@@ -632,7 +632,7 @@ const step1Errors = computed(() => {
         const hasFiles = design.files && design.files.length > 0
         const hasNotes = design.designNotes && design.designNotes.trim()
         if (!hasFiles && !hasNotes) {
-          errorsList.push(`Please upload a design or add notes for "${productName}"`)
+          errorsList.push(`Please upload a design or add notes"`)
         }
       } else if (design.designSource === 'saved') {
         if (!design.selectedTemplateId) {
