@@ -114,7 +114,7 @@
 
             <div v-else class="space-y-4">
               <div v-for="(item, idx) in orderProducts" :key="idx" class="bg-white rounded-xl border overflow-hidden">
-                <div class="px-6 py-4 border-b bg-gray-50">
+                <div v-if="item.image"  class="px-6 py-4 border-b bg-gray-50">
                   <div class="flex items-center gap-3">
                     <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg" @error="handleImageError" />
                     <div>
@@ -388,7 +388,7 @@
         </div>
         <h3 class="text-xl font-bold mb-2">Order Submitted!</h3>
         <p class="text-gray-500 text-sm mb-6">
-          We'll contact you within 1-2 business days for design approval and payment confirmation.
+          We'll contact you within 3-7 business days for design approval and payment confirmation.
         </p>
         <button @click="router.push('/customer/orders')" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           View My Orders

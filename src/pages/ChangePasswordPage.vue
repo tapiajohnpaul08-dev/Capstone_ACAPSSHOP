@@ -267,6 +267,7 @@ const form = ref({
 
 // Computed
 const isOAuthProvider = computed(() => {
+  console.log('userProvider.value:', userProvider.value)
   return userProvider.value && userProvider.value !== 'local'
 })
 

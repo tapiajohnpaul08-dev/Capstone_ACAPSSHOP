@@ -94,7 +94,7 @@ const allMenuItems = ref([
   { id: 'account', icon: 'User', title: 'Account Information', description: 'Manage your personal information', to: '/customer/profile/account' },
   { id: 'designs', icon: 'Image', title: 'My Design Templates', description: 'View and manage saved designs', to: '/customer/designs' },
   { id: 'order-history', icon: 'History', title: 'Order History', description: 'View all past orders', to: '/customer/order-history' },
-  { id: 'change-password', icon: 'Settings', title: 'Change Password', description: 'Update your account password', to: '/customer/profile/change-password', requiresLocal: true },
+  // { id: 'change-password', icon: 'Settings', title: 'Change Password', description: 'Update your account password', to: '/customer/profile/change-password', requiresLocal: true },
   { id: 'privacy', icon: 'Shield', title: 'Privacy and Security', description: 'Control your privacy and Security settings', to: '/customer/profile/privacy' },
   { id: 'language', icon: 'Globe', title: 'Language', description: 'English', badge: 'English', to: null },
   { id: 'help', icon: 'CircleHelp', title: 'Help Centre', description: 'Get support and assistance', to: null },

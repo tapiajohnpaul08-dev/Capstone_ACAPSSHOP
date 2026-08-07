@@ -28,6 +28,16 @@
         </span>
       </div>
 
+      <!-- Customer info (ordering as) -->
+      <div v-if="customerInfo?.name" class="flex items-center gap-2 text-xs text-gray-500 -mt-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-gray-400">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="truncate">
+          {{ customerInfo.name }}<span v-if="customerInfo.company"> · {{ customerInfo.company }}</span><span v-if="customerInfo.phone"> · {{ customerInfo.phone }}</span>
+        </span>
+      </div>
+
       <!-- Cart Items Section -->
       <div v-if="isCartOrder && cartItems && cartItems.length > 0" class="space-y-3">
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items ({{ cartItems.length }})</div>
@@ -39,15 +49,20 @@
             <div class="flex-1 min-w-0">
               <p class="font-medium text-gray-800 truncate">{{ item.name }}</p>
               <p class="text-xs text-gray-500">{{ item.size || 'Select size' }} · {{ (item.quantity || 0).toLocaleString() }} pcs</p>
-              <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{ item.printPlacement.replace('-', ' ') }}</p>
+              <p v-if="item.printPlacement || item.printSize" class="text-xs text-gray-400 capitalize">
+                {{ item.printPlacement ? item.printPlacement.replace('-', ' ') : '' }}<span v-if="item.printPlacement && item.printSize"> · </span>{{ item.printSize || '' }}
+              </p>
+              <p v-if="item.designSource" class="text-xs text-gray-400">
+                {{ item.designSource === 'upload' ? 'New upload' : item.designSource === 'saved' ? 'Saved template' : 'No design' }}
+              </p>
             </div>
             <div class="text-right">
               <p class="font-semibold text-blue-600">{{ calculateCartItemTotal(item) }}</p>
             </div>
           </div>
         </div>
-        <div class="border-t pt-2 flex justify-between font-semibold">
-          <span>Subtotal</span>
+        <div class="border-t pt-2 flex justify-between font-semibold text-sm">
+          <span>Items Subtotal</span>
           <span class="text-blue-600">{{ cartSubtotal }}</span>
         </div>
       </div>
@@ -76,63 +91,103 @@
             <span class="font-medium text-gray-800">{{ sizes }}</span>
           </div>
           <div v-if="designSource" class="flex justify-between">
-  <span class="text-gray-500">Design</span>
-  <span class="font-medium text-gray-800">
-    {{ designSource === 'upload' ? 'New Upload' : designSource === 'saved' ? 'Saved Template' : 'No Design' }}
-  </span>
-</div>
-          <div class="flex justify-between">
-            <span class="text-gray-500">Estimated Delivery</span>
-            <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
+            <span class="text-gray-500">Design</span>
+            <span class="font-medium text-gray-800">
+              {{ designSource === 'upload' ? 'New Upload' : designSource === 'saved' ? 'Saved Template' : 'No Design' }}
+            </span>
+          </div>
+          <div v-if="printPlacement || printSize" class="flex justify-between">
+            <span class="text-gray-500">Print Placement</span>
+            <span class="font-medium text-gray-800 text-right max-w-[55%] truncate capitalize">
+              {{ printPlacement ? printPlacement.replace('-', ' ') : '' }}<span v-if="printPlacement && printSize"> · </span>{{ printSize }}
+            </span>
+          </div>
+          <div v-if="specifications" class="flex justify-between">
+            <span class="text-gray-500">Specifications</span>
+            <span class="font-medium text-gray-800 text-right max-w-[55%] truncate">{{ specifications }}</span>
           </div>
           <div v-if="filesCount > 0" class="flex justify-between">
             <span class="text-gray-500">Files</span>
             <span class="font-medium text-gray-800">{{ filesCount }} file{{ filesCount > 1 ? 's' : '' }}</span>
           </div>
         </div>
+      </div>
 
-        <div class="border-t pt-4 space-y-2">
-          <div v-if="orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-500">Unit price (est.)</span>
-              <span class="text-gray-700">{{ getUnitPrice() }}</span>
-            </div>
+      <!-- Fulfillment Details — shared across cart, company-product, and own-cups orders -->
+      <div v-if="fulfillment || preferredDate || deliveryAddress || ownCupsDeliveryDate" class="border-t pt-4 space-y-2.5">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fulfillment</div>
+        <div class="space-y-2 text-sm">
+          <div v-if="orderType === 'own-cups' && ownCupsDeliveryDate" class="flex justify-between">
+            <span class="text-gray-500">Your Drop-off Date</span>
+            <span class="font-medium text-gray-800">{{ formatDate(ownCupsDeliveryDate) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-500">{{ orderType === 'own-cups' ? 'Est. Completion' : 'Est. Delivery' }}</span>
+            <span class="font-medium text-gray-800">{{ estimatedETA }}</span>
+          </div>
+          <div v-if="preferredTime" class="flex justify-between">
+            <span class="text-gray-500">Preferred Time</span>
+            <span class="font-medium text-gray-800">{{ preferredTime }}</span>
+          </div>
+          <div v-if="fulfillment && fulfillment.toLowerCase() === 'delivery' && deliveryAddress" class="flex justify-between gap-3">
+            <span class="text-gray-500 shrink-0">Deliver To</span>
+            <span class="font-medium text-gray-800 text-right">{{ deliveryAddress }}</span>
+          </div>
+          <div v-else-if="fulfillment && fulfillment.toLowerCase() === 'pickup'" class="flex justify-between">
+            <span class="text-gray-500">Pick-up At</span>
+            <span class="font-medium text-gray-800 text-right">ACAPS Trading — Main Store</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Financial Breakdown — shared across cart, company-product, and own-cups orders -->
+      <div class="border-t pt-4 space-y-2">
+        <div v-if="!isCartOrder && orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Unit price (est.)</span>
+            <span class="text-gray-700">{{ getUnitPrice() }}</span>
+          </div>
+        </div>
+
+        <!-- ✅ Payment Breakdown -->
+        <div class="space-y-1.5 pt-2 border-t border-gray-100">
+          <!-- Product Total -->
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Products Total</span>
+            <span class="font-medium text-gray-800">{{ productTotalDisplay }}</span>
           </div>
 
-          <!-- ✅ Payment Breakdown -->
-          <div class="space-y-1.5 pt-2 border-t border-gray-100">
-            <!-- Product Total -->
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-500">Products Total</span>
-              <span class="font-medium text-gray-800">{{ productTotalDisplay }}</span>
-            </div>
-
-            <!-- Design Fee -->
-            <div class="flex justify-between text-sm">
-              <span class="text-gray-500">Design Fee</span>
-              <span class="font-medium text-gray-800">{{ designFeeDisplay }}</span>
-            </div>
-
-            <!-- Printing Service Fee -->
-            <div v-if="orderType === 'own-cups'" class="flex justify-between text-sm">
-              <span class="text-gray-500">Printing Service</span>
-              <span class="font-medium text-gray-800">₱500.00</span>
-            </div>
-
-            <!-- Total -->
-            <div class="flex justify-between items-center pt-2 border-t border-gray-200">
-              <span class="font-semibold text-gray-900">Estimated Total</span>
-              <span class="text-xl font-bold text-blue-600">{{ estimatedTotalDisplay }}</span>
-            </div>
-
-            <!-- Breakdown note -->
-            <p v-if="hasDesign" class="text-[10px] text-gray-400 italic">
-              * Includes ₱500 design fee and printing service fee for custom artwork
-            </p>
-            <p v-else-if="orderType === 'own-cups'" class="text-[10px] text-gray-400 italic">
-              * Includes ₱500 printing service fee for custom printing
-            </p>
+          <!-- Design Fee -->
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Design Fee</span>
+            <span class="font-medium text-gray-800">{{ designFeeDisplay }}</span>
           </div>
+
+          <!-- Printing Service Fee -->
+          <div v-if="orderType === 'own-cups'" class="flex justify-between text-sm">
+            <span class="text-gray-500">Printing Service</span>
+            <span class="font-medium text-gray-800">₱500.00</span>
+          </div>
+
+          <!-- Payment method sub-detail -->
+          <div v-if="paymentMethod === 'bank_transfer' && paymentDetails?.bankName" class="flex justify-between text-sm">
+            <span class="text-gray-500">Bank</span>
+            <span class="font-medium text-gray-800">{{ paymentDetails.bankName }}{{ paymentDetails.referenceNumber ? ` · Ref# ${paymentDetails.referenceNumber}` : '' }}</span>
+          </div>
+
+          <!-- Total -->
+          <div class="flex justify-between items-center pt-2 border-t border-gray-200">
+            <span class="font-semibold text-gray-900">Estimated Total</span>
+            <span class="text-xl font-bold text-blue-600">{{ estimatedTotalDisplay }}</span>
+          </div>
+
+          <!-- Breakdown note -->
+          <p v-if="hasDesign" class="text-[10px] text-gray-400 italic">
+            * Includes ₱500 design fee and printing service fee for custom artwork
+          </p>
+          <p v-else-if="orderType === 'own-cups'" class="text-[10px] text-gray-400 italic">
+            * Includes ₱500 printing service fee for custom printing
+          </p>
         </div>
       </div>
 
@@ -196,7 +251,18 @@ const props = defineProps({
   validationHints: { type: Array, default: () => [] },
   cartItems: { type: Array, default: () => [] },
   isCartOrder: { type: Boolean, default: false },
-  hasDesign: { type: Boolean, default: false } // ✅ New prop to indicate if design exists
+  hasDesign: { type: Boolean, default: false }, // ✅ New prop to indicate if design exists
+
+  // ── Enhanced order-detail props (all optional — card degrades gracefully if omitted) ──
+  customerInfo: { type: Object, default: () => ({}) }, // { name, email, phone, company }
+  deliveryAddress: { type: String, default: '' }, // used when fulfillment === 'delivery'
+  preferredDate: { type: String, default: '' }, // completion / delivery date (ISO yyyy-mm-dd)
+  preferredTime: { type: String, default: '' },
+  ownCupsDeliveryDate: { type: String, default: '' }, // when customer will drop off their own items
+  printSize: { type: String, default: '' }, // single-item placement (ignored for cart orders)
+  printPlacement: { type: String, default: '' },
+  specifications: { type: String, default: '' },
+  paymentDetails: { type: Object, default: () => ({}) } // { bankName, referenceNumber }
 })
 
 const emit = defineEmits(['submit'])
@@ -218,15 +284,19 @@ function handleImageError(event) {
   event.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
 }
 
-// ETA based on design source and delivery method
+function formatDate(dateValue, options = { month: 'short', day: 'numeric', year: 'numeric' }) {
+  if (!dateValue) return ''
+  const d = typeof dateValue === 'string' ? new Date(dateValue) : dateValue
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-PH', options)
+}
+
+// Prefer the customer's actual chosen date; fall back to the generic estimate range.
 const estimatedETA = computed(() => {
-  if (props.designSource === 'upload') {
-    return props.fulfillment === 'Delivery' ? '7-10 business days' : '5-7 business days'
+  if (props.preferredDate) {
+    return formatDate(props.preferredDate)
   }
-  if (props.designSource === 'saved') {
-    return props.fulfillment === 'Delivery' ? '5-7 business days' : '3-5 business days'
-  }
-  return props.fulfillment === 'Delivery' ? '7-10 business days' : '5-7 business days'
+  return '3-7 business days'
 })
 
 function calculateCartItemTotal(item) {

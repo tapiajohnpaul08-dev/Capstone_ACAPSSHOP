@@ -150,8 +150,8 @@
             class="field"
           />
           <p class="text-xs text-gray-400 mt-1">
-            Select the date you'll bring your items to our store. 
-            <span class="text-blue-600">This is separate from your preferred completion date.</span>
+            Select the date you'll bring your items to our store.
+            <span class="text-blue-600">Your completion date must be at least 7 business days after this date.</span>
           </p>
         </div>
       </div>
@@ -205,17 +205,19 @@
               <Info class="w-3 h-3" />
               Earliest: {{ formatDate(minDate) }} · Latest: {{ formatDate(maxDate) }}
             </p>
-            <p v-if="isOwnCups && modelValue.ownCupsDeliveryDate && modelValue.preferredDate" class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+            <p v-if="isOwnCups" class="text-xs text-amber-600 mt-1 flex items-center gap-1">
               <Info class="w-3 h-3" />
-              Note: Your items must be delivered to us before we can start production.
-              <span v-if="new Date(modelValue.ownCupsDeliveryDate) > new Date(modelValue.preferredDate)" class="text-red-500 font-medium">
-                (Delivery date is after completion date!)
+              <span v-if="modelValue.ownCupsDeliveryDate">
+                Based on your drop-off date ({{ formatDate(modelValue.ownCupsDeliveryDate) }}), the earliest completion date is {{ formatDate(minDate) }}.
+              </span>
+              <span v-else>
+                Please select the date you'll bring your items first — it determines the earliest completion date.
               </span>
             </p>
           </div>
         </div>
 
-        <!-- Quick selection chips -->
+        <!-- Quick selection chips
         <div class="mt-3">
           <p class="text-xs text-gray-500 mb-2">Quick select:</p>
           <div class="flex flex-wrap gap-2">
@@ -232,7 +234,7 @@
               {{ date.label }}
             </button>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
   </div>
@@ -275,10 +277,12 @@ const emit = defineEmits(['update:modelValue'])
 const minAddressLength = 10
 
 // ─── DATE HELPERS ──────────────────────────────────────────────────────────
-function getBusinessDaysFromToday(days) {
-  const date = new Date()
+// Adds N business days (Mon–Fri) on top of a given start date.
+function addBusinessDays(startDate, days) {
+  const date = new Date(startDate)
+  date.setHours(0, 0, 0, 0)
   let businessDaysAdded = 0
-  
+
   while (businessDaysAdded < days) {
     date.setDate(date.getDate() + 1)
     const dayOfWeek = date.getDay()
@@ -286,8 +290,13 @@ function getBusinessDaysFromToday(days) {
       businessDaysAdded++
     }
   }
-  
+
   return date
+}
+
+// Kept for any existing callers — business days counted from today.
+function getBusinessDaysFromToday(days) {
+  return addBusinessDays(new Date(), days)
 }
 
 function formatDate(dateValue) {
@@ -318,21 +327,37 @@ function getTodayDate() {
 }
 
 // ─── DATE RANGE ────────────────────────────────────────────────────────────
-const minDateObj = getBusinessDaysFromToday(5)
-const maxDateObj = getBusinessDaysFromToday(7)
+// Production takes 3-7 business days, so the completion/delivery date must
+// always be at least 7 business days out to safely cover that window.
+const MIN_LEAD_DAYS = 7
+const MAX_LEAD_DAYS = 14 // gives customers a 2-week window to pick from
 
-const minDate = computed(() => toDateInputValue(minDateObj))
-const maxDate = computed(() => toDateInputValue(maxDateObj))
+// For "own items" orders, the clock starts when the customer drops their
+// items off with us — not today. If they haven't picked that date yet,
+// fall back to today so the field still has a sane default.
+const referenceDate = computed(() => {
+  if (props.isOwnCups && props.modelValue.ownCupsDeliveryDate) {
+    const d = new Date(props.modelValue.ownCupsDeliveryDate)
+    if (!isNaN(d.getTime())) return d
+  }
+  return new Date()
+})
+
+const minDateObj = computed(() => addBusinessDays(referenceDate.value, MIN_LEAD_DAYS))
+const maxDateObj = computed(() => addBusinessDays(referenceDate.value, MAX_LEAD_DAYS))
+
+const minDate = computed(() => toDateInputValue(minDateObj.value))
+const maxDate = computed(() => toDateInputValue(maxDateObj.value))
 const todayDate = computed(() => getTodayDate())
 
 // Quick select dates
 const quickDates = computed(() => {
   const dates = []
-  for (let i = 5; i <= 7; i++) {
-    const date = getBusinessDaysFromToday(i)
-    const label = i === 5 ? 'Earliest' : i === 7 ? 'Latest' : `${i} days`
+  for (let i = MIN_LEAD_DAYS; i <= MAX_LEAD_DAYS; i += 1) {
+    const date = addBusinessDays(referenceDate.value, i)
+    const label = i === MIN_LEAD_DAYS ? 'Earliest' : i === MAX_LEAD_DAYS ? 'Latest' : `${i} days`
     dates.push({
-      label: `${label}`,
+      label,
       value: toDateInputValue(date)
     })
   }
@@ -372,10 +397,12 @@ const dateError = computed(() => {
   max.setHours(0, 0, 0, 0)
   
   if (selected < min) {
-    return `Earliest available date is ${formatDate(min)} (5 business days)`
+    return props.isOwnCups && props.modelValue.ownCupsDeliveryDate
+      ? `Earliest available date is ${formatDate(min)} (7 business days after your drop-off date)`
+      : `Earliest available date is ${formatDate(min)} (7 business days from today)`
   }
   if (selected > max) {
-    return `Latest available date is ${formatDate(max)} (7 business days)`
+    return `Latest available date is ${formatDate(max)} (${MAX_LEAD_DAYS} business days)`
   }
   return ''
 })
@@ -457,15 +484,31 @@ watch(() => props.modelValue, () => {
   validateAllFields()
 }, { immediate: true })
 
+// If the own-cups drop-off date changes (or is set for the first time) and
+// the currently selected completion date no longer satisfies the 7-business-day
+// minimum, bump it forward to the new earliest valid date automatically.
+watch(minDate, (newMin) => {
+  if (!props.modelValue.preferredDate) return
+  const selected = new Date(props.modelValue.preferredDate)
+  const min = new Date(newMin)
+  selected.setHours(0, 0, 0, 0)
+  min.setHours(0, 0, 0, 0)
+  if (selected < min) {
+    emit('update:modelValue', {
+      ...props.modelValue,
+      preferredDate: newMin
+    })
+  }
+})
+
 // ─── INITIALIZE DEFAULT DATE ─────────────────────────────────────────────
 if (!props.modelValue.preferredDate) {
-  const defaultDate = toDateInputValue(getBusinessDaysFromToday(5))
   import('vue').then(({ nextTick }) => {
     nextTick(() => {
       if (!props.modelValue.preferredDate) {
         emit('update:modelValue', { 
           ...props.modelValue, 
-          preferredDate: defaultDate 
+          preferredDate: minDate.value 
         })
       }
     })
