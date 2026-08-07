@@ -70,12 +70,14 @@ export function useAuth() {
     if (res.success && res.data) {
       const customer = res.data.customer
       currentUser.value = customer
+      console.log('Login successful, customer:', currentUser.value)
       token.value = res.data.token
       
       localStorage.setItem('customerToken', res.data.token)
       localStorage.setItem('currentUser', JSON.stringify(customer))
       localStorage.setItem('userName', `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email)
       localStorage.setItem('userEmail', customer.email)
+      localStorage.setItem('userProvider', customer.provider || 'local')
     }
     return res
   }
@@ -89,6 +91,8 @@ export function useAuth() {
     localStorage.setItem('currentUser', JSON.stringify(userData))
     localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
     localStorage.setItem('userEmail', userData.email)
+    localStorage.setItem('userProvider', userData.provider || 'local')
+
   }
 
   async function register(userData) {

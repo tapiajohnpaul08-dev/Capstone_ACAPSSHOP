@@ -340,6 +340,12 @@
           <Printer class="w-3 h-3" />
           Print
         </button>
+
+        <button v-if="order.status === 'Completed'"
+          class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
+        >
+            Submit Feedback
+        </button>
       </div>
 
       <!-- Status Messages - Compact -->

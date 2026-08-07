@@ -83,11 +83,10 @@ import ConfirmationModal from '@/modals/ConfirmationModal.vue'
 import { useAuth } from '@/composables/useAuth.js'
 
 const router = useRouter()
-const { logout: authLogout, userName, userEmail, userInitial } = useAuth()
+const { logout: authLogout, userName, userEmail, userInitial, userProvider } = useAuth()
 
 const showLogoutConfirm = ref(false)
 const showDeleteConfirm = ref(false)
-const userProvider = ref('local') // 'local', 'google', 'facebook'
 
 // All menu items
 const allMenuItems = ref([
@@ -112,11 +111,7 @@ const filteredMenuItems = computed(() => {
 
 // Load user data from localStorage
 onMounted(() => {
-  const currentUser = localStorage.getItem('currentUser')
-  if (currentUser) {
-    const user = JSON.parse(currentUser)
-    userProvider.value = user.provider || 'local'
-  }
+  console.log('Mounted ProfilePage.vue, userProvider:', userProvider.value)
 })
 
 function handleMenuClick(item) {

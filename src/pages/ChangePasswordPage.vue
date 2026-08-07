@@ -255,6 +255,12 @@ const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
 let cooldownInterval = null
 
+// Authoritative provider info from the backend (returned when we request the OTP).
+// This is the source of truth for whether to show the "Current Password" field —
+// the locally cached currentUser.provider can be stale or missing, so we prefer
+// this once it's available and only fall back to the cached value before that.
+const serverProviderInfo = ref(null) // { hasPassword, provider, isOAuth }
+
 // Password strength
 const passwordStrength = ref(0)
 
@@ -266,13 +272,18 @@ const form = ref({
 })
 
 // Computed
+// Prefer the provider info the backend just verified via requestPasswordChangeOtp
+// (accurate, DB-sourced) over the client-cached currentUser.provider, which can be
+// stale — e.g. if it was never populated correctly during an OAuth login.
 const isOAuthProvider = computed(() => {
-  console.log('userProvider.value:', userProvider.value)
-  return userProvider.value && userProvider.value !== 'local'
+  if (serverProviderInfo.value) {
+    return !!serverProviderInfo.value.isOAuth
+  }
+  return !!(userProvider.value && userProvider.value !== 'local')
 })
 
 const providerName = computed(() => {
-  const provider = userProvider.value
+  const provider = serverProviderInfo.value?.provider || userProvider.value
   if (provider === 'google') return 'Google'
   if (provider === 'facebook') return 'Facebook'
   return provider || 'OAuth'
@@ -384,6 +395,11 @@ async function sendOtpForPassword() {
     const result = await authApi.requestPasswordOtp(email)
     
     if (result.success) {
+      // Capture the backend-verified provider info so the "Current Password"
+      // field shows/hides based on the real account type, not stale cached data.
+      if (result.data) {
+        serverProviderInfo.value = result.data
+      }
       otpSent.value = true
       otpSuccess.value = `Verification code sent to ${email}!`
       startCooldown()
