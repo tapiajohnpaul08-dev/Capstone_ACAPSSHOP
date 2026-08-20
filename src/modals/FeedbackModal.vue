@@ -1,3 +1,4 @@
+<!-- components/FeedbackModal.vue -->
 <template>
   <Teleport to="body">
     <Transition
@@ -37,10 +38,7 @@
               @click="close"
               class="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
             >
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <X class="w-3.5 h-3.5" />
             </button>
 
             <!-- Icon -->
@@ -48,14 +46,8 @@
               class="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0"
               :class="status === 'success' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
             >
-              <svg v-if="status === 'success'" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-              <svg v-else class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
+              <CheckCircle v-if="status === 'success'" class="w-7 h-7" />
+              <AlertCircle v-else class="w-7 h-7" />
             </div>
 
             <!-- Status badge -->
@@ -63,7 +55,7 @@
               class="text-xs font-semibold px-3 py-0.5 rounded-full"
               :class="status === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
             >
-              {{ status === 'success' ? 'Successful' : 'Unsuccessful' }}
+              {{ status === 'success' ? 'Successful' : 'Error' }}
             </span>
 
             <!-- Title -->
@@ -79,71 +71,64 @@
   </Teleport>
 </template>
 
-<script>
-export default {
-  name: 'FeedbackModal',
+<script setup>
+import { watch, onBeforeUnmount } from 'vue';
+import { X, CheckCircle, AlertCircle } from 'lucide-vue-next';
 
-  props: {
-    visible: {
-      type: Boolean,
-      default: false
-    },
-    title: {
-      type: String,
-      default: 'Notification'
-    },
-    status: {
-      type: String,
-      default: 'success',
-      validator: val => ['success', 'error'].includes(val)
-    },
-    message: {
-      type: String,
-      default: ''
-    },
-    duration: {
-      type: Number,
-      default: 2000
-    }
+const props = defineProps({
+  visible: {
+    type: Boolean,
+    default: false
   },
-
-  emits: ['update:visible', 'closed'],
-
-  data() {
-    return {
-      autoCloseTimer: null
-    }
+  title: {
+    type: String,
+    default: 'Notification'
   },
-
-  watch: {
-    visible(val) {
-      if (val) this.startAutoClose()
-      else this.clearTimer()
-    }
+  status: {
+    type: String,
+    default: 'success',
+    validator: val => ['success', 'error'].includes(val)
   },
-
-  methods: {
-    startAutoClose() {
-      this.clearTimer()
-      this.autoCloseTimer = setTimeout(() => this.close(), this.duration)
-    },
-    clearTimer() {
-      if (this.autoCloseTimer) {
-        clearTimeout(this.autoCloseTimer)
-        this.autoCloseTimer = null
-      }
-    },
-    close() {
-      this.clearTimer()
-      this.$emit('update:visible', false)
-      this.$emit('closed')
-    }
+  message: {
+    type: String,
+    default: ''
   },
+  duration: {
+    type: Number,
+    default: 2000
+  }
+});
 
-  beforeUnmount() {
-    this.clearTimer()
+const emit = defineEmits(['update:visible', 'closed']);
+
+let autoCloseTimer = null;
+
+function startAutoClose() {
+  clearTimer();
+  autoCloseTimer = setTimeout(() => close(), props.duration);
+}
+
+function clearTimer() {
+  if (autoCloseTimer) {
+    clearTimeout(autoCloseTimer);
+    autoCloseTimer = null;
   }
 }
+
+function close() {
+  clearTimer();
+  emit('update:visible', false);
+  emit('closed');
+}
+
+watch(() => props.visible, (val) => {
+  if (val) startAutoClose();
+  else clearTimer();
+});
+
+onBeforeUnmount(() => {
+  clearTimer();
+});
 </script>
 
 <style scoped>

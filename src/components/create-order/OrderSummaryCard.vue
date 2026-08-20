@@ -28,7 +28,7 @@
         </span>
       </div>
 
-      <!-- Customer info (ordering as) -->
+      <!-- Customer info -->
       <div v-if="customerInfo?.name" class="flex items-center gap-2 text-xs text-gray-500 -mt-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="shrink-0 text-gray-400">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
@@ -113,7 +113,7 @@
         </div>
       </div>
 
-      <!-- Fulfillment Details — shared across cart, company-product, and own-cups orders -->
+      <!-- Fulfillment Details -->
       <div v-if="fulfillment || preferredDate || deliveryAddress || ownCupsDeliveryDate" class="border-t pt-4 space-y-2.5">
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fulfillment</div>
         <div class="space-y-2 text-sm">
@@ -140,7 +140,7 @@
         </div>
       </div>
 
-      <!-- Financial Breakdown — shared across cart, company-product, and own-cups orders -->
+      <!-- Financial Breakdown -->
       <div class="border-t pt-4 space-y-2">
         <div v-if="!isCartOrder && orderType === 'company-product' && selectedProduct && quantity" class="space-y-1.5">
           <div class="flex justify-between text-sm">
@@ -149,7 +149,7 @@
           </div>
         </div>
 
-        <!-- ✅ Payment Breakdown -->
+        <!-- Payment Breakdown -->
         <div class="space-y-1.5 pt-2 border-t border-gray-100">
           <!-- Product Total -->
           <div class="flex justify-between text-sm">
@@ -157,16 +157,10 @@
             <span class="font-medium text-gray-800">{{ productTotalDisplay }}</span>
           </div>
 
-          <!-- Design Fee -->
-          <div class="flex justify-between text-sm">
-            <span class="text-gray-500">Design Fee</span>
-            <span class="font-medium text-gray-800">{{ designFeeDisplay }}</span>
-          </div>
-
-          <!-- Printing Service Fee -->
-          <div v-if="orderType === 'own-cups'" class="flex justify-between text-sm">
-            <span class="text-gray-500">Printing Service</span>
-            <span class="font-medium text-gray-800">₱500.00</span>
+          <!-- ✅ Combined Design & Printing Service Fee -->
+          <div v-if="hasDesign || orderType === 'own-cups'" class="flex justify-between text-sm">
+            <span class="text-gray-500">{{ orderType === 'own-cups' ? 'Printing Service' : 'Design Fee' }}</span>
+            <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
           </div>
 
           <!-- Payment method sub-detail -->
@@ -182,11 +176,14 @@
           </div>
 
           <!-- Breakdown note -->
-          <p v-if="hasDesign" class="text-[10px] text-gray-400 italic">
-            * Includes ₱500 design fee and printing service fee for custom artwork
+          <p v-if="hasDesign && orderType === 'own-cups'" class="text-[10px] text-gray-400 italic">
+            * ₱500 design fee + ₱500 printing service fee for custom printing on your items
+          </p>
+          <p v-else-if="hasDesign" class="text-[10px] text-gray-400 italic">
+            * ₱500 design fee for custom artwork
           </p>
           <p v-else-if="orderType === 'own-cups'" class="text-[10px] text-gray-400 italic">
-            * Includes ₱500 printing service fee for custom printing
+            * ₱500 printing service fee for custom printing on your items
           </p>
         </div>
       </div>
@@ -235,6 +232,11 @@ import { computed } from 'vue'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+// ✅ Combined fee constant
+const FEES = {
+  DESIGN_AND_PRINTING_SERVICE_FEE: 500
+}
+
 const props = defineProps({
   orderType: { type: String, required: true },
   selectedProduct: { type: Object, default: null },
@@ -251,25 +253,19 @@ const props = defineProps({
   validationHints: { type: Array, default: () => [] },
   cartItems: { type: Array, default: () => [] },
   isCartOrder: { type: Boolean, default: false },
-  hasDesign: { type: Boolean, default: false }, // ✅ New prop to indicate if design exists
-
-  // ── Enhanced order-detail props (all optional — card degrades gracefully if omitted) ──
-  customerInfo: { type: Object, default: () => ({}) }, // { name, email, phone, company }
-  deliveryAddress: { type: String, default: '' }, // used when fulfillment === 'delivery'
-  preferredDate: { type: String, default: '' }, // completion / delivery date (ISO yyyy-mm-dd)
+  hasDesign: { type: Boolean, default: false },
+  customerInfo: { type: Object, default: () => ({}) },
+  deliveryAddress: { type: String, default: '' },
+  preferredDate: { type: String, default: '' },
   preferredTime: { type: String, default: '' },
-  ownCupsDeliveryDate: { type: String, default: '' }, // when customer will drop off their own items
-  printSize: { type: String, default: '' }, // single-item placement (ignored for cart orders)
+  ownCupsDeliveryDate: { type: String, default: '' },
+  printSize: { type: String, default: '' },
   printPlacement: { type: String, default: '' },
   specifications: { type: String, default: '' },
-  paymentDetails: { type: Object, default: () => ({}) } // { bankName, referenceNumber }
+  paymentDetails: { type: Object, default: () => ({}) }
 })
 
 const emit = defineEmits(['submit'])
-
-// ✅ Constants
-const DESIGN_FEE = 500
-const PRINTING_SERVICE_FEE = 500
 
 function getImageUrl(imagePath) {
   if (!imagePath) return `${API_BASE_URL}/uploads/products/default-product.jpg`
@@ -291,7 +287,6 @@ function formatDate(dateValue, options = { month: 'short', day: 'numeric', year:
   return d.toLocaleDateString('en-PH', options)
 }
 
-// Prefer the customer's actual chosen date; fall back to the generic estimate range.
 const estimatedETA = computed(() => {
   if (props.preferredDate) {
     return formatDate(props.preferredDate)
@@ -372,14 +367,11 @@ function getUnitPrice() {
   return `₱${unitPrice.toFixed(2)}`
 }
 
-// ✅ Product Total (without fees)
 const productTotalDisplay = computed(() => {
-  // For own cups orders - no product cost
   if (props.orderType === 'own-cups') {
     return '₱0.00'
   }
   
-  // For cart orders (multi-item)
   if (props.cartItems && props.cartItems.length > 0) {
     let total = 0
     for (const item of props.cartItems) {
@@ -406,7 +398,6 @@ const productTotalDisplay = computed(() => {
     return `₱${total.toLocaleString()}`
   }
   
-  // For single product orders
   const qty = Number(props.quantity)
   if (!qty || isNaN(qty)) return '₱0.00'
   
@@ -427,32 +418,24 @@ const productTotalDisplay = computed(() => {
   return '₱0.00'
 })
 
-// ✅ Design Fee Display
-const designFeeDisplay = computed(() => {
-  // Only charge design fee if there's a design
-  if (props.hasDesign) {
-    return `₱${DESIGN_FEE.toLocaleString()}`
-  }
-  return '₱0.00'
-})
-
-// ✅ Total with all fees
 const estimatedTotalDisplay = computed(() => {
+  // Use props.totalAmount directly if provided and valid
+  if (props.totalAmount !== undefined && props.totalAmount > 0) {
+    return `₱${props.totalAmount.toLocaleString()}`
+  }
+  
+  // Fallback calculation
   let total = 0
   
-  // Parse product total
   const productTotalStr = productTotalDisplay.value.replace(/[₱,]/g, '')
   const productTotal = parseFloat(productTotalStr) || 0
   total += productTotal
   
-  // Add design fee
-  if (props.hasDesign) {
-    total += DESIGN_FEE
-  }
-  
-  // Add printing service fee for own cups
-  if (props.orderType === 'own-cups') {
-    total += PRINTING_SERVICE_FEE
+  // ✅ Add combined fee if:
+  // - Own cups order (printing service)
+  // - OR design exists (design fee)
+  if (props.hasDesign || props.orderType === 'own-cups') {
+    total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
   }
   
   return `₱${total.toLocaleString()}`

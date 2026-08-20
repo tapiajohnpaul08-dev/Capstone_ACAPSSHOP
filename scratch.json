@@ -1,0 +1,81 @@
+{
+    "id": "ORD-2026-304--COMP",
+    "orderId": "ORD-2026-304--COMP",
+    "orderNumber": "ORD-2026-304--COMP",
+    "status": "Out for Delivery",
+    "statusValue": "ready",
+    "paymentStatus": "Unpaid",
+    "isProvided": false,
+    "supplyType": "Company Cups",
+    "deliveryMethod": "Pick-up",
+    "totalAmount": 175,
+    "quantity": 500,
+    "image": null,
+    "date": "8/19/2026",
+    "createdAt": "2026-08-19T12:08:02.402Z",
+    "items": [
+        {
+            "productId": "PRD-2026-184",
+            "name": "HARD PLASTIC SHOT",
+            "category": "Plastic Cups",
+            "size": "1oz",
+            "quantity": 500,
+            "estimatedTotal": 175,
+            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916468/beverage/products/product-1785916465295-41350293.jpg",
+            "design": {
+                "source": "saved",
+                "printSize": "3x3",
+                "printPlacement": "Front-Only",
+                "designNotes": "",
+                "files": []
+            }
+        }
+    ],
+    "customerName": "Junebert Hachero",
+    "customerEmail": "braceroroxanne@gmail.com",
+    "customerPhone": "09709406573",
+    "address": "Bustos Bulacan",
+    "postalCode": "3007",
+    "company": "Jear Corp",
+    "fulfillment": {
+        "deliveryAddress": "",
+        "sameAsCustomer": false
+    },
+    "designDetails": [],
+    "expectedDelivery": "8/26/2026",
+    "fromCustomerToCompanyDeliveryDate": null,
+    "preferredDate": null,
+    "preferredTime": "",
+    "productionSchedule": "2026-08-20T12:08:00.000Z",
+    "notes": "Individual Designs | Items: HARD PLASTIC SHOT",
+    "statusHistory": [
+        {
+            "status": "Pending",
+            "timestamp": "2026-08-19T12:08:02.398Z",
+            "notes": "Order created",
+            "productionSchedule": "",
+            "updatedBy": null
+        },
+        {
+            "status": "Scheduled",
+            "timestamp": "2026-08-19T12:08:38.548Z",
+            "notes": "Order scheduled for production on Aug 20, 2026, 08:08 PM",
+            "productionSchedule": "2026-08-20T20:08",
+            "updatedBy": "John Paul Tapia"
+        },
+        {
+            "status": "In Production",
+            "timestamp": "2026-08-19T12:09:01.894Z",
+            "notes": "Order is now in production",
+            "productionSchedule": "",
+            "updatedBy": "John Paul Tapia"
+        },
+        {
+            "status": "Out for Delivery",
+            "timestamp": "2026-08-19T12:09:17.663Z",
+            "notes": "Order is ready for pickup at the store",
+            "productionSchedule": "",
+            "updatedBy": "John Paul Tapia"
+        }
+    ]
+}

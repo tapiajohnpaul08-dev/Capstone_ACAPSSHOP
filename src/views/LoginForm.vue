@@ -28,7 +28,7 @@
               Welcome to<br />
               <span class="text-blue-400">ACAPS TRADING</span>
             </h1>
-            <p class="text-white/80 text-lg">Your trusted partner for quality packaging solutions.</p>
+            <p class="text-white/80 text-lg">"We Are Committed to You"</p>
           </div>
           </div>
 

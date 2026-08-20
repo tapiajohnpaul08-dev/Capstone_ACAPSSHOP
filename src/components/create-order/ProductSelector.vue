@@ -105,7 +105,7 @@
           <input v-model="ownCupsData.productType" type="text" placeholder="e.g., Coffee Cups, Tumblers" class="field" />
         </div>
         <div>
-          <label class="text-sm font-medium text-gray-700">Cup Size <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium text-gray-700">Item Size <span class="text-red-500">*</span></label>
           <input v-model="ownCupsData.sizes" type="text" placeholder="e.g., 12oz, 16oz" class="field" />
         </div>
         <div>

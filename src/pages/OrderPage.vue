@@ -118,29 +118,31 @@
         </div>
 
         <!-- Order Footer -->
-        <div class="px-4 py-3 bg-gray-50 border-t flex flex-wrap justify-between items-center gap-2">
-          <div class="flex gap-4 text-sm text-gray-600">
-            <div class="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
-                <path d="M12 22V12"/>
-                <polyline points="3.29 7 12 12 20.71 7"/>
-              </svg>
-              <span>{{ order.isProvided ? 'Own Cups' : 'Company Cups' }}</span>
-            </div>
-            <div class="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
-                <circle cx="12" cy="10" r="3"/>
-              </svg>
-              <span>{{ order.receivingMode || order.deliveryMethod || 'Pick-up' }}</span>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-sm text-gray-500">Total Order Amount</div>
-            <div class="text-lg font-bold">{{ formatPrice(order.totalAmount || order.amount) }}</div>
-          </div>
-        </div>
+<div class="px-4 py-3 bg-gray-50 border-t flex flex-wrap justify-between items-center gap-2">
+  <div class="flex gap-4 text-sm text-gray-600">
+    <div class="flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+        <path d="M12 22V12"/>
+        <polyline points="3.29 7 12 12 20.71 7"/>
+      </svg>
+      <span>{{ order.isProvided ? 'Own Cups' : 'Company Cups' }}</span>
+    </div>
+    <div class="flex items-center gap-1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <span>{{ order.receivingMode || order.deliveryMethod || 'Pick-up' }}</span>
+    </div>
+  </div>
+  <div class="text-right">
+    <div class="text-sm text-gray-500">Total Order Amount</div>
+    <div class="text-lg font-bold text-blue-600">
+      {{ formatPrice(order.totalAmount || order.amount || (order.isProvided ? 500 : 0)) }}
+    </div>
+  </div>
+</div>
       </div>
     </div>
 

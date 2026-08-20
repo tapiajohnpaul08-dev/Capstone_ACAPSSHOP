@@ -53,13 +53,13 @@
         <span class="text-xs text-gray-400">
           {{ formatDate(template.createdAt || template.updatedAt) }}
         </span>
-        <button 
+        <!-- <button 
           @click.stop="$emit('use', template)"
           class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center gap-1"
         >
           <Sparkles class="w-3 h-3" />
           Use Template
-        </button>
+        </button> -->
       </div>
     </div>
   </div>

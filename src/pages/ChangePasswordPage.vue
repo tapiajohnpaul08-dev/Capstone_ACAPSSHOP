@@ -491,7 +491,7 @@ async function handlePasswordChange() {
     let result
     const email = userEmail.value || currentUser.value?.email
     const customerId = currentUser.value?.customerId
-    
+    console.log('Current user 111:', currentUser.value?.customerId)
     if (isOAuthProvider.value) {
       // OAuth users: update with OTP only (no current password)
       result = await authApi.updatePasswordWithOtp(
@@ -555,7 +555,7 @@ function handleFeedbackClose() {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Current user:', currentUser.customerId || currentUser.value)
+  console.log('Current user:', currentUser.value?.customerId || currentUser.value)
   // Auto-send OTP for ALL users when page loads
   if (!otpSent.value) {
     sendOtpForPassword()

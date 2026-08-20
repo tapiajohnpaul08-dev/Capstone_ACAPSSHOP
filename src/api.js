@@ -472,3 +472,85 @@ export const templatesApi = {
     );
   }
 };
+
+
+export const feedBackApi = {
+
+  submitFeedback: async (data) => {
+        try {
+            const response = await axiosInstance.post('/feedback', data);
+            return response.data;
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+            return { success: false, message: error.response?.data?.message || 'Failed to submit feedback' };
+        }
+    },
+    // Check if feedback exists for an order
+    checkFeedbackExists: async (orderId) => {
+        try {
+            const response = await axiosInstance.get(`/feedback/order/${orderId}/check`);
+            return response.data;
+        } catch (error) {
+            console.error('Error checking feedback:', error);
+            return { exists: false };
+        }
+    },
+
+    // Get customer's feedback
+    getMyFeedback: async () => {
+        try {
+            const response = await axiosInstance.get('/feedback/my-feedback');
+            return response.data;
+        } catch (error) {
+            console.error('Error getting my feedback:', error);
+            return { success: false, data: [] };
+        }
+    },
+
+    // Get feedback for an order
+    getFeedbackByOrder: async (orderId) => {
+        try {
+            const response = await axiosInstance.get(`/feedback/order/${orderId}`);
+            return response.data;
+        } catch (error) {
+            console.error('Error getting order feedback:', error);
+            return { success: false, data: null };
+        }
+    },
+
+    // Get product feedback (public)
+    getProductFeedback: async (productId, limit = 20, page = 1) => {
+        try {
+            const response = await axiosInstance.get(`/feedback/product/${productId}`, {
+                params: { limit, page }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Error getting product feedback:', error);
+            return { success: false, data: [] };
+        }
+    },
+
+    // Get product feedback stats (public)
+    getProductFeedbackStats: async (productId) => {
+        try {
+            const response = await axiosInstance.get(`/feedback/product/${productId}/stats`);
+            return response.data;
+        } catch (error) {
+            console.error('Error getting feedback stats:', error);
+            return { success: false, data: null };
+        }
+    },
+
+    // Mark feedback as helpful
+    markHelpful: async (feedbackId) => {
+        try {
+            const response = await axiosInstance.post(`/feedback/${feedbackId}/helpful`);
+            return response.data;
+        } catch (error) {
+            console.error('Error marking helpful:', error);
+            return { success: false };
+        }
+    }
+
+}

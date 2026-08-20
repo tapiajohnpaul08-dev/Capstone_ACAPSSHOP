@@ -1,5 +1,5 @@
 // composables/useFeedback.js
-// Drop this composable anywhere to trigger the FeedbackModal easily.
+// Composable for showing toast/notification modals
 
 import { ref } from 'vue'
 

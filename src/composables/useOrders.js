@@ -166,6 +166,7 @@ export function useOrders() {
       paymentStatus: backendOrder.paymentStatus,
       isProvided: backendOrder.isProvided, // ← ADD THIS LINE
       supplyType: backendOrder.isProvided ? 'Own Cups' : 'Company Cups',
+      hasDesign: backendOrder.hasDesign,
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
       product: backendOrder.productName,

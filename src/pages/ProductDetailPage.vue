@@ -1,12 +1,10 @@
-<!-- src/views/customer/ProductDetailPage.vue - Fixed image size -->
+<!-- src/views/customer/ProductDetailPage.vue -->
 <template>
   <div class="min-h-screen bg-gray-50">
     <div class="container mx-auto px-4 py-8 max-w-6xl">
       <!-- Back Button -->
       <button @click="router.back()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
+        <ArrowLeft class="w-5 h-5" />
         Back to Products
       </button>
 
@@ -18,7 +16,7 @@
 
       <!-- Product Detail -->
       <div v-else-if="product" class="flex flex-col lg:flex-row gap-8">
-        <!-- Product Image - Fixed size panel -->
+        <!-- Product Image -->
         <div class="lg:w-1/2">
           <div class="bg-white rounded-2xl border p-6 sticky top-24">
             <div class="aspect-square w-full flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden">
@@ -56,7 +54,7 @@
                 >
                   <div class="font-semibold">{{ size.name }}</div>
                   <div class="text-sm text-gray-600">₱{{ size.price.toLocaleString() }}/pc</div>
-                  <div class="text-xs" :class="size.stock > 0 ? 'text-green-600' : 'text-red-500'">
+                  <div class="text-xs" :class="size.stock > 500 ? 'text-green-600' : 'text-red-500'">
                     {{ size.stock > 0 ? `${size.stock.toLocaleString()} in stock` : 'Out of stock' }}
                   </div>
                 </button>
@@ -72,9 +70,7 @@
                   :disabled="quantity <= (product.minOrder || 500)"
                   class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14"/>
-                  </svg>
+                  <Minus class="w-4 h-4" />
                 </button>
                 <input
                   type="number"
@@ -90,9 +86,7 @@
                   :disabled="selectedSize && quantity >= selectedSize.stock"
                   class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14"/><path d="M12 5v14"/>
-                  </svg>
+                  <Plus class="w-4 h-4" />
                 </button>
               </div>
               <p class="text-xs text-gray-400 mt-1">
@@ -123,14 +117,15 @@
             <div class="flex gap-3">
               <button
                 @click="addToCart"
-                :disabled="!selectedSize || selectedSize.stock === 0"
+                :disabled="!selectedSize || selectedSize.stock < product.minOrder"
                 class="flex-1 py-3 rounded-xl font-semibold transition-all border-2 border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
               >
+                <ShoppingCart class="w-4 h-4 inline mr-2" />
                 Add to Cart
               </button>
               <button
                 @click="orderNow"
-                :disabled="!selectedSize || selectedSize.stock === 0"
+                :disabled="!selectedSize || selectedSize.stock < product.minOrder"
                 class="flex-1 py-3 rounded-xl font-semibold transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Order Now
@@ -146,13 +141,168 @@
         </div>
       </div>
 
+      <!-- ✅ FEEDBACK SECTION - Displayed below product -->
+      <div v-if="product && !loading" class="mt-8">
+        <div class="bg-white rounded-2xl border overflow-hidden">
+          <!-- Feedback Header -->
+          <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <MessageSquare class="w-5 h-5 text-blue-600" />
+              <h3 class="font-semibold text-gray-900">Customer Reviews</h3>
+              <span v-if="feedbackStats.totalReviews > 0" class="text-sm text-gray-500">
+                ({{ feedbackStats.totalReviews }} reviews)
+              </span>
+            </div>
+            <div v-if="feedbackStats.totalReviews > 0" class="flex items-center gap-3">
+              <div class="flex items-center gap-1">
+                <Star 
+                  v-for="star in 5" 
+                  :key="star" 
+                  class="w-4 h-4"
+                  :class="star <= Math.round(feedbackStats.averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'"
+                />
+              </div>
+              <span class="text-sm font-semibold text-gray-900">{{ feedbackStats.averageRating.toFixed(1) }}</span>
+            </div>
+          </div>
+
+          <!-- Loading Feedbacks -->
+          <div v-if="feedbackLoading" class="p-6 text-center">
+            <Loader2 class="w-6 h-6 mx-auto text-blue-600 animate-spin" />
+            <p class="text-gray-500 mt-2 text-sm">Loading reviews...</p>
+          </div>
+
+          <!-- No Feedbacks -->
+          <div v-else-if="feedbacks.length === 0" class="p-6 text-center">
+            <MessageSquare class="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p class="text-gray-500 text-sm">No reviews yet for this product.</p>
+            <p class="text-gray-400 text-xs mt-1">Be the first to share your experience!</p>
+          </div>
+
+          <!-- Feedbacks List -->
+          <div v-else class="divide-y">
+            <div 
+              v-for="feedback in feedbacks" 
+              :key="feedback.feedbackId || feedback._id"
+              class="px-6 py-4 hover:bg-gray-50 transition-colors"
+            >
+              <!-- Feedback Header -->
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm">
+                      {{ (feedback.customerName || 'U').charAt(0).toUpperCase() }}
+                    </div>
+                    <div>
+                      <p class="font-medium text-sm text-gray-900">{{ feedback.customerName || 'Anonymous' }}</p>
+                      <div class="flex items-center gap-2">
+                        <div class="flex gap-0.5">
+                          <Star 
+                            v-for="star in 5" 
+                            :key="star" 
+                            class="w-3.5 h-3.5"
+                            :class="star <= feedback.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'"
+                          />
+                        </div>
+                        <span class="text-xs text-gray-400">{{ formatDate(feedback.submittedAt || feedback.createdAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <span v-if="feedback.isVerified" class="text-xs text-green-600 flex items-center gap-1">
+                  <CheckCircle class="w-3 h-3" /> Verified Purchase
+                </span>
+              </div>
+
+              <!-- Feedback Content -->
+              <div class="ml-10 mt-2">
+                <p v-if="feedback.title" class="text-sm font-medium text-gray-800">{{ feedback.title }}</p>
+                <p class="text-sm text-gray-600 mt-0.5">{{ feedback.comment }}</p>
+
+                <!-- Pros -->
+                <div v-if="feedback.pros && feedback.pros.length > 0" class="mt-2">
+                  <p class="text-xs font-medium text-gray-500 flex items-center gap-1">
+                    <ThumbsUp class="w-3 h-3 text-green-600" /> What they liked:
+                  </p>
+                  <div class="flex flex-wrap gap-1 mt-0.5">
+                    <span v-for="(pro, idx) in feedback.pros" :key="idx" class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs">
+                      {{ pro }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Cons -->
+                <div v-if="feedback.cons && feedback.cons.length > 0" class="mt-2">
+                  <p class="text-xs font-medium text-gray-500 flex items-center gap-1">
+                    <ThumbsDown class="w-3 h-3 text-red-600" /> What could be improved:
+                  </p>
+                  <div class="flex flex-wrap gap-1 mt-0.5">
+                    <span v-for="(con, idx) in feedback.cons" :key="idx" class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs">
+                      {{ con }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Helpful Button -->
+                <button 
+                  @click="markHelpful(feedback.feedbackId || feedback._id)"
+                  class="mt-2 text-xs text-gray-400 hover:text-blue-600 transition-colors flex items-center gap-1"
+                >
+                  <ThumbsUp class="w-3 h-3" />
+                  Helpful ({{ feedback.helpfulCount || 0 }})
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Load More -->
+          <div v-if="feedbacks.length > 0 && feedbackPagination.hasMore" class="px-6 py-3 border-t bg-gray-50 text-center">
+            <button 
+              @click="loadMoreFeedbacks"
+              :disabled="feedbackLoadingMore"
+              class="text-sm text-blue-600 hover:text-blue-700 font-medium disabled:opacity-50"
+            >
+              <span v-if="feedbackLoadingMore" class="inline-flex items-center gap-2">
+                <Loader2 class="w-4 h-4 animate-spin" /> Loading more...
+              </span>
+              <span v-else>Load More Reviews</span>
+            </button>
+          </div>
+
+          <!-- Rating Summary -->
+          <div v-if="feedbackStats.totalReviews > 0" class="px-6 py-3 border-t bg-gray-50 flex flex-wrap items-center gap-6 text-sm">
+            <div class="flex items-center gap-2">
+              <span class="text-gray-500">Average Rating:</span>
+              <span class="font-semibold text-gray-900">{{ feedbackStats.averageRating.toFixed(1) }}</span>
+              <div class="flex gap-0.5">
+                <Star 
+                  v-for="star in 5" 
+                  :key="star" 
+                  class="w-3.5 h-3.5"
+                  :class="star <= Math.round(feedbackStats.averageRating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'"
+                />
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="text-gray-500">Distribution:</span>
+              <div v-for="rating in [5,4,3,2,1]" :key="rating" class="flex items-center gap-1">
+                <span class="text-xs text-gray-500">{{ rating }}★</span>
+                <div class="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    class="h-full bg-yellow-400 rounded-full"
+                    :style="{ width: getPercentage(rating) + '%' }"
+                  ></div>
+                </div>
+                <span class="text-xs text-gray-400">{{ feedbackStats.distribution?.[rating] || 0 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Not Found -->
       <div v-else class="text-center py-16">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mx-auto text-gray-300 mb-4">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
+        <Package class="w-16 h-16 mx-auto text-gray-300 mb-4" />
         <p class="text-gray-500">Product not found</p>
         <button @click="router.push('/customer/dashboard')" class="mt-4 text-blue-600 hover:underline">Return to Shop</button>
       </div>
@@ -161,7 +311,9 @@
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
-        <div v-if="toast.show" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm">
+        <div v-if="toast.show" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-xl shadow-lg text-sm flex items-center gap-2">
+          <CheckCircle v-if="toast.type === 'success'" class="w-4 h-4 text-green-400" />
+          <AlertCircle v-else class="w-4 h-4 text-red-400" />
           {{ toast.message }}
         </div>
       </transition>
@@ -172,34 +324,62 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { productsApi } from '@/api'
+import { productsApi, feedBackApi } from '@/api'
+import { 
+  ArrowLeft, 
+  ShoppingCart, 
+  Minus, 
+  Plus, 
+  Star, 
+  MessageSquare, 
+  ThumbsUp, 
+  ThumbsDown, 
+  CheckCircle, 
+  AlertCircle,
+  Loader2,
+  Package
+} from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
+// ─── Product State ──────────────────────────────────────────────────────
 const product = ref(null)
 const selectedSize = ref(null)
 const quantity = ref(500)
 const loading = ref(true)
-const toast = ref({ show: false, message: '' })
+const toast = ref({ show: false, message: '', type: 'success' })
 
-// Computed image URL with proper handling
+// ─── Feedback State ──────────────────────────────────────────────────────
+const feedbacks = ref([])
+const feedbackStats = ref({
+  totalReviews: 0,
+  averageRating: 0,
+  distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+})
+const feedbackLoading = ref(false)
+const feedbackLoadingMore = ref(false)
+const feedbackPagination = ref({
+  page: 1,
+  limit: 5,
+  hasMore: true,
+  total: 0
+})
+
+// Computed image URL
 const productImageUrl = computed(() => {
   if (!product.value?.image) return `${API_BASE_URL}/uploads/products/default-product.jpg`
   
   const imagePath = product.value.image
   
-  // If it's already a full URL
   if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
     return imagePath
   }
   
-  // Remove leading slashes
   let cleanPath = imagePath.replace(/^\/+/, '')
   
-  // Handle different path formats
   if (cleanPath.startsWith('uploads/')) {
     return `${API_BASE_URL}/${cleanPath}`
   }
@@ -207,12 +387,11 @@ const productImageUrl = computed(() => {
     return `${API_BASE_URL}/uploads/${cleanPath}`
   }
   
-  // Default: assume it's a filename in products folder
   return `${API_BASE_URL}/uploads/products/${cleanPath}`
 })
 
-function showToast(message) {
-  toast.value = { show: true, message }
+function showToast(message, type = 'success') {
+  toast.value = { show: true, message, type }
   setTimeout(() => { toast.value.show = false }, 2500)
 }
 
@@ -269,27 +448,19 @@ function validateQuantity() {
 }
 
 function addToCart() {
+  // ... existing addToCart logic ...
   if (!selectedSize.value) {
-    showToast('Please select a size')
+    showToast('Please select a size', 'error')
     return
   }
   
   if (selectedSize.value.stock === 0) {
-    showToast('This size is out of stock')
+    showToast('This size is out of stock', 'error')
     return
   }
   
   const cart = JSON.parse(localStorage.getItem('customerCart') || '[]')
   
-  // Log what we're saving
-  console.log('Adding to cart:', {
-    productId: product.value.id,
-    name: product.value.name,
-    size: selectedSize.value.name,
-    quantity: quantity.value
-  })
-  
-  // Calculate the price with bulk discount
   let unitPrice = selectedSize.value.price
   const qty = quantity.value
   
@@ -314,7 +485,7 @@ function addToCart() {
     name: product.value.name,
     image: product.value.image,
     category: product.value.category,
-    size: selectedSize.value.name,  // This is the key field
+    size: selectedSize.value.name,
     quantity: quantity.value,
     printPlacement: '',
     printSize: '',
@@ -332,32 +503,23 @@ function addToCart() {
   }
   
   localStorage.setItem('customerCart', JSON.stringify(cart))
-  
-  // Verify saved cart
-  const savedCart = JSON.parse(localStorage.getItem('customerCart') || '[]')
-  console.log('Cart after save:', savedCart)
-  
-  showToast(`${product.value.name} (${selectedSize.value.name}) added to cart!`)
+  showToast(`${product.value.name} (${selectedSize.value.name}) added to cart!`, 'success')
 }
 
 function orderNow() {
+  // ... existing orderNow logic ...
   const token = localStorage.getItem('customerToken')
   if (!token) {
-    showToast('Please login to place an order')
+    showToast('Please login to place an order', 'error')
     setTimeout(() => router.push('/customer/login'), 1500)
     return
   }
   
   if (!selectedSize.value) {
-    showToast('Please select a size')
+    showToast('Please select a size', 'error')
     return
   }
   
-  // ✅ Debug log
-  console.log('📦 Order Now - Selected Size:', selectedSize.value)
-  console.log('📦 Order Now - Quantity:', quantity.value)
-  
-  // ✅ Pass ALL product details
   router.push({
     path: '/customer/orders/create',
     query: {
@@ -368,7 +530,7 @@ function orderNow() {
       productImage: product.value.image || '',
       productCategory: product.value.category || '',
       minOrder: product.value.minOrder || 500,
-      size: selectedSize.value.name || selectedSize.value, // ✅ Ensure size is passed
+      size: selectedSize.value.name || selectedSize.value,
       sizePrice: selectedSize.value.price || '',
       sizeStock: selectedSize.value.stock || '',
       quantity: quantity.value,
@@ -384,6 +546,102 @@ function orderNow() {
     }
   })
 }
+
+// ─── FEEDBACK FUNCTIONS ──────────────────────────────────────────────
+
+async function loadProductFeedbacks(productId, page = 1, limit = 5) {
+  if (!productId) return
+  
+  try {
+    const response = await feedBackApi.getProductFeedback(productId, limit, page)
+    
+    if (response.success && response.data) {
+      if (page === 1) {
+        feedbacks.value = response.data
+      } else {
+        feedbacks.value = [...feedbacks.value, ...response.data]
+      }
+      
+      feedbackPagination.value = {
+        page: page,
+        limit: limit,
+        hasMore: response.pagination ? page < response.pagination.pages : false,
+        total: response.pagination?.total || 0
+      }
+    }
+  } catch (error) {
+    console.error('Error loading product feedbacks:', error)
+  }
+}
+
+async function loadFeedbackStats(productId) {
+  if (!productId) return
+  
+  try {
+    const response = await feedBackApi.getProductFeedbackStats(productId)
+    
+    if (response.success && response.data) {
+      feedbackStats.value = {
+        totalReviews: response.data.totalReviews || 0,
+        averageRating: response.data.averageRating || 0,
+        distribution: response.data.distribution || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+      }
+    }
+  } catch (error) {
+    console.error('Error loading feedback stats:', error)
+  }
+}
+
+async function loadMoreFeedbacks() {
+  if (feedbackLoadingMore.value || !feedbackPagination.value.hasMore) return
+  
+  feedbackLoadingMore.value = true
+  const nextPage = feedbackPagination.value.page + 1
+  
+  await loadProductFeedbacks(product.value.id, nextPage, feedbackPagination.value.limit)
+  feedbackLoadingMore.value = false
+}
+
+async function markHelpful(feedbackId) {
+  try {
+    const response = await feedBackApi.markHelpful(feedbackId)
+    
+    if (response.success) {
+      // Update local feedback count
+      const feedback = feedbacks.value.find(f => (f.feedbackId || f._id) === feedbackId)
+      if (feedback) {
+        feedback.helpfulCount = (feedback.helpfulCount || 0) + 1
+      }
+      showToast('Thanks for your feedback!', 'success')
+    }
+  } catch (error) {
+    console.error('Error marking helpful:', error)
+  }
+}
+
+function getPercentage(rating) {
+  const total = feedbackStats.value.totalReviews || 0
+  if (total === 0) return 0
+  const count = feedbackStats.value.distribution?.[rating] || 0
+  return Math.round((count / total) * 100)
+}
+
+function formatDate(dateValue) {
+  if (!dateValue) return ''
+  try {
+    const date = new Date(dateValue)
+    if (isNaN(date.getTime())) return ''
+    return date.toLocaleDateString('en-PH', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  } catch {
+    return ''
+  }
+}
+
+// ─── LIFECYCLE ─────────────────────────────────────────────────────────
 
 onMounted(async () => {
   const productId = route.params.id
@@ -403,13 +661,21 @@ onMounted(async () => {
         // Select first size with stock, or first size overall
         selectedSize.value = product.value.sizes?.find(s => s.stock > 0) || product.value.sizes?.[0]
         quantity.value = product.value.minOrder || 500
+        
+        // ✅ Load feedbacks
+        feedbackLoading.value = true
+        await Promise.all([
+          loadProductFeedbacks(product.value.id, 1, 5),
+          loadFeedbackStats(product.value.id)
+        ])
+        feedbackLoading.value = false
       } else {
         console.error('Failed to load product:', response.message)
-        showToast('Failed to load product details')
+        showToast('Failed to load product details', 'error')
       }
     } catch (error) {
       console.error('Error loading product:', error)
-      showToast('Error loading product details')
+      showToast('Error loading product details', 'error')
     } finally {
       loading.value = false
     }

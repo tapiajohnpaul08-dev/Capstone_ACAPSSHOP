@@ -42,7 +42,6 @@
             {{ getStepBadge(i) }}
           </span>
           {{ step.label }}
-          <!-- Show validation status on step buttons -->
           <span v-if="i < currentStep" class="text-green-500">
             <CheckCircle class="w-3 h-3" />
           </span>
@@ -68,7 +67,6 @@
             @product-changed="onProductChanged"
           />
           
-          <!-- Step Validation Status -->
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -94,13 +92,12 @@
         <!-- STEP 1: DESIGN MODE SELECTION -->
         <div v-if="currentStep === 1">
           <DesignModeSelector
-  v-model="designMode"
-  :item-count="orderProducts.length"
-  :has-design-required="false"
-  :is-own-cups="isOwnCups"
-/>
+            v-model="designMode"
+            :item-count="orderProducts.length"
+            :has-design-required="false"
+            :is-own-cups="isOwnCups"
+          />
 
-          <!-- Design Upload -->
           <div v-if="designMode !== 'no-design'" class="mt-4">
             <div v-if="designMode === 'shared'">
               <DesignManager
@@ -114,7 +111,7 @@
 
             <div v-else class="space-y-4">
               <div v-for="(item, idx) in orderProducts" :key="idx" class="bg-white rounded-xl border overflow-hidden">
-                <div v-if="item.image"  class="px-6 py-4 border-b bg-gray-50">
+                <div v-if="item.image" class="px-6 py-4 border-b bg-gray-50">
                   <div class="flex items-center gap-3">
                     <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg" @error="handleImageError" />
                     <div>
@@ -148,7 +145,6 @@
             </div>
           </div>
 
-          <!-- Navigation -->
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -214,12 +210,12 @@
         <!-- STEP 3: CUSTOMER & DELIVERY -->
         <div v-if="getStepKey(currentStep) === 'info'" class="space-y-5">
           <CustomerInfoCard v-model="customerInfo" :errors="errors.customer" />
-<FulfillmentCard 
-  v-model="fulfillment" 
-  :customer-address="customerInfo.address" 
-  :errors="errors.fulfillment"
-  :is-own-cups="isOwnCups"
-/>          
+          <FulfillmentCard 
+            v-model="fulfillment" 
+            :customer-address="customerInfo.address" 
+            :errors="errors.fulfillment"
+            :is-own-cups="isOwnCups"
+          />          
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -318,7 +314,9 @@
 
             <div class="border-t pt-4">
               <h5 class="font-semibold text-sm text-gray-700 mb-3">Items</h5>
-              <div class="space-y-2">
+              
+              <!-- Company Products -->
+              <div v-if="orderType === 'company-product'" class="space-y-2">
                 <div
                   v-for="(item, idx) in orderProducts"
                   :key="idx"
@@ -331,11 +329,57 @@
                   <span class="text-blue-600">₱{{ calculateItemTotal(item).toLocaleString() }}</span>
                 </div>
               </div>
+              
+              <!-- Own Cups -->
+              <div v-else-if="orderType === 'own-cups'" class="space-y-2">
+                <div
+                  v-for="(item, idx) in orderProducts"
+                  :key="idx"
+                  class="flex justify-between text-sm bg-gray-50 p-3 rounded-lg"
+                >
+                  <div>
+                    <span class="font-medium">{{ item.productType || 'Customer Provided Items' }}</span>
+                    <span class="text-gray-500 ml-2">{{ item.sizes || 'Custom' }} · {{ item.quantity || 500 }} pcs</span>
+                  </div>
+                  <span class="text-blue-600">₱0.00</span>
+                </div>
+                <p class="text-xs text-gray-400 mt-1">
+                  * Items provided by customer - no product cost
+                </p>
+              </div>
+              
+              <div v-else class="text-sm text-gray-500">
+                No items to display.
+              </div>
             </div>
 
-            <div class="border-t pt-4 flex justify-between items-center">
-              <span class="font-bold text-lg">Total</span>
-              <span class="text-2xl font-bold text-blue-600">₱{{ totalAmount.toLocaleString() }}</span>
+            <!-- Fee Breakdown -->
+            <div class="border-t pt-4 space-y-2 text-sm">
+              <!-- Own Cups: Show as "Printing Service Fee" -->
+              <div v-if="isOwnCups" class="flex justify-between">
+                <span class="text-gray-500">Printing Service Fee</span>
+                <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
+              </div>
+              
+              <!-- Company Products with Design: Show as "Design Fee" -->
+              <div v-else-if="hasDesign" class="flex justify-between">
+                <span class="text-gray-500">Design Fee</span>
+                <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
+              </div>
+              
+              <!-- Total -->
+              <div class="flex justify-between border-t pt-2" :class="{ 'mt-2': isOwnCups || hasDesign }">
+                <span class="font-bold">Estimated Total</span>
+                <span class="text-xl font-bold text-blue-600">₱{{ totalAmount.toLocaleString() }}</span>
+              </div>
+              
+              <!-- Notes -->
+              <p v-if="isOwnCups" class="text-xs text-gray-400 mt-1">
+                * ₱500 printing service fee for custom printing on your items
+              </p>
+              <p v-else-if="hasDesign" class="text-xs text-gray-400 mt-1">
+                * ₱500 design fee for custom artwork
+              </p>
             </div>
 
             <div v-if="validationHints.length > 0" class="space-y-1.5">
@@ -354,7 +398,6 @@
             <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
               ← Back
             </button>
-            
           </div>
         </div>
       </div>
@@ -375,7 +418,6 @@
           :validation-hints="validationHints"
           @submit="handleSubmit"
           :has-design="hasDesign"
-
         />
       </div>
     </div>
@@ -427,7 +469,6 @@ import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
 
 import { ShoppingCart, Package } from 'lucide-vue-next'
 
-
 const route = useRoute()
 const router = useRouter()
 const { loadCart } = useCart()
@@ -451,7 +492,6 @@ const sharedDesign = ref({
 })
 const itemVariantSettings = ref([])
 const placementSettings = ref([])
-// Fixed note applied automatically when the customer chooses 'no-design' (plain product, as is)
 const NO_DESIGN_FIXED_NOTE = 'No design - plain product, as is.'
 const customerInfo = ref({ 
   name: '', 
@@ -465,6 +505,11 @@ const customerInfo = ref({
 const fulfillment = ref({ method: 'delivery', deliveryAddress: '', sameAsCustomer: false })
 const paymentMethod = ref({ method: 'cod', bankName: '', referenceNumber: '', paymentStatus: 'pending' })
 const errors = ref({ customer: {}, fulfillment: {} })
+
+// ─── PRICE CALCULATION CONSTANTS ──────────────────────────────────────────
+const FEES = {
+  DESIGN_AND_PRINTING_SERVICE_FEE: 500  // ✅ One combined fee
+}
 
 // ─── DESIGN MODE ───────────────────────────────────────────────────────────
 const designMode = ref('individual')
@@ -487,17 +532,14 @@ const activeSteps = computed(() => {
 })
 
 const hasDesign = computed(() => {
-  // Check if design mode is not 'no-design'
   if (designMode.value === 'no-design') return false
   
-  // Check shared design
   if (designMode.value === 'shared') {
     const design = sharedDesign.value
     return !!(design.designSource === 'upload' && design.files?.length > 0) ||
            !!(design.designSource === 'saved' && design.selectedTemplateId)
   }
   
-  // Check individual designs
   if (designMode.value === 'individual') {
     for (const design of itemDesigns.value) {
       if (design.designSource === 'upload' && design.files?.length > 0) {
@@ -542,24 +584,26 @@ const orderSizes = computed(() =>
   orderProducts.value.map(p => p.size).join(', ')
 )
 
-const totalAmount = computed(() => {
-  let total = 0
-  for (const product of orderProducts.value) {
-    total += calculateItemTotal(product)
+function calculateBaseProductPrice(item) {
+  // Own cups - no product cost (customer provides their own items)
+  if (isOwnCups.value) {
+    return 0
   }
-  return total
-})
-
-function calculateItemTotal(item) {
-  if (item.estimatedTotal) return item.estimatedTotal
+  
+  if (item.estimatedTotal) {
+    return item.estimatedTotal
+  }
+  
   if (item.unitPrice && item.quantity) {
     return item.unitPrice * item.quantity
   }
+  
   if (item.sizes && item.size) {
     const size = item.sizes.find(s => s.name === item.size)
     if (size) {
       let unitPrice = size.price
-      const qty = item.quantity
+      const qty = item.quantity || 0
+      
       if (qty >= 5000 && size.bulkPrices?.[5000]) {
         unitPrice = size.bulkPrices[5000] / 5000
       } else if (qty >= 2000 && size.bulkPrices?.[2000]) {
@@ -569,11 +613,35 @@ function calculateItemTotal(item) {
       } else if (qty >= 500 && size.bulkPrices?.[500]) {
         unitPrice = size.bulkPrices[500] / 500
       }
+      
       return unitPrice * qty
     }
   }
+  
   return 0
 }
+
+function calculateItemTotal(item) {
+  return calculateBaseProductPrice(item)
+}
+
+const totalAmount = computed(() => {
+  let total = 0
+  
+  for (const product of orderProducts.value) {
+    total += calculateBaseProductPrice(product)
+  }
+  
+  // ✅ One combined fee: ₱500 charged when:
+  // - Own cups order (printing service)
+  // - OR design exists (design fee)
+  // - OR both (still just ₱500, not ₱1000)
+  if (isOwnCups.value || hasDesign.value) {
+    total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
+  }
+  
+  return total
+})
 
 // ─── VALIDATION ────────────────────────────────────────────────────────────
 const step0Errors = computed(() => {
@@ -602,7 +670,6 @@ const step1Errors = computed(() => {
   const errorsList = []
   
   if (designMode.value === 'no-design') {
-    // No design mode - plain product as is, nothing to validate
     return errorsList
   }
   
@@ -618,7 +685,6 @@ const step1Errors = computed(() => {
       }
     }
   } else {
-    // Individual mode
     for (let i = 0; i < orderProducts.value.length; i++) {
       const design = itemDesigns.value[i]
       const productName = orderProducts.value[i]?.name
@@ -830,10 +896,9 @@ async function handleSubmit() {
 
   try {
     const itemsArray = []
-    let totalAmount = 0
+    let productTotal = 0
     
     if (designMode.value === 'no-design') {
-      // No design mode - just use design notes
       for (let i = 0; i < orderProducts.value.length; i++) {
         const product = orderProducts.value[i]
         const item = buildItemPayload(product, {
@@ -847,16 +912,13 @@ async function handleSubmit() {
           files: []
         })
         itemsArray.push(item)
-        totalAmount += calculateItemTotal(product)
+        productTotal += calculateItemTotal(product)
       }
     } else if (designMode.value === 'shared') {
-      // Shared design mode - one design for all items
       const designImage = getDesignImage(sharedDesign.value)
       
       for (let i = 0; i < orderProducts.value.length; i++) {
         const product = orderProducts.value[i]
-        // For single item in shared mode, use shared design placement
-        // For multiple items, use placementSettings
         const settings = orderProducts.value.length > 1 
           ? (placementSettings.value[i] || itemVariantSettings.value[i] || {})
           : sharedDesign.value
@@ -873,10 +935,9 @@ async function handleSubmit() {
         })
         
         itemsArray.push(item)
-        totalAmount += calculateItemTotal(product)
+        productTotal += calculateItemTotal(product)
       }
     } else {
-      // Individual design mode - each item has its own design (with placement)
       for (let i = 0; i < orderProducts.value.length; i++) {
         const product = orderProducts.value[i]
         const design = itemDesigns.value[i] || {}
@@ -894,11 +955,11 @@ async function handleSubmit() {
         })
         
         itemsArray.push(item)
-        totalAmount += calculateItemTotal(product)
+        productTotal += calculateItemTotal(product)
       }
     }
 
-    // Calculate prices for each item
+    // Calculate prices for each item from the backend
     for (const item of itemsArray) {
       if (item.productId) {
         try {
@@ -910,6 +971,16 @@ async function handleSubmit() {
           console.error('Error calculating price:', error)
         }
       }
+    }
+
+    // ✅ Calculate final total with combined fee
+    let finalAmount = productTotal || itemsArray.reduce((sum, i) => sum + (i.estimatedTotal || 0), 0)
+    
+    // ✅ Add combined design & printing service fee (₱500) if:
+    // - Own cups order (printing service)
+    // - OR design exists (design fee)
+    if (isOwnCups.value || hasDesign.value) {
+      finalAmount += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
     }
 
     const orderData = {
@@ -924,7 +995,7 @@ async function handleSubmit() {
         referenceNumber: paymentMethod.value.referenceNumber
       } : null,
       isProvided: isOwnCups.value,
-      amount: totalAmount || itemsArray.reduce((sum, i) => sum + (i.estimatedTotal || 0), 0),
+      amount: finalAmount,
       customerName: customerInfo.value.name,
       customerEmail: customerInfo.value.email,
       customerPhone: customerInfo.value.phone,
@@ -963,21 +1034,15 @@ async function handleSubmit() {
   }
 }
 
-// In CreateOrderPage.vue - Fix the buildItemPayload function
-
 function buildItemPayload(product, design) {
-  // Get the design image URL from the uploaded files
   let designImage = ''
   let designFiles = []
   
   if (design.designSource === 'upload') {
-    // Check if we have uploaded files with Cloudinary URLs
     if (design.files && design.files.length > 0) {
-      // The files should now have path/url from Cloudinary
       const firstFile = design.files[0]
       designImage = firstFile.path || firstFile.url || ''
       
-      // Store all files with their Cloudinary URLs
       designFiles = design.files.map(f => ({
         name: f.name || '',
         size: f.size || 0,
@@ -1049,11 +1114,9 @@ function generateOrderNotes() {
 }
 
 // ─── WATCHERS ─────────────────────────────────────────────────────────────
-// Auto-detect design mode based on item count
 watch(orderProducts, (newProducts) => {
   if (newProducts.length === 0) return
   
-  // If only one item, default to individual mode with placement shown
   if (newProducts.length === 1) {
     if (designMode.value === 'shared') {
       designMode.value = 'individual'
@@ -1061,8 +1124,6 @@ watch(orderProducts, (newProducts) => {
   }
 }, { immediate: true })
 
-
-// ✅ Helper to parse product data from query params
 function parseProductDataFromQuery() {
   const productId = route.query.productId
   const productName = route.query.productName
@@ -1072,7 +1133,6 @@ function parseProductDataFromQuery() {
   const size = route.query.size
   const quantity = parseInt(route.query.quantity) || minOrder
   
-  // Parse product data if available
   let productData = null
   if (route.query.productData) {
     try {
@@ -1087,11 +1147,8 @@ function parseProductDataFromQuery() {
 
 // ─── LIFECYCLE ────────────────────────────────────────────────────────────
 onMounted(async () => {
-
-  // ✅ Check if coming from product detail page with params
   const { productId, productName, productImage, productCategory, minOrder, size, quantity, productData } = parseProductDataFromQuery()
 
-  // Load cart data
   if (isCartOrder.value) {
     const pendingCart = sessionStorage.getItem('pendingCart')
     if (pendingCart) {
@@ -1119,7 +1176,6 @@ onMounted(async () => {
       }
     }
     
-    // Initialize designs
     itemDesigns.value = orderProducts.value.map(() => ({
       designSource: 'upload',
       printSize: '',
@@ -1141,26 +1197,17 @@ onMounted(async () => {
     }))
   }
 
- // ✅ Single product order from Product Detail Page
   if (!isCartOrder.value && orderType.value === 'company-product') {
-    // If we have product data from query params, use it
     if (productId && productData) {
       selectedProductData.value = productData
       
-      // ✅ Use the size from query, fallback to first available
       let defaultSize = size
-      
-      // If size is not provided or invalid, use first available
       if (!defaultSize || !productData.sizes?.find(s => s.name === defaultSize)) {
         defaultSize = productData.sizes?.[0]?.name || ''
       }
       
-      // ✅ Set the quantity
       const defaultQuantity = quantity || minOrder || productData.minOrder || 500
       
-      console.log('🔧 Setting default values:', { defaultSize, defaultQuantity })
-      
-      // Find the unit price for the selected size
       const selectedSizeObj = productData.sizes?.find(s => s.name === defaultSize)
       
       orderProducts.value = [{
@@ -1168,17 +1215,15 @@ onMounted(async () => {
         name: productName || productData.name,
         image: productImage || productData.image,
         category: productCategory || productData.category,
-        size: defaultSize, // ✅ Set the size from query
+        size: defaultSize,
         quantity: defaultQuantity,
         minOrder: minOrder || productData.minOrder || 500,
         sizes: productData.sizes || [],
         unitPrice: selectedSizeObj?.price || 0
       }]
       
-      // ✅ Set design mode to individual for single product
       designMode.value = 'individual'
       
-      // Initialize designs
       itemDesigns.value = [{
         designSource: 'upload',
         printSize: '',
@@ -1189,15 +1234,11 @@ onMounted(async () => {
         selectedTemplate: null
       }]
       
-      console.log('✅ Order products set:', orderProducts.value)
-      
     } else if (productId) {
-      // Fallback: fetch product from API
       const response = await productsApi.getProductById(productId)
       if (response.success && response.data) {
         selectedProductData.value = response.data
         
-        // ✅ Use size from query or fallback to first
         let defaultSize = size
         if (!defaultSize || !response.data.sizes?.find(s => s.name === defaultSize)) {
           defaultSize = response.data.sizes?.[0]?.name || ''
@@ -1231,8 +1272,6 @@ onMounted(async () => {
     }
   }
 
-
-  // Own cups
   if (isOwnCups.value) {
     orderProducts.value = [{
       productType: '',
@@ -1258,7 +1297,6 @@ onMounted(async () => {
       printPlacement: '',
       designNotes: ''
     }]
-    // For own cups, default to individual mode since they're bringing their own items and must provide design
     designMode.value = 'individual'
 
     const pendingOwnCups = sessionStorage.getItem('pendingOwnCups')
@@ -1270,7 +1308,6 @@ onMounted(async () => {
     }
   }
 
-  // Load saved customer info
   const saved = localStorage.getItem('defaultCustomerInfo')
   if (saved) {
     const data = JSON.parse(saved)
@@ -1299,4 +1336,4 @@ textarea.field {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
-</style>
+</style>a
