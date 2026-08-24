@@ -5,7 +5,6 @@ import MainLayout from '@/views/MainLayout.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-
     {
       path: '/oauth/callback',
       name: 'OAuthCallback',
@@ -19,11 +18,12 @@ const router = createRouter({
       component: () => import('@/views/LoginForm.vue'),
       meta: { requiresAuth: false },
     },
-            {
-  path: '/customer/forgot-password',
-  name: 'ForgotPassword',
-  component: () => import('@/pages/ForgotPasswordPage.vue'),
-},
+    {
+      path: '/customer/forgot-password',
+      name: 'ForgotPassword',
+      component: () => import('@/pages/ForgotPasswordPage.vue'),
+    },
+
     {
       path: '/customer/signup',
       name: 'SignUp',
@@ -34,6 +34,12 @@ const router = createRouter({
       path: '/customer/verify-otp',
       name: 'OtpVerify',
       component: () => import('@/views/OtpVerifyView.vue'),
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/customer/policies',
+      name: 'Policies',
+      component: () => import('@/pages/PoliciesPage.vue'),
       meta: { requiresAuth: false },
     },
     // All authenticated routes - inside MainLayout (with navigation bar)
@@ -138,7 +144,7 @@ const router = createRouter({
         },
       ],
     },
-    
+
     {
       path: '/',
       redirect: '/customer/login',
@@ -154,7 +160,7 @@ const router = createRouter({
 // Helper function to check if token is expired
 function isTokenExpired(token) {
   if (!token) return true
-  
+
   try {
     const parts = token.split('.')
     if (parts.length !== 3) return true
@@ -173,18 +179,18 @@ function isAuthenticated(to) {
   // ✅ FIRST: Check for token in URL parameters (for OAuth callback)
   const urlParams = new URLSearchParams(to.query)
   const urlToken = urlParams.get('token')
-  
+
   if (urlToken && !isTokenExpired(urlToken)) {
     console.log('✅ Valid token found in URL parameters')
     return true
   }
-  
+
   // ✅ SECOND: Check for token in localStorage
   const token = localStorage.getItem('customerToken')
   if (token && !isTokenExpired(token)) {
     return true
   }
-  
+
   // Check legacy currentUser
   const currentUser = localStorage.getItem('currentUser')
   if (currentUser) {
@@ -197,7 +203,7 @@ function isAuthenticated(to) {
       return false
     }
   }
-  
+
   return false
 }
 
@@ -205,32 +211,38 @@ function isAuthenticated(to) {
 router.beforeEach((to, from) => {
   console.log('📍 Navigating to:', to.path)
   console.log('🔑 Query params:', to.query)
-  
+
   const authenticated = isAuthenticated(to)
-  
+
   // If route requires authentication and user is not authenticated, redirect to login
   if (to.meta.requiresAuth && !authenticated) {
     console.log('❌ Not authenticated, redirecting to login')
-    
+
     // Clear any invalid auth data
     localStorage.removeItem('customerToken')
     localStorage.removeItem('currentUser')
     localStorage.removeItem('user')
-    
+
     // Store the intended destination for redirect after login
     if (to.path !== '/customer/login') {
       sessionStorage.setItem('redirectAfterLogin', to.fullPath)
     }
-    
+
     return '/customer/login'
   }
-  
+
   // If user is authenticated and tries to access login/signup pages, redirect to dashboard
-  if ((to.path === '/customer/login' || to.path === '/customer/signup' || to.path === '/customer/verify-otp' || to.path === '/') && authenticated) {
+  if (
+    (to.path === '/customer/login' ||
+      to.path === '/customer/signup' ||
+      to.path === '/customer/verify-otp' ||
+      to.path === '/') &&
+    authenticated
+  ) {
     console.log('✅ Already authenticated, redirecting to dashboard')
     return '/customer/dashboard'
   }
-  
+
   return true
 })
 
@@ -245,7 +257,7 @@ export function setupAuthInterceptor(axiosInstance) {
         router.push('/customer/login')
       }
       return Promise.reject(error)
-    }
+    },
   )
 }
 
