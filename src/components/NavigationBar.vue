@@ -1,20 +1,22 @@
+<!-- components/NavigationBar.vue -->
 <template>
   <nav class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
     <div class="container mx-auto px-4">
+      <!-- ✅ Always show the navbar, but conditionally show content -->
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
-        <router-link to="/customer/dashboard" class="flex items-center gap-2 group">
-          <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm transition-all group-hover:shadow-md">
-            <span class="text-white font-black text-sm">A</span>
-          </div>
+        <router-link :to="isAuthenticated ? '/customer/dashboard' : '/'" class="flex items-center group">
+          <div class="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center">
+            <img src="../assets/images/ACAPS_LOGO_ONLY.png" alt="">
+            </div>
           <div>
             <h1 class="text-lg font-black text-gray-900 tracking-tight">ACAPSHOP</h1>
-            <p class="text-xs text-gray-400 -mt-0.5">Customer Portal</p>
+            <p class="text-xs text-gray-400 -mt-0.5">We Are Committed to You</p>
           </div>
         </router-link>
 
-        <!-- Desktop Navigation -->
-        <div class="hidden md:flex items-center gap-1">
+        <!-- ✅ Desktop Navigation - Show only when authenticated -->
+        <div v-if="isAuthenticated" class="hidden md:flex items-center gap-1">
           <router-link
             to="/customer/dashboard"
             class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all"
@@ -68,21 +70,10 @@
 
         <!-- Right Side -->
         <div class="flex items-center gap-2">
-          <!-- <button
-            @click="$emit('bell-click')"
-            class="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10.268 21a2 2 0 0 0 3.464 0"/>
-              <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/>
-            </svg>
-            <span v-if="notifCount > 0" class="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs bg-red-500 text-white rounded-full">
-              {{ notifCount > 99 ? '99+' : notifCount }}
-            </span>
-          </button> -->
+          
 
-          <!-- User Menu -->
-          <div class="relative" ref="userMenuRef">
+          <!-- ✅ Show User Menu if authenticated, otherwise show Login/Sign Up -->
+          <div v-if="isAuthenticated" class="relative" ref="userMenuRef">
             <button
               @click="toggleUserMenu"
               class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -118,6 +109,16 @@
             </div>
           </div>
 
+          <!-- ✅ Show Login/Sign Up buttons for public users -->
+          <template v-else>
+            <router-link to="/customer/login" class="px-4 py-2 text-blue-600 hover:text-blue-700 font-semibold text-sm transition-colors">
+              Log In
+            </router-link>
+            <router-link to="/customer/signup" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold text-sm shadow-sm">
+              Sign Up
+            </router-link>
+          </template>
+
           <!-- Mobile Menu Button -->
           <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 hover:bg-gray-100 rounded-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -131,42 +132,59 @@
     <!-- Mobile Menu -->
     <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 bg-white">
       <div class="container mx-auto px-4 py-2 space-y-1">
-        <router-link to="/customer/dashboard" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/dashboard') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        <!-- Public mobile links -->
+        <router-link to="/" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           <span>Home</span>
         </router-link>
-        <router-link to="/customer/orders" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/orders') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
-          <span>My Orders</span>
+        <router-link to="/catalog" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          <span>Catalog</span>
         </router-link>
-        <router-link to="/customer/messages" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/messages') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <span>Messages</span>
-          <span v-if="unreadCount > 0" class="ml-auto min-w-[20px] h-5 flex items-center justify-center text-xs font-semibold rounded-full bg-red-500 text-white">
-            {{ unreadCount > 99 ? '99+' : unreadCount }}
-          </span>
-        </router-link>
-        <router-link to="/customer/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all" :class="isActive('/customer/profile') ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Profile</span>
-        </router-link>
+
+        <!-- Auth links for mobile -->
+        <template v-if="!isAuthenticated">
+          <router-link to="/customer/login" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-blue-600 hover:bg-blue-50" @click="mobileMenuOpen = false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span>Log In</span>
+          </router-link>
+          <router-link to="/customer/signup" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all bg-blue-600 text-white hover:bg-blue-700" @click="mobileMenuOpen = false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            <span>Sign Up</span>
+          </router-link>
+        </template>
+
+        <!-- Protected mobile links (only when authenticated) -->
+        <template v-if="isAuthenticated">
+          <router-link to="/customer/orders" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
+            <span>My Orders</span>
+          </router-link>
+          <router-link to="/customer/messages" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <span>Messages</span>
+          </router-link>
+          <router-link to="/customer/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Profile</span>
+          </router-link>
+        </template>
       </div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 
 const props = defineProps({
   notifCount: { type: Number, default: 0 },
-  cartCount: { type: Number, default: 0 },
   unreadCount: { type: Number, default: 0 }
 })
 
-defineEmits(['bell-click'])
+const emit = defineEmits(['bell-click'])
 
 const route = useRoute()
 const router = useRouter()
@@ -175,6 +193,23 @@ const { userName, userEmail, userInitial, logout: authLogout } = useAuth()
 const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
 const userMenuRef = ref(null)
+
+// ✅ Check if user is authenticated (token exists and not expired)
+const isAuthenticated = computed(() => {
+  const token = localStorage.getItem('customerToken')
+  if (!token) return false
+  
+  try {
+    const parts = token.split('.')
+    if (parts.length !== 3) return false
+    const payload = JSON.parse(atob(parts[1]))
+    if (!payload.exp) return true
+    const currentTime = Math.floor(Date.now() / 1000)
+    return payload.exp > currentTime
+  } catch {
+    return false
+  }
+})
 
 function isActive(path) {
   return route.path === path
@@ -190,6 +225,7 @@ function logout() {
   showUserMenu.value = false
   mobileMenuOpen.value = false
 }
+
 
 function handleClickOutside(event) {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {

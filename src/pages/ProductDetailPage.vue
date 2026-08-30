@@ -114,7 +114,7 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex gap-3">
+            <div v-if="checkToken()" class="flex gap-3">
               <button
                 @click="addToCart"
                 :disabled="!selectedSize || selectedSize.stock < product.minOrder"
@@ -130,6 +130,23 @@
               >
                 Order Now
               </button>
+            </div>
+
+            <div v-else class="flex flex-col gap-3">
+              <!-- Add to Cart Button -->
+            <button 
+              @click="addToCart"
+              class="w-full mt-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="!selectedSize || selectedSize.stock < product.minOrder"
+            >
+              Add to Cart
+            </button>
+
+            <!-- Login prompt -->
+            <p class="text-xs text-gray-400 text-center mt-2">
+              Need an account? <router-link to="/customer/signup" class="text-blue-600 hover:underline">Sign up</router-link> or 
+              <router-link to="/customer/login" class="text-blue-600 hover:underline">log in</router-link>
+            </p>
             </div>
 
             <!-- Product Description -->
@@ -368,6 +385,9 @@ const feedbackPagination = ref({
   total: 0
 })
 
+
+
+
 // Computed image URL
 const productImageUrl = computed(() => {
   if (!product.value?.image) return `${API_BASE_URL}/uploads/products/default-product.jpg`
@@ -393,6 +413,16 @@ const productImageUrl = computed(() => {
 function showToast(message, type = 'success') {
   toast.value = { show: true, message, type }
   setTimeout(() => { toast.value.show = false }, 2500)
+}
+
+function checkToken() {
+  const token = localStorage.getItem('customerToken')
+  if (!token) {
+    // showToast('Please login to continue', 'error')
+    // setTimeout(() => router.push('/customer/login'), 1500)
+    return false
+  }
+  return true
 }
 
 function handleImageError(e) {

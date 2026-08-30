@@ -370,7 +370,8 @@ async function addToCart(product) {
 }
 
 function goToProductDetail(product) {
-  router.push(`/customer/product/${product.id}`)
+  router.push(`/product/${product.id}`)
+  console.log('Navigating to product detail for:', product.name)
 }
 
 function removeFromCart(idx) {

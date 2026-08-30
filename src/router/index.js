@@ -1,17 +1,20 @@
 // router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import MainLayout from '@/views/MainLayout.vue'
+import CustomerHomePage from '@/pages/CustomerHomePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // ─── OAUTH ───
     {
       path: '/oauth/callback',
       name: 'OAuthCallback',
       component: () => import('@/views/OAuthCallback.vue'),
       meta: { requiresAuth: false },
     },
-    // Login route - outside MainLayout (no navigation bar)
+
+    // ─── PUBLIC AUTH ROUTES (no layout) ───
     {
       path: '/customer/login',
       name: 'CustomerLogin',
@@ -22,8 +25,8 @@ const router = createRouter({
       path: '/customer/forgot-password',
       name: 'ForgotPassword',
       component: () => import('@/pages/ForgotPasswordPage.vue'),
+      meta: { requiresAuth: false },
     },
-
     {
       path: '/customer/signup',
       name: 'SignUp',
@@ -42,7 +45,30 @@ const router = createRouter({
       component: () => import('@/pages/PoliciesPage.vue'),
       meta: { requiresAuth: false },
     },
-    // All authenticated routes - inside MainLayout (with navigation bar)
+
+    // ─── PUBLIC HOMEPAGE / CATALOG (no login required) ───
+    // These are standalone pages WITHOUT MainLayout
+    {
+      path: '/',
+      name: 'Home',
+      component: CustomerHomePage,
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/catalog',
+      name: 'Catalog',
+      component: CustomerHomePage,
+      meta: { requiresAuth: false },
+    },
+    {
+      path: '/product/:id',
+      name: 'ProductDetail',
+      component: () => import('@/pages/ProductDetailPage.vue'),
+      meta: { requiresAuth: false }, // ✅ PUBLIC - anyone can view
+    },
+
+    // ─── PROTECTED ROUTES (login required) ───
+    // These use MainLayout (with user menu, cart, messages, etc.)
     {
       path: '/customer',
       component: MainLayout,
@@ -55,7 +81,7 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'CustomerDashboard',
-          component: () => import('@/pages/CustomerHomePage.vue'),
+          component: CustomerHomePage,
           meta: { requiresAuth: true },
         },
         {
@@ -74,12 +100,6 @@ const router = createRouter({
           path: 'orders/:id',
           name: 'OrderDetail',
           component: () => import('@/pages/OrderDetailPage.vue'),
-          meta: { requiresAuth: true },
-        },
-        {
-          path: 'catalog',
-          name: 'CustomerCatalog',
-          component: () => import('@/pages/CustomerHomePage.vue'),
           meta: { requiresAuth: true },
         },
         {
@@ -104,12 +124,6 @@ const router = createRouter({
           path: 'designs',
           name: 'DesignTemplates',
           component: () => import('@/pages/DesignTemplatePage.vue'),
-          meta: { requiresAuth: true },
-        },
-        {
-          path: '/customer/product/:id',
-          name: 'ProductDetail',
-          component: () => import('@/pages/ProductDetailPage.vue'),
           meta: { requiresAuth: true },
         },
         {
@@ -145,14 +159,10 @@ const router = createRouter({
       ],
     },
 
-    {
-      path: '/',
-      redirect: '/customer/login',
-    },
-    // Catch all route - redirect to login
+    // Catch all route - redirect to home
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/customer/login',
+      redirect: '/',
     },
   ],
 })
@@ -176,16 +186,16 @@ function isTokenExpired(token) {
 
 // Helper function to check authentication status
 function isAuthenticated(to) {
-  // ✅ FIRST: Check for token in URL parameters (for OAuth callback)
+  // Check for token in URL parameters (for OAuth callback)
   const urlParams = new URLSearchParams(to.query)
   const urlToken = urlParams.get('token')
 
   if (urlToken && !isTokenExpired(urlToken)) {
-    console.log('✅ Valid token found in URL parameters')
+    console.log('Valid token found in URL parameters')
     return true
   }
 
-  // ✅ SECOND: Check for token in localStorage
+  // Check for token in localStorage
   const token = localStorage.getItem('customerToken')
   if (token && !isTokenExpired(token)) {
     return true
@@ -207,16 +217,15 @@ function isAuthenticated(to) {
   return false
 }
 
-// Navigation guard with token validation
+// Navigation guard
 router.beforeEach((to, from) => {
-  console.log('📍 Navigating to:', to.path)
-  console.log('🔑 Query params:', to.query)
+  console.log('Navigating to:', to.path)
 
   const authenticated = isAuthenticated(to)
 
   // If route requires authentication and user is not authenticated, redirect to login
   if (to.meta.requiresAuth && !authenticated) {
-    console.log('❌ Not authenticated, redirecting to login')
+    console.log('Not authenticated, redirecting to login')
 
     // Clear any invalid auth data
     localStorage.removeItem('customerToken')
@@ -224,7 +233,7 @@ router.beforeEach((to, from) => {
     localStorage.removeItem('user')
 
     // Store the intended destination for redirect after login
-    if (to.path !== '/customer/login') {
+    if (to.path !== '/customer/login' && to.path !== '/') {
       sessionStorage.setItem('redirectAfterLogin', to.fullPath)
     }
 
@@ -235,11 +244,10 @@ router.beforeEach((to, from) => {
   if (
     (to.path === '/customer/login' ||
       to.path === '/customer/signup' ||
-      to.path === '/customer/verify-otp' ||
-      to.path === '/') &&
+      to.path === '/customer/verify-otp') &&
     authenticated
   ) {
-    console.log('✅ Already authenticated, redirecting to dashboard')
+    console.log('Already authenticated, redirecting to dashboard')
     return '/customer/dashboard'
   }
 
