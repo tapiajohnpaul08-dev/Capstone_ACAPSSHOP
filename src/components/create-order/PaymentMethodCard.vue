@@ -101,12 +101,6 @@
           </select>
         </div>
 
-        <div>
-          <label class="text-sm font-medium text-gray-700 mb-1 block">Reference Number (Optional)</label>
-          <input v-model="modelValue.referenceNumber" type="text" placeholder="Enter reference number if already paid" class="field" />
-          <p class="text-xs text-gray-400 mt-1">You can upload proof of payment after order submission</p>
-        </div>
-
         <div class="text-xs text-amber-600 bg-amber-50 p-3 rounded-lg">
           <strong>Note:</strong> Orders with bank transfer will be processed after payment confirmation. Our team will contact you within 24 hours.
         </div>
@@ -116,11 +110,42 @@
       <div v-if="modelValue.method === 'cod'" class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
         <strong>Total Amount to Pay:</strong> ₱{{ totalAmount.toLocaleString() }}
       </div>
+
+      <!-- 50% Downpayment QR (shown for every order, regardless of payment method) -->
+      <div class="p-4 rounded-lg border-2 border-blue-200 bg-blue-50/60 space-y-4">
+        <div>
+          <p class="text-sm font-semibold text-gray-900">50% Downpayment Required</p>
+          <p class="text-xs text-gray-500 mt-0.5">Scan the QR code to pay your downpayment. The remaining balance is due on {{ modelValue.method === 'cod' ? 'delivery' : 'production completion' }}.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+          <div class="flex flex-col items-center">
+            <div class="shrink-0 bg-white p-2 rounded-lg border">
+              <img :src="downpaymentQrSrc" alt="Downpayment QR code" class="w-36 h-36 object-contain" @error="handleQrError" />
+            </div>
+            <h2 class="text-lg font-bold text-blue-600 mt-2">JU*****T J* H.</h2>
+            <p class="text-xs text-gray-500">0970 940 6573</p>
+          </div>
+          <div class="flex-1 w-full space-y-3">
+            <div class="text-sm text-gray-700 bg-white rounded-lg border px-3 py-2 flex items-center justify-between">
+              <span class="text-xs text-gray-500">Downpayment amount (50%)</span>
+              <span class="font-bold text-blue-600">₱{{ downpaymentAmount.toLocaleString() }}</span>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-gray-700 mb-1 block">Reference Number</label>
+              <input v-model="modelValue.referenceNumber" type="text" placeholder="Enter GCash/bank reference number after paying" class="field" />
+              <p class="text-xs text-gray-400 mt-1">Your Order will be confirmed once we confirm your payment.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import QRCodeImage from '@/assets/images/QR_CODE.png'
 const props = defineProps({
   modelValue: {
     type: Object,
@@ -136,12 +161,20 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
+
+const downpaymentQrSrc = computed(() => QRCodeImage)
+
+const downpaymentAmount = computed(() => Math.round((props.totalAmount || 0) * 0.5))
+
+function handleQrError(event) {
+  event.target.src = 'https://via.placeholder.com/300x300?text=QR+Code'
+}
+
 function selectMethod(method) {
   emit('update:modelValue', {
     ...props.modelValue,
     method: method,
-    bankName: method === 'cod' ? '' : props.modelValue.bankName,
-    referenceNumber: method === 'cod' ? '' : props.modelValue.referenceNumber
+    bankName: method === 'cod' ? '' : props.modelValue.bankName
   })
 }
 

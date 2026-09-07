@@ -503,10 +503,10 @@ const customerInfo = ref({
   saveAsDefault: false 
 })
 const fulfillment = ref({ method: 'delivery', deliveryAddress: '', sameAsCustomer: false })
-const paymentMethod = ref({ method: 'cod', bankName: '', referenceNumber: '', paymentStatus: 'pending' })
+const paymentMethod = ref({ method: 'cod', bankName: '', referenceNumber: '', paymentStatus: 'Partial' })
 const errors = ref({ customer: {}, fulfillment: {} })
 
-// ─── PRICE CALCULATION CONSTANTS ──────────────────────────────────────────
+// ─── PRICE CALCULATION CONSTANTS ──────────────────────────────────────────l
 const FEES = {
   DESIGN_AND_PRINTING_SERVICE_FEE: 500  // ✅ One combined fee
 }
@@ -990,10 +990,9 @@ async function handleSubmit() {
       postalCode: customerInfo.value.postalCode || '',
       receivingMode: fulfillment.value.method === 'pickup' ? 'Pick-up' : 'Delivery',
       paymentMethod: paymentMethod.value.method,
-      paymentDetails: paymentMethod.value.method === 'bank_transfer' ? {
-        bankName: paymentMethod.value.bankName,
+      paymentDetails: {
         referenceNumber: paymentMethod.value.referenceNumber
-      } : null,
+      },
       isProvided: isOwnCups.value,
       amount: finalAmount,
       customerName: customerInfo.value.name,

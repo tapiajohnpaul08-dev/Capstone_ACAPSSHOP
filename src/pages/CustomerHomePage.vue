@@ -296,6 +296,13 @@ const bannerSlides = [
   { image: DoubleWall }
 ]
 
+// --- How it works steps ---
+const howItWorks = [
+  { number: 1, title: 'Choose a product', description: 'Pick a cup, tumbler, or lighter from our catalog, or provide your own items.' },
+  { number: 2, title: 'Upload your design', description: 'Send us your logo or artwork and tell us where you want it printed.' },
+  { number: 3, title: 'We print & deliver', description: 'We print your order and ship it straight to you.' }
+]
+
 // --- Computed ---
 const cartCount = computed(() => cart.value.length)
 
