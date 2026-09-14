@@ -196,16 +196,13 @@ const userMenuRef = ref(null)
 
 // ✅ Check if user is authenticated (token exists and not expired)
 const isAuthenticated = computed(() => {
-  const token = localStorage.getItem('customerToken')
-  if (!token) return false
-  
+  const currentUser = localStorage.getItem('currentUser')
+  console.log('Current User:', currentUser) // Debugging line
   try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return false
-    const payload = JSON.parse(atob(parts[1]))
-    if (!payload.exp) return true
-    const currentTime = Math.floor(Date.now() / 1000)
-    return payload.exp > currentTime
+    if (!currentUser) return false
+    if (currentUser){
+      return true
+    }
   } catch {
     return false
   }

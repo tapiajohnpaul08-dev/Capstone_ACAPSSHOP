@@ -163,6 +163,12 @@
             <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
           </div>
 
+          <!-- Shipping Fee -->
+          <div v-if="orderType === 'company-product'" class="flex justify-between text-sm">
+            <span class="text-gray-500">Shipping Fee</span>
+            <span class="font-medium text-gray-800">₱{{ shippingFee.toLocaleString() }}</span>
+          </div>
+
           <!-- Payment method sub-detail -->
           <div v-if="paymentMethod === 'bank_transfer' && paymentDetails?.bankName" class="flex justify-between text-sm">
             <span class="text-gray-500">Bank</span>
@@ -189,7 +195,7 @@
       </div>
 
       <p class="text-xs text-gray-400 leading-snug">
-        Final price confirmed after design review and approval.
+        Final price confirmed after review and approval.
       </p>
 
       <div v-if="validationHints.length > 0" class="space-y-1.5">
@@ -233,9 +239,11 @@ import { computed } from 'vue'
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 // ✅ Combined fee constant
-const FEES = {
-  DESIGN_AND_PRINTING_SERVICE_FEE: 500
+let FEES = {
+  DESIGN_AND_PRINTING_SERVICE_FEE: 500,
 }
+
+
 
 const props = defineProps({
   orderType: { type: String, required: true },
@@ -262,7 +270,8 @@ const props = defineProps({
   printSize: { type: String, default: '' },
   printPlacement: { type: String, default: '' },
   specifications: { type: String, default: '' },
-  paymentDetails: { type: Object, default: () => ({}) }
+  paymentDetails: { type: Object, default: () => ({}) },
+  shippingFee: { type: Number, default: 0 }
 })
 
 const emit = defineEmits(['submit'])

@@ -245,8 +245,12 @@
 
         <!-- STEP 4: PAYMENT -->
         <div v-if="getStepKey(currentStep) === 'payment'" class="space-y-5">
-          <PaymentMethodCard v-model="paymentMethod" :total-amount="totalAmount" />
-          
+<PaymentMethodCard 
+  v-model="paymentMethod" 
+  :total-amount="totalAmount"
+  :payable-amount="payableAmount"
+  :shipping-fee="getShippingFee()"
+/>          
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -366,6 +370,11 @@
                 <span class="text-gray-500">Design Fee</span>
                 <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
               </div>
+
+              <div v-if="fulfillment.method === 'delivery'" class="flex justify-between">
+                <span class="text-gray-500">Shipping Fee</span>
+                <span class="font-medium text-gray-800">₱{{ getShippingFee().toLocaleString() }}</span>
+              </div>
               
               <!-- Total -->
               <div class="flex justify-between border-t pt-2" :class="{ 'mt-2': isOwnCups || hasDesign }">
@@ -418,6 +427,7 @@
           :validation-hints="validationHints"
           @submit="handleSubmit"
           :has-design="hasDesign"
+          :shipping-fee="getShippingFee()"
         />
       </div>
     </div>
@@ -498,8 +508,6 @@ const customerInfo = ref({
   company: '', 
   email: '', 
   phone: '', 
-  address: '',
-  postalCode: '',
   saveAsDefault: false 
 })
 const fulfillment = ref({ method: 'delivery', deliveryAddress: '', sameAsCustomer: false })
@@ -508,7 +516,10 @@ const errors = ref({ customer: {}, fulfillment: {} })
 
 // ─── PRICE CALCULATION CONSTANTS ──────────────────────────────────────────l
 const FEES = {
-  DESIGN_AND_PRINTING_SERVICE_FEE: 500  // ✅ One combined fee
+  DESIGN_AND_PRINTING_SERVICE_FEE: 500,  // ✅ One combined fee
+  LUZON_FEE: 500,
+  VISAYAS_FEE: 1000,
+  MINDANAO_FEE: 1500
 }
 
 // ─── DESIGN MODE ───────────────────────────────────────────────────────────
@@ -625,6 +636,44 @@ function calculateItemTotal(item) {
   return calculateBaseProductPrice(item)
 }
 
+// ─── SHIPPING FEE CALCULATION ─────────────────────────────────────────────
+function getShippingFee() {
+  
+  if (fulfillment.value.method !== 'delivery') {
+    return 0
+  }
+  
+  const region = fulfillment.value.deliveryRegion || ''
+  console.log('Calculating shipping fee for region:', region)
+  switch (region) {
+    case 'Luzon':
+      return FEES.LUZON_FEE
+    case 'Visayas':
+      return FEES.VISAYAS_FEE
+    case 'Mindanao':
+      return FEES.MINDANAO_FEE
+    default:
+      return 0
+  }
+}
+
+// Add a new computed property in <script setup> after totalAmount
+const payableAmount = computed(() => {
+  let total = 0
+  
+  for (const product of orderProducts.value) {
+    total += calculateBaseProductPrice(product)
+  }
+  
+  // Add design/printing fee (not shipping)
+  if (isOwnCups.value || hasDesign.value) {
+    total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
+  }
+  
+  // ✅ Shipping fee NOT included
+  return total
+})
+
 const totalAmount = computed(() => {
   let total = 0
   
@@ -632,14 +681,12 @@ const totalAmount = computed(() => {
     total += calculateBaseProductPrice(product)
   }
   
-  // ✅ One combined fee: ₱500 charged when:
-  // - Own cups order (printing service)
-  // - OR design exists (design fee)
-  // - OR both (still just ₱500, not ₱1000)
   if (isOwnCups.value || hasDesign.value) {
     total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
   }
   
+  total += getShippingFee()
+
   return total
 })
 
@@ -722,8 +769,11 @@ const stepPlacementErrors = computed(() => {
   return errorsList
 })
 
+// ─── VALIDATION ────────────────────────────────────────────────────────────
 const stepInfoErrors = computed(() => {
   const errorsList = []
+  
+  // Customer info validation
   if (!customerInfo.value.name?.trim()) errorsList.push('Customer name required')
   if (!customerInfo.value.email?.trim() || !EMAIL_REGEX.test(customerInfo.value.email)) {
     errorsList.push('Valid email required')
@@ -732,10 +782,39 @@ const stepInfoErrors = computed(() => {
   if (!phoneClean || !PHONE_REGEX.test(phoneClean)) {
     errorsList.push('Valid phone required')
   }
-  if (!customerInfo.value.address?.trim()) errorsList.push('Address required')
-  if (fulfillment.value.method === 'delivery' && !fulfillment.value.deliveryAddress?.trim()) {
-    errorsList.push('Delivery address required')
+  
+  // ✅ Check delivery address fields when delivery is selected
+  if (fulfillment.value.method === 'delivery') {
+    if (!fulfillment.value.deliveryStreetAddress?.trim()) {
+      errorsList.push('Street address is required')
+    }
+    if (!fulfillment.value.deliveryBarangay?.trim()) {
+      errorsList.push('Barangay is required')
+    }
+    if (!fulfillment.value.deliveryMunicipality?.trim()) {
+      errorsList.push('Municipality/City is required')
+    }
+    if (!fulfillment.value.deliveryProvince?.trim()) {
+      errorsList.push('Province is required')
+    }
+    if (!fulfillment.value.deliveryPostalCode?.trim()) {
+      errorsList.push('Postal code is required')
+    }
+    if (!fulfillment.value.deliveryRegion?.trim()) {
+      errorsList.push('Region is required')
+    }
   }
+  
+  // ✅ Check own cups delivery date
+  if (isOwnCups.value && !fulfillment.value.ownCupsDeliveryDate) {
+    errorsList.push('Please select a date to bring your items')
+  }
+  
+  // ✅ Check preferred date
+  if (!fulfillment.value.preferredDate) {
+    errorsList.push('Please select a preferred date')
+  }
+  
   return errorsList
 })
 
@@ -983,12 +1062,27 @@ async function handleSubmit() {
       finalAmount += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
     }
 
+    finalAmount += getShippingFee()
+
+      // ✅ Build full address from fulfillment fields
+    const addressParts = [
+      fulfillment.value.deliveryStreetAddress,
+      fulfillment.value.deliveryBarangay,
+      fulfillment.value.deliveryMunicipality,
+      fulfillment.value.deliveryProvince,
+      fulfillment.value.deliveryPostalCode,
+      fulfillment.value.deliveryRegion,
+      fulfillment.value.deliveryCountry || 'Philippines'
+    ].filter(Boolean)
+    const fullAddress = addressParts.join(', ')
+
     const orderData = {
       items: itemsArray,
       quantity: itemsArray.reduce((sum, item) => sum + (item.quantity || 0), 0),
-      address: customerInfo.value.address,
-      postalCode: customerInfo.value.postalCode || '',
+      address: fullAddress,   
+      postalCode: fulfillment.value.deliveryPostalCode || '',
       receivingMode: fulfillment.value.method === 'pickup' ? 'Pick-up' : 'Delivery',
+      shippingFee: getShippingFee(),
       paymentMethod: paymentMethod.value.method,
       paymentDetails: {
         referenceNumber: paymentMethod.value.referenceNumber

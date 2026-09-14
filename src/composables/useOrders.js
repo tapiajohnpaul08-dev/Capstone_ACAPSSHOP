@@ -117,15 +117,15 @@ export function useOrders() {
   const transformOrderToFrontend = (backendOrder) => {
     // Determine status value for UI
     let statusValue = backendOrder.status?.toLowerCase() || 'pending'
-    // Map status to UI values
     const statusMap = {
-      'pending': 'pending',
-      'scheduled': 'scheduled',
-      'in production': 'production',
-      'out for delivery': 'ready',
-      'completed': 'completed',
-      'cancelled': 'cancelled'
-    }
+  'pending': 'pending',
+  'confirmed': 'confirmed',        // ← ADD THIS
+  'scheduled': 'scheduled',
+  'in production': 'production',
+  'out for delivery': 'ready',
+  'completed': 'completed',
+  'cancelled': 'cancelled'
+}
     
     // Create items array from either items or single product
     let items = []
@@ -169,6 +169,7 @@ export function useOrders() {
       hasDesign: backendOrder.hasDesign,
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
+      shippingFee: backendOrder.shippingFee || 0,
       product: backendOrder.productName,
       quantity: backendOrder.quantity,
       sizes: backendOrder.size,

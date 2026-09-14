@@ -37,33 +37,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Bank Transfer / Online Banking Option -->
-        <!-- <div
-          @click="selectMethod('bank_transfer')"
-          class="p-4 rounded-lg border-2 cursor-pointer transition-all"
-          :class="modelValue.method === 'bank_transfer'
-            ? 'border-blue-600 bg-blue-50'
-            : 'border-gray-200 hover:border-gray-300'"
-        >
-          <div class="flex items-start gap-3">
-            <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
-              :class="modelValue.method === 'bank_transfer' ? 'border-blue-600' : 'border-gray-300'">
-              <div v-if="modelValue.method === 'bank_transfer'" class="w-2 h-2 rounded-full bg-blue-600"></div>
-            </div>
-            <div class="flex-1">
-              <div class="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600">
-                  <rect x="2" y="6" width="20" height="12" rx="2"/>
-                  <path d="M22 10h-6M2 10h6"/>
-                  <circle cx="12" cy="14" r="1"/>
-                </svg>
-                <span class="text-sm font-semibold text-gray-800">Online Banking / Bank Transfer</span>
-              </div>
-              <p class="text-xs text-gray-500 mt-1">Pay via bank transfer before production</p>
-            </div>
-          </div>
-        </div> -->
       </div>
 
       <!-- Bank Selection (only when bank transfer selected) -->
@@ -107,15 +80,29 @@
       </div>
 
       <!-- Summary for COD -->
-      <div v-if="modelValue.method === 'cod'" class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-        <strong>Total Amount to Pay:</strong> ₱{{ totalAmount.toLocaleString() }}
+      <div v-if="modelValue.method === 'cod'" class="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg space-y-1">
+        <div class="flex justify-between">
+          <span>Items + Design Fee:</span>
+          <span class="font-semibold text-gray-700">₱{{ payableAmount.toLocaleString() }}</span>
+        </div>
+        <div v-if="shippingFee > 0" class="flex justify-between">
+          <span>Shipping Fee:</span>
+          <span class="font-semibold text-gray-700">₱{{ shippingFee.toLocaleString() }}</span>
+        </div>
+        <div class="flex justify-between pt-1 border-t border-gray-200">
+          <span class="font-semibold">Total to Pay:</span>
+          <span class="font-bold text-gray-900">₱{{ totalAmount.toLocaleString() }}</span>
+        </div>
       </div>
 
       <!-- 50% Downpayment QR (shown for every order, regardless of payment method) -->
       <div class="p-4 rounded-lg border-2 border-blue-200 bg-blue-50/60 space-y-4">
         <div>
           <p class="text-sm font-semibold text-gray-900">50% Downpayment Required</p>
-          <p class="text-xs text-gray-500 mt-0.5">Scan the QR code to pay your downpayment. The remaining balance is due on {{ modelValue.method === 'cod' ? 'delivery' : 'production completion' }}.</p>
+          <p class="text-xs text-gray-500 mt-0.5">
+            Scan the QR code to pay your downpayment. The remaining balance is due on 
+            {{ modelValue.method === 'cod' ? 'delivery' : 'production completion' }}.
+          </p>
         </div>
 
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
@@ -131,6 +118,9 @@
               <span class="text-xs text-gray-500">Downpayment amount (50%)</span>
               <span class="font-bold text-blue-600">₱{{ downpaymentAmount.toLocaleString() }}</span>
             </div>
+            <p class="text-[10px] text-gray-400 italic leading-snug">
+              * Downpayment is computed from items + design fee only. Shipping fee is not included.
+            </p>
             <div>
               <label class="text-sm font-medium text-gray-700 mb-1 block">Reference Number</label>
               <input v-model="modelValue.referenceNumber" type="text" placeholder="Enter GCash/bank reference number after paying" class="field" />
@@ -146,6 +136,7 @@
 <script setup>
 import { computed } from 'vue'
 import QRCodeImage from '@/assets/images/QR_CODE.png'
+
 const props = defineProps({
   modelValue: {
     type: Object,
@@ -156,15 +147,20 @@ const props = defineProps({
       paymentStatus: 'pending'
     })
   },
-  totalAmount: { type: Number, default: 0 }
+  // ✅ Full order total (includes shipping)
+  totalAmount: { type: Number, default: 0 },
+  // ✅ Amount used for downpayment computation (excludes shipping)
+  payableAmount: { type: Number, default: 0 },
+  // ✅ Shipping fee (for display only)
+  shippingFee: { type: Number, default: 0 }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
-
 const downpaymentQrSrc = computed(() => QRCodeImage)
 
-const downpaymentAmount = computed(() => Math.round((props.totalAmount || 0) * 0.5))
+// ✅ Compute downpayment only from payableAmount (items + design fee, no shipping)
+const downpaymentAmount = computed(() => Math.round((props.payableAmount || 0) * 0.5))
 
 function handleQrError(event) {
   event.target.src = 'https://via.placeholder.com/300x300?text=QR+Code'

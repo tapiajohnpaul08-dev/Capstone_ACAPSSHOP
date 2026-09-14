@@ -197,6 +197,11 @@
                 <span class="font-medium">{{ formatPrice(designFee) }}</span>
               </div>
 
+              <div class="flex justify-between">
+                <span class="text-gray-500">Shipping Fee</span>
+                <span class="font-medium">{{ formatPrice(order.shippingFee) }}</span>
+              </div>
+
               <!-- Subtotal Divider -->
               <div v-if="order.isProvided || hasDesignDetails" class="border-t border-gray-100 my-1"></div>
 
@@ -222,14 +227,6 @@
                   <span class="text-gray-400">Balance</span>
                   <span class="font-medium text-red-500">{{ formatPrice(getRemainingBalance) }}</span>
                 </div>
-              </div>
-
-              <!-- Fee Notes -->
-              <div class="mt-1 p-1.5 bg-gray-50 rounded text-[9px] text-gray-400 leading-tight">
-                <span v-if="hasDesignDetails && order.isProvided">* ₱500 printing service + ₱500 design fee for custom printing on your items</span>
-                <span v-else-if="hasDesignDetails && !order.isProvided">* ₱500 design fee for custom artwork</span>
-                <span v-else-if="order.isProvided">* ₱500 printing service fee for custom printing on your items</span>
-                <span v-else class="text-gray-300">No additional fees</span>
               </div>
             </div>
           </div>
@@ -265,8 +262,9 @@
                   <div class="font-medium">{{ order.isProvided ? 'Own Cups' : 'Company Cups' }}</div>
                 </div>
               </div>
-              <div class="text-[10px] text-gray-400">Address</div>
-              <div class="font-medium text-xs">{{ order.address || order.customer?.address || order.deliveryAddress || 'N/A' }}</div>
+
+              <div v-if="order.deliveryMethod === 'Delivery'"  class="text-[10px] text-gray-400">Address</div>
+              <div v-if="order.deliveryMethod === 'Delivery'" class="font-medium text-xs">{{ order.address || order.customer?.address || order.deliveryAddress || 'N/A' }}</div>
               <div v-if="order.driverDetails && isDelivery" class="mt-1 p-1.5 bg-green-50 rounded border border-green-200 text-[10px]">
                 <span class="font-medium text-green-700">Driver:</span> {{ order.driverDetails.driverName }}
                 <span class="ml-2 text-gray-500">•</span>
@@ -312,13 +310,13 @@
         </button>
         
         <button 
-          v-if="['pending', 'scheduled'].includes(order.status?.toLowerCase())" 
-          @click="showCancelConfirm = true" 
-          class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
-        >
-          <XCircle class="w-3 h-3" />
-          Cancel
-        </button>
+  v-if="['pending', 'confirmed', 'scheduled'].includes(order.status?.toLowerCase())" 
+  @click="showCancelConfirm = true" 
+  class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
+>
+  <XCircle class="w-3 h-3" />
+  Cancel
+</button>
 
         <button 
           v-if="isOutForDelivery && !order.isReceived" 
@@ -725,7 +723,8 @@ const calculatedSubtotal = computed(() => {
   if (order.value?.hasDesign === true) {
     total += 500
   }
-  
+
+  total += order.value?.shippingFee
   
   return total
 })
@@ -764,6 +763,7 @@ function getTimelineIcon(status) {
   const statusLower = status?.toLowerCase() || ''
   const icons = {
     'pending': ClockIcon,
+    'confirmed': CheckCircleIcon,      // ← ADD THIS
     'scheduled': CalendarIcon,
     'in production': PackageIcon,
     'out for delivery': TruckIcon,
@@ -783,6 +783,8 @@ function getTimelineIconColor(status, index) {
   
   const colors = {
     'pending': 'bg-yellow-100 text-yellow-600',
+    'confirmed': 'bg-teal-100 text-teal-600',    // ← ADD THIS
+
     'scheduled': 'bg-blue-100 text-blue-600',
     'in production': 'bg-purple-100 text-purple-600',
     'out for delivery': 'bg-green-100 text-green-600',
@@ -811,6 +813,7 @@ function handleImageError(event) {
 function formatStatus(status) {
   const statusMap = {
     'pending': 'Pending Review',
+    'confirmed': 'Confirmed', 
     'scheduled': 'Scheduled',
     'in production': 'In Production',
     'out for delivery': order.value?.receivingMode === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
@@ -913,6 +916,7 @@ function getStatusDescription(status) {
   
   const descriptions = {
     'pending': 'Your order has been placed and is waiting for review by our team.',
+    'confirmed': 'Your order has been confirmed! We are preparing it for scheduling.',
     'scheduled': 'Your order has been reviewed and scheduled for production.',
     'in production': 'Your order is now in production. Our team is working on it.',
     'out for delivery': order.value?.receivingMode === 'Pick-up' 
@@ -930,6 +934,7 @@ const statusBadgeClass = computed(() => {
   const status = displayStatus.value?.toLowerCase() || ''
   const classes = {
     'pending': 'bg-yellow-100 text-yellow-800',
+    'confirmed': 'bg-teal-100 text-teal-800',
     'scheduled': 'bg-blue-100 text-blue-800',
     'in production': 'bg-purple-100 text-purple-800',
     'out for delivery': 'bg-green-100 text-green-800',
@@ -997,15 +1002,148 @@ function printOrder() {
 }
 
 function orderAgain() {
-  // ... existing orderAgain logic ...
+  // Navigate to create order page with the order data
+  if (order.value && order.value.items && order.value.items.length > 0) {
+    // If it's a company product order
+    if (!order.value.isProvided) {
+      // Get the first item or all items
+      const items = order.value.items.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        category: item.category,
+        size: item.size,
+        quantity: item.quantity,
+        image: item.image,
+        // Include design info if available
+        design: item.design || {
+          source: item.designSource || 'upload',
+          printSize: item.printSize || '',
+          printPlacement: item.printPlacement || '',
+          designNotes: item.designNotes || '',
+          files: item.files || []
+        }
+      }))
+      
+      // Store in session for the create order page
+      sessionStorage.setItem('pendingCart', JSON.stringify(items))
+      
+      // Navigate to create order page
+      router.push('/customer/orders/create?source=cart&type=company-product')
+    } else {
+      // Own cups order
+      const ownCupsData = {
+        productType: order.value.product || 'Customer Provided Items',
+        sizes: order.value.sizes || 'Custom',
+        quantity: order.value.quantity || 500
+      }
+      
+      sessionStorage.setItem('pendingOwnCups', JSON.stringify(ownCupsData))
+      router.push('/customer/orders/create?type=own-cups&from=order-detail')
+    }
+  } else {
+    showToast('No items to reorder')
+  }
 }
 
 async function handleToggleReceived() {
-  // ... existing handleToggleReceived logic ...
+  if (!order.value || order.value.status !== 'out-for-delivery') {
+    showToast('Only orders out for delivery can be marked as received')
+    return
+  }
+  
+  // Show confirmation
+  const confirmMessage = order.value.deliveryMethod === 'Pick-up' 
+    ? 'Have you picked up this order from the store?'
+    : 'Have you received this delivery?'
+    
+  if (!confirm(confirmMessage)) return
+  
+  try {
+    loading.value = true
+    
+    // Get the user info from localStorage
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}')
+    
+    const response = await ordersApi.toggleReceivedStatus(
+      order.value.id, 
+      true, 
+      user
+    )
+    
+    if (response.success) {
+      // Update local order status
+      order.value.status = 'completed'
+      order.value.statusValue = 'completed'
+      order.value.received = true
+      
+      // Also update in orders list if available
+      const index = orders.value.findIndex(o => o.id === order.value.id)
+      if (index !== -1) {
+        orders.value[index].status = 'completed'
+        orders.value[index].statusValue = 'completed'
+        orders.value[index].received = true
+      }
+      
+      showToast('Order marked as received! Thank you for your business!')
+      
+      // Refresh order details
+      await fetchOrder(order.value.id)
+    } else {
+      showToast(response.message || 'Failed to mark order as received')
+    }
+  } catch (error) {
+    console.error('Error marking order as received:', error)
+    showToast(error.message || 'An error occurred')
+  } finally {
+    loading.value = false
+  }
 }
 
 async function handleCancel() {
-  // ... existing handleCancel logic ...
+  if (!order.value) return
+  
+  // Check if order can be cancelled
+  const cancellableStatuses = ['pending', 'scheduled']
+  if (!cancellableStatuses.includes(order.value.statusValue)) {
+    showToast(`Cannot cancel order in ${order.value.status} status. Only pending or scheduled orders can be cancelled.`)
+    return
+  }
+  
+  // Show confirmation
+  if (!confirm(`Are you sure you want to cancel order ${order.value.orderId || order.value.id}? This action cannot be undone.`)) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    
+    const response = await ordersApi.cancelMyOrder(order.value.id)
+    
+    if (response.success) {
+      // Update local order status
+      order.value.status = 'cancelled'
+      order.value.statusValue = 'cancelled'
+      
+      // Also update in orders list if available
+      const index = orders.value.findIndex(o => o.id === order.value.id)
+      if (index !== -1) {
+        orders.value[index].status = 'cancelled'
+        orders.value[index].statusValue = 'cancelled'
+      }
+      
+      showToast(`Order ${order.value.orderId || order.value.id} has been cancelled successfully.`)
+      
+      // Refresh order details
+      await fetchOrder(order.value.id)
+    } else {
+      showToast(response.message || 'Failed to cancel order')
+    }
+  } catch (error) {
+    console.error('Error cancelling order:', error)
+    showToast(error.message || 'An error occurred')
+  } finally {
+    loading.value = false
+  }
 }
 
 // ─── LIFECYCLE ────────────────────────────────────────────────────────

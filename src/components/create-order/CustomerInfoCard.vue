@@ -36,8 +36,7 @@
             placeholder="Enter company name (optional)"
             class="field"
           />
-          <p class="text-xs text-gray-400">Optional</p>
-        </div>
+          </div>
       </div>
 
       <div class="grid md:grid-cols-2 gap-4">
@@ -80,40 +79,7 @@
           />
           <p v-if="localErrors.phone" class="text-xs text-red-500">{{ localErrors.phone }}</p>
           <p v-else-if="isValidField('phone') && modelValue.phone" class="text-xs text-green-500">✓ Valid phone number</p>
-          <p class="text-xs text-gray-400">Format: +63XXXXXXXXXX or 09XXXXXXXXX</p>
         </div>
-      </div>
-
-      <div class="space-y-1.5">
-        <label class="text-sm font-medium text-gray-700" for="ci-address">
-          Address <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          id="ci-address"
-          :value="modelValue.address"
-          @input="updateField('address', $event.target.value)"
-          @blur="validateField('address')"
-          placeholder="Enter your complete address"
-          rows="2"
-          class="field resize-none"
-          :class="{ 
-            'border-red-400 ring-1 ring-red-300': localErrors.address,
-            'border-green-400 ring-1 ring-green-300': isValidField('address') && modelValue.address
-          }"
-        ></textarea>
-        <p v-if="localErrors.address" class="text-xs text-red-500">{{ localErrors.address }}</p>
-        <p v-else-if="isValidField('address') && modelValue.address" class="text-xs text-green-500">✓ Valid address</p>
-      </div>
-      
-      <div class="space-y-1 5">
-        <label>Postal Code</label>
-        <input
-          type="Number"
-          :value="modelValue.postalCode"
-          @input="updateField('postalCode', $event.target.value)"
-          placeholder="Enter postal code"
-          class="field"
-        />
       </div>
 
       <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
@@ -130,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
 
 const props = defineProps({
@@ -144,16 +110,14 @@ const emit = defineEmits(['update:modelValue'])
 const localErrors = ref({
   name: '',
   email: '',
-  phone: '',
-  address: ''
+  phone: ''
 })
 
 // Track which fields have been validated
 const validatedFields = ref({
   name: false,
   email: false,
-  phone: false,
-  address: false
+  phone: false
 })
 
 // Validation functions
@@ -188,16 +152,6 @@ function validatePhone(value) {
   return ''
 }
 
-function validateAddress(value) {
-  if (!value || !value.trim()) {
-    return 'Address is required'
-  }
-  if (value.trim().length < 5) {
-    return 'Please enter a complete address'
-  }
-  return ''
-}
-
 function validateField(field) {
   validatedFields.value[field] = true
   switch (field) {
@@ -209,9 +163,6 @@ function validateField(field) {
       break
     case 'phone':
       localErrors.value.phone = validatePhone(props.modelValue.phone)
-      break
-    case 'address':
-      localErrors.value.address = validateAddress(props.modelValue.address)
       break
   }
 }
@@ -240,7 +191,6 @@ watch(() => props.errors, (newErrors) => {
   if (newErrors.name) localErrors.value.name = newErrors.name
   if (newErrors.email) localErrors.value.email = newErrors.email
   if (newErrors.phone) localErrors.value.phone = newErrors.phone
-  if (newErrors.address) localErrors.value.address = newErrors.address
 }, { deep: true })
 </script>
 

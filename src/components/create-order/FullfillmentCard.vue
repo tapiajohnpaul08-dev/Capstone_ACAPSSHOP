@@ -1,4 +1,4 @@
-<!-- FulfillmentCard.vue - Fixed with proper date fields -->
+<!-- FulfillmentCard.vue - Full address fields with Region dropdown -->
 <template>
   <div class="bg-white rounded-xl border">
     <div class="px-6 pt-6 pb-4 border-b">
@@ -59,60 +59,155 @@
         </div>
       </div>
 
-      <!-- Error message for delivery method -->
-      <p v-if="showDeliveryError && modelValue.method === 'delivery'" class="text-xs text-red-500 flex items-center gap-1">
-        <AlertCircle class="w-3 h-3" />
-        Please fill in the delivery address below
-      </p>
-
       <!-- Delivery address (only when delivery selected) -->
-      <div v-if="modelValue.method === 'delivery'" class="space-y-1.5">
-        <label class="text-sm font-medium text-gray-700" for="ff-addr">
-          Delivery Address <span class="text-red-500">*</span>
-        </label>
-        <textarea
-          id="ff-addr"
-          :value="modelValue.deliveryAddress"
-          @input="updateField('deliveryAddress', $event.target.value)"
-          @blur="validateDeliveryAddress"
-          placeholder="Enter complete delivery address (Street, Barangay, City, Province)"
-          rows="2"
-          class="field resize-none"
-          :class="{ 
-            'border-red-400 ring-1 ring-red-300': deliveryAddressError && !isValidDeliveryAddress,
-            'border-green-400 ring-1 ring-green-300': isValidDeliveryAddress && modelValue.deliveryAddress
-          }"
-        ></textarea>
+      <div v-if="modelValue.method === 'delivery'" class="space-y-3 border-t pt-4">
+        <h5 class="text-sm font-semibold text-gray-800">Delivery Address <span class="text-red-500">*</span></h5>
+        <p class="text-xs text-gray-500">Where should we deliver your order?</p>
         
-        <!-- Character counter -->
-        <div class="flex justify-between items-center">
+        <div class="space-y-3">
+          <div class="grid md:grid-cols-2 gap-3">
+            <!-- Country (Philippines only) -->
           <div>
-            <p v-if="deliveryAddressError && !isValidDeliveryAddress" class="text-xs text-red-500 flex items-center gap-1">
-              <AlertCircle class="w-3 h-3" />
-              {{ deliveryAddressError }}
-            </p>
-            <p v-else-if="isValidDeliveryAddress && modelValue.deliveryAddress" class="text-xs text-green-500 flex items-center gap-1">
-              <CheckCircle class="w-3 h-3" />
-              Valid address
-            </p>
+            <label class="text-sm font-medium text-gray-700">Country <span class="text-red-500">*</span></label>
+            <select 
+              :value="deliveryAddress.country || 'Philippines'"
+              @change="updateDeliveryField('country', $event.target.value)"
+              class="field"
+            >
+              <option value="Philippines">Philippines</option>
+            </select>
           </div>
-          <span class="text-xs text-gray-400" v-if="modelValue.deliveryAddress">
-            {{ modelValue.deliveryAddress.length }}/{{ minAddressLength }}+ characters
-          </span>
+
+          <!-- Region -->
+          <div>
+            <label class="text-sm font-medium text-gray-700">Region <span class="text-red-500">*</span>               
+              <span class="text-xs ml-2 font-normal text-gray-400">Free Deliveries Only for Luzon</span>
+ </label>
+            <select 
+              :value="deliveryAddress.region"
+              @change="updateDeliveryField('region', $event.target.value)"
+              @blur="validateDeliveryField('region')"
+              class="field"
+              :class="{ 
+                'border-red-400 ring-1 ring-red-300': deliveryErrors.region,
+                'border-green-400 ring-1 ring-green-300': isValidDeliveryField('region') && deliveryAddress.region
+              }"
+            >
+              <option value="">Select region...</option>
+              <option value="Luzon">Luzon</option>
+              <option value="Visayas">Visayas</option>
+              <option value="Mindanao">Mindanao</option>
+            </select>
+            <p v-if="deliveryErrors.region" class="text-xs text-red-500">{{ deliveryErrors.region }}</p>
+            <p v-else-if="isValidDeliveryField('region') && deliveryAddress.region" class="text-xs text-green-500">✓ Region selected</p>
+          </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <!-- Province -->
+            <div>
+              <label class="text-sm font-medium text-gray-700">Province <span class="text-red-500">*</span></label>
+              <input
+                :value="deliveryAddress.province"
+                @input="updateDeliveryField('province', $event.target.value)"
+                @blur="validateDeliveryField('province')"
+                type="text"
+                placeholder="e.g., Metro Manila"
+                class="field"
+                :class="{ 
+                  'border-red-400 ring-1 ring-red-300': deliveryErrors.province,
+                  'border-green-400 ring-1 ring-green-300': isValidDeliveryField('province') && deliveryAddress.province
+                }"
+              />
+              <p v-if="deliveryErrors.province" class="text-xs text-red-500">{{ deliveryErrors.province }}</p>
+            </div>
+            <!-- Postal Code -->
+            <div>
+              <label class="text-sm font-medium text-gray-700">Postal Code <span class="text-red-500">*</span></label>
+              <input
+                :value="deliveryAddress.postalCode"
+                @input="updateDeliveryField('postalCode', $event.target.value)"
+                @blur="validateDeliveryField('postalCode')"
+                type="text"
+                placeholder="e.g., 1100"
+                class="field"
+                :class="{ 
+                  'border-red-400 ring-1 ring-red-300': deliveryErrors.postalCode,
+                  'border-green-400 ring-1 ring-green-300': isValidDeliveryField('postalCode') && deliveryAddress.postalCode
+                }"
+              />
+              <p v-if="deliveryErrors.postalCode" class="text-xs text-red-500">{{ deliveryErrors.postalCode }}</p>
+              <p v-else-if="isValidDeliveryField('postalCode') && deliveryAddress.postalCode" class="text-xs text-green-500">✓ Valid postal code</p>
+            </div>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            
+            <!-- Municipality -->
+            <div>
+              <label class="text-sm font-medium text-gray-700">Municipality / City <span class="text-red-500">*</span></label>
+              <input
+                :value="deliveryAddress.municipality"
+                @input="updateDeliveryField('municipality', $event.target.value)"
+                @blur="validateDeliveryField('municipality')"
+                type="text"
+                placeholder="e.g., Quezon City"
+                class="field"
+                :class="{ 
+                  'border-red-400 ring-1 ring-red-300': deliveryErrors.municipality,
+                  'border-green-400 ring-1 ring-green-300': isValidDeliveryField('municipality') && deliveryAddress.municipality
+                }"
+              />
+              <p v-if="deliveryErrors.municipality" class="text-xs text-red-500">{{ deliveryErrors.municipality }}</p>
+            </div>
+
+            <!-- Barangay -->
+            <div>
+              <label class="text-sm font-medium text-gray-700">Barangay <span class="text-red-500">*</span></label>
+              <input
+                :value="deliveryAddress.barangay"
+                @input="updateDeliveryField('barangay', $event.target.value)"
+                @blur="validateDeliveryField('barangay')"
+                type="text"
+                placeholder="e.g., Barangay 123"
+                class="field"
+                :class="{ 
+                  'border-red-400 ring-1 ring-red-300': deliveryErrors.barangay,
+                  'border-green-400 ring-1 ring-green-300': isValidDeliveryField('barangay') && deliveryAddress.barangay
+                }"
+              />
+              <p v-if="deliveryErrors.barangay" class="text-xs text-red-500">{{ deliveryErrors.barangay }}</p>
+            </div>
+          </div>
+
+          <!-- Street Address (merged field) -->
+          <div>
+            <label class="text-sm font-medium text-gray-700">
+              Street Address <span class="text-red-500">*</span>
+              <span class="text-xs font-normal text-gray-400">(House/Unit/Flr #, Building Name, Blk/Lot, Purok)</span>
+            </label>
+            <textarea
+              :value="deliveryAddress.streetAddress"
+              @input="updateDeliveryField('streetAddress', $event.target.value)"
+              @blur="validateDeliveryField('streetAddress')"
+              rows="2"
+              placeholder="e.g., 123 Unit 4B, Tower A, Block 1 Lot 5, Purok 3"
+              class="field resize-none"
+              :class="{ 
+                'border-red-400 ring-1 ring-red-300': deliveryErrors.streetAddress,
+                'border-green-400 ring-1 ring-green-300': isValidDeliveryField('streetAddress') && deliveryAddress.streetAddress
+              }"
+            ></textarea>
+            <p v-if="deliveryErrors.streetAddress" class="text-xs text-red-500">{{ deliveryErrors.streetAddress }}</p>
+            <p v-else-if="isValidDeliveryField('streetAddress') && deliveryAddress.streetAddress" class="text-xs text-green-500">✓ Valid address</p>
+          </div>
+
+          <!-- Full delivery address preview -->
+          <div v-if="hasDeliveryAddressFields" class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <p class="text-xs font-medium text-gray-600">Delivery Address Preview</p>
+            <p class="text-sm text-gray-800 mt-1">{{ fullDeliveryAddress }}</p>
+          </div>
         </div>
-        
-        <label class="flex items-center gap-2 cursor-pointer select-none w-fit mt-1">
-          <input
-            type="checkbox"
-            :checked="modelValue.sameAsCustomer"
-            @change="handleSameAsCustomer($event.target.checked)"
-            class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span class="text-xs text-gray-600 flex items-center gap-1">
-            <Copy class="w-3 h-3" />
-            Same as customer address
-          </span>
-        </label>
       </div>
 
       <!-- Pickup info -->
@@ -136,7 +231,6 @@
         <div class="flex items-center gap-2 mb-3">
           <Calendar class="w-4 h-4 text-green-600" />
           <h5 class="font-medium text-gray-800 text-sm">When will you deliver your items to us?</h5>
-          <!-- <span class="text-xs text-gray-400">(Own Items Only)</span> -->
         </div>
         <div>
           <label class="text-sm font-medium text-gray-700">
@@ -216,25 +310,6 @@
             </p>
           </div>
         </div>
-
-        <!-- Quick selection chips
-        <div class="mt-3">
-          <p class="text-xs text-gray-500 mb-2">Quick select:</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="date in quickDates"
-              :key="date.label"
-              @click="selectQuickDate(date.value)"
-              class="px-3 py-1.5 text-xs rounded-full border transition-colors inline-flex items-center gap-1"
-              :class="modelValue.preferredDate === date.value
-                ? 'bg-blue-50 border-blue-500 text-blue-700'
-                : 'border-gray-300 text-gray-600 hover:border-blue-300 hover:bg-blue-50'"
-            >
-              <Calendar class="w-3 h-3" />
-              {{ date.label }}
-            </button>
-          </div>
-        </div> -->
       </div>
     </div>
   </div>
@@ -263,21 +338,173 @@ const props = defineProps({
       sameAsCustomer: false,
       preferredDate: '',
       preferredTime: '',
-      ownCupsDeliveryDate: '' // ✅ Only used for Own Cups
+      ownCupsDeliveryDate: '',
+      // Delivery address fields
+      deliveryCountry: 'Philippines',
+      deliveryRegion: '',
+      deliveryStreetAddress: '',
+      deliveryBarangay: '',
+      deliveryMunicipality: '',
+      deliveryProvince: '',
+      deliveryPostalCode: ''
     })
   },
-  customerAddress: { type: String, default: '' },
+  customerAddress: { type: Object, default: () => ({}) },
   errors: { type: Object, default: () => ({}) },
-  isOwnCups: { type: Boolean, default: false } // ✅ Determines if ownCupsDeliveryDate is shown
+  isOwnCups: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
 
-// ─── CONSTANTS ──────────────────────────────────────────────────────────────
-const minAddressLength = 10
+
+
+// ─── DELIVERY ADDRESS STATE ──────────────────────────────────────────────
+const deliveryAddress = computed({
+  get: () => ({
+    country: props.modelValue.deliveryCountry || 'Philippines',
+    region: props.modelValue.deliveryRegion || '',
+    streetAddress: props.modelValue.deliveryStreetAddress || '',
+    barangay: props.modelValue.deliveryBarangay || '',
+    municipality: props.modelValue.deliveryMunicipality || '',
+    province: props.modelValue.deliveryProvince || '',
+    postalCode: props.modelValue.deliveryPostalCode || ''
+  }),
+  set: (val) => {
+    emit('update:modelValue', { 
+      ...props.modelValue, 
+      deliveryCountry: val.country,
+      deliveryRegion: val.region,
+      deliveryStreetAddress: val.streetAddress,
+      deliveryBarangay: val.barangay,
+      deliveryMunicipality: val.municipality,
+      deliveryProvince: val.province,
+      deliveryPostalCode: val.postalCode
+    })
+  }
+})
+
+// ─── DELIVERY VALIDATION ──────────────────────────────────────────────────
+const deliveryErrors = ref({
+  region: '',
+  streetAddress: '',
+  barangay: '',
+  municipality: '',
+  province: '',
+  postalCode: ''
+})
+
+const deliveryValidatedFields = ref({
+  region: false,
+  streetAddress: false,
+  barangay: false,
+  municipality: false,
+  province: false,
+  postalCode: false
+})
+
+const hasDeliveryAddressFields = computed(() => {
+  return deliveryAddress.value.streetAddress || deliveryAddress.value.barangay || deliveryAddress.value.municipality || deliveryAddress.value.province
+})
+
+// This concatenates all address fields into a single string for the API
+const fullDeliveryAddress = computed(() => {
+  const parts = [
+    props.modelValue.deliveryStreetAddress,
+    props.modelValue.deliveryBarangay,
+    props.modelValue.deliveryMunicipality,
+    props.modelValue.deliveryProvince,
+    props.modelValue.deliveryPostalCode,
+    props.modelValue.deliveryRegion,
+    props.modelValue.deliveryCountry || 'Philippines'
+  ].filter(Boolean)
+  return parts.join(', ')
+})
+
+function validateDeliveryRegion(value) {
+  if (!value || !value.trim()) {
+    return 'Region is required'
+  }
+  return ''
+}
+
+function validateDeliveryStreetAddress(value) {
+  if (!value || !value.trim()) {
+    return 'Street address is required'
+  }
+  if (value.trim().length < 5) {
+    return 'Please enter a complete street address'
+  }
+  return ''
+}
+
+function validateDeliveryBarangay(value) {
+  if (!value || !value.trim()) {
+    return 'Barangay is required'
+  }
+  return ''
+}
+
+function validateDeliveryMunicipality(value) {
+  if (!value || !value.trim()) {
+    return 'Municipality is required'
+  }
+  return ''
+}
+
+function validateDeliveryProvince(value) {
+  if (!value || !value.trim()) {
+    return 'Province is required'
+  }
+  return ''
+}
+
+function validateDeliveryPostalCode(value) {
+  if (!value || !value.trim()) {
+    return 'Postal code is required'
+  }
+  if (!/^\d{4}$/.test(value.trim())) {
+    return 'Enter a valid 4-digit postal code'
+  }
+  return ''
+}
+
+function validateDeliveryField(field) {
+  deliveryValidatedFields.value[field] = true
+  switch (field) {
+    case 'region':
+      deliveryErrors.value.region = validateDeliveryRegion(deliveryAddress.value.region)
+      break
+    case 'streetAddress':
+      deliveryErrors.value.streetAddress = validateDeliveryStreetAddress(deliveryAddress.value.streetAddress)
+      break
+    case 'barangay':
+      deliveryErrors.value.barangay = validateDeliveryBarangay(deliveryAddress.value.barangay)
+      break
+    case 'municipality':
+      deliveryErrors.value.municipality = validateDeliveryMunicipality(deliveryAddress.value.municipality)
+      break
+    case 'province':
+      deliveryErrors.value.province = validateDeliveryProvince(deliveryAddress.value.province)
+      break
+    case 'postalCode':
+      deliveryErrors.value.postalCode = validateDeliveryPostalCode(deliveryAddress.value.postalCode)
+      break
+  }
+}
+
+function isValidDeliveryField(field) {
+  return deliveryValidatedFields.value[field] && !deliveryErrors.value[field] && deliveryAddress.value[field]
+}
+
+function updateDeliveryField(field, value) {
+  const newAddress = { ...deliveryAddress.value, [field]: value }
+  deliveryAddress.value = newAddress
+  if (deliveryErrors.value[field]) {
+    validateDeliveryField(field)
+  }
+}
 
 // ─── DATE HELPERS ──────────────────────────────────────────────────────────
-// Adds N business days (Mon–Fri) on top of a given start date.
 function addBusinessDays(startDate, days) {
   const date = new Date(startDate)
   date.setHours(0, 0, 0, 0)
@@ -292,11 +519,6 @@ function addBusinessDays(startDate, days) {
   }
 
   return date
-}
-
-// Kept for any existing callers — business days counted from today.
-function getBusinessDaysFromToday(days) {
-  return addBusinessDays(new Date(), days)
 }
 
 function formatDate(dateValue) {
@@ -327,14 +549,9 @@ function getTodayDate() {
 }
 
 // ─── DATE RANGE ────────────────────────────────────────────────────────────
-// Production takes 3-7 business days, so the completion/delivery date must
-// always be at least 7 business days out to safely cover that window.
 const MIN_LEAD_DAYS = 3
-const MAX_LEAD_DAYS = 10 // gives customers a 2-week window to pick from
+const MAX_LEAD_DAYS = 10
 
-// For "own items" orders, the clock starts when the customer drops their
-// items off with us — not today. If they haven't picked that date yet,
-// fall back to today so the field still has a sane default.
 const referenceDate = computed(() => {
   if (props.isOwnCups && props.modelValue.ownCupsDeliveryDate) {
     const d = new Date(props.modelValue.ownCupsDeliveryDate)
@@ -350,24 +567,9 @@ const minDate = computed(() => toDateInputValue(minDateObj.value))
 const maxDate = computed(() => toDateInputValue(maxDateObj.value))
 const todayDate = computed(() => getTodayDate())
 
-// Quick select dates
-const quickDates = computed(() => {
-  const dates = []
-  for (let i = MIN_LEAD_DAYS; i <= MAX_LEAD_DAYS; i += 1) {
-    const date = addBusinessDays(referenceDate.value, i)
-    const label = i === MIN_LEAD_DAYS ? 'Earliest' : i === MAX_LEAD_DAYS ? 'Latest' : `${i} days`
-    dates.push({
-      label,
-      value: toDateInputValue(date)
-    })
-  }
-  return dates
-})
-
 // ─── VALIDATION ────────────────────────────────────────────────────────────
 const deliveryAddressTouched = ref(false)
 const dateTouched = ref(false)
-const timeTouched = ref(false)
 
 const isValidDate = computed(() => {
   if (!props.modelValue.preferredDate) return false
@@ -407,42 +609,15 @@ const dateError = computed(() => {
   return ''
 })
 
-const isValidDeliveryAddress = computed(() => {
-  if (props.modelValue.method !== 'delivery') return false
-  const address = props.modelValue.deliveryAddress?.trim() || ''
-  return address.length >= minAddressLength
-})
-
-const deliveryAddressError = computed(() => {
-  if (!deliveryAddressTouched.value && !props.errors?.deliveryAddress) return ''
-  if (props.modelValue.method !== 'delivery') return ''
-  const address = props.modelValue.deliveryAddress?.trim() || ''
-  if (!address) {
-    return 'Delivery address is required'
-  }
-  if (address.length < minAddressLength) {
-    return `Please enter a complete address (minimum ${minAddressLength} characters)`
-  }
-  return props.errors?.deliveryAddress || ''
-})
-
 const showDeliveryError = computed(() => {
   return deliveryAddressTouched.value && 
          props.modelValue.method === 'delivery' && 
-         !isValidDeliveryAddress
+         (!deliveryAddress.value.streetAddress || !deliveryAddress.value.barangay || !deliveryAddress.value.municipality || !deliveryAddress.value.province)
 })
 
 // ─── METHODS ──────────────────────────────────────────────────────────────
-function validateDeliveryAddress() {
-  deliveryAddressTouched.value = true
-}
-
 function updateField(field, value) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
-  
-  if (field === 'deliveryAddress') {
-    validateDeliveryAddress()
-  }
   if (field === 'preferredDate') {
     dateTouched.value = true
   }
@@ -455,38 +630,14 @@ function setMethod(method) {
   }
 }
 
-function handleSameAsCustomer(checked) {
-  updateField('sameAsCustomer', checked)
-  if (checked && props.customerAddress) {
-    updateField('deliveryAddress', props.customerAddress)
-    deliveryAddressTouched.value = true
-  } else if (!checked) {
-    updateField('deliveryAddress', '')
-    deliveryAddressTouched.value = false
-  }
-}
-
-function selectQuickDate(dateValue) {
-  updateField('preferredDate', dateValue)
-  dateTouched.value = true
-}
-
-function validateAllFields() {
-  if (props.modelValue.deliveryAddress) {
+// Watch for changes and re-validate
+watch(deliveryAddress, () => {
+  if (props.modelValue.method === 'delivery') {
     deliveryAddressTouched.value = true
   }
-  if (props.modelValue.preferredDate) {
-    dateTouched.value = true
-  }
-}
+}, { deep: true })
 
-watch(() => props.modelValue, () => {
-  validateAllFields()
-}, { immediate: true })
-
-// If the own-cups drop-off date changes (or is set for the first time) and
-// the currently selected completion date no longer satisfies the 7-business-day
-// minimum, bump it forward to the new earliest valid date automatically.
+// If the own-cups drop-off date changes, update the min date
 watch(minDate, (newMin) => {
   if (!props.modelValue.preferredDate) return
   const selected = new Date(props.modelValue.preferredDate)

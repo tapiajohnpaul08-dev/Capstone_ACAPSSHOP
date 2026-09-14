@@ -285,6 +285,13 @@ const products = ref([])
 const loading = ref(true)
 const user = ref(null)
 
+const categories = [
+  { label: 'All', value: 'all' },
+  { label: 'Plastic Cups', value: 'Plastic Cups' },
+  { label: 'Paper Cups', value: 'Paper Cups' },
+  { label: 'Meal Boxes', value: 'lighters' }
+]
+
 // --- Carousel state – local images only ---
 import PetCups from '@/assets/images/Pet_cups.png'
 import SingleWall from '@/assets/images/Single_Wall.png'
