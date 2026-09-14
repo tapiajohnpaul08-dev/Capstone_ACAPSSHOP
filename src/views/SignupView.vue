@@ -1,6 +1,15 @@
 <template>
+    <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <!-- Full Background Image with Blur -->
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+         :style="{ backgroundImage: `url(${backgroundImage})` }">
+    </div>
+    
+    <!-- Blur Overlay -->
+    <div class="absolute inset-0 backdrop-blur-[6px] bg-black/40"></div>
+
   <div class="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-    <div class="bg-white flex flex-col gap-4 rounded-xl border w-full max-w-2xl shadow-sm">
+    <div class=" relative z-10 w-full max-w-6xl mx-auto bg-white flex flex-col gap-4 rounded-xl border w-full max-w-2xl shadow-sm">
 
       <!-- Card Header -->
       <div class="text-center px-6 pt-6">
@@ -207,11 +216,31 @@
               <span>Number</span>
             </div>
           </div>
+          <!-- Terms and Policy Agreement -->
+<div class="flex items-start gap-2 pt-2">
+  <input
+    id="agreeTerms"
+    v-model="form.agreeTerms"
+    type="checkbox"
+    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+  />
+  <label for="agreeTerms" class="text-xs text-gray-600 leading-relaxed cursor-pointer">
+    I agree to the
+    <router-link
+      to="/customer/policies"
+      target="_blank"
+      class="text-blue-600 hover:underline font-medium"
+    >
+      Terms of Service and Privacy Policy
+    </router-link>
+  </label>
+</div>
+<p v-if="errors.agreeTerms" class="text-xs text-red-500 -mt-2">{{ errors.agreeTerms }}</p>
 
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="isLoading"
+            :disabled="isLoading || !form.agreeTerms"
             class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-blue-600 text-white hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed h-9 px-4 py-2 w-full mt-2"
           >
             <span v-if="isLoading" class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
@@ -230,12 +259,16 @@
 
     </div>
   </div>
+
+</div>
 </template>
 
 <script>
 import { appName } from '@/data/loginData.js'
 import { otpApi } from '@/api'
 import { Eye, EyeOff } from 'lucide-vue-next'
+import backgroundImage from '@/assets/images/LoginFormBG.png'
+
 
 export default {
   name: 'SignUpView',
@@ -248,6 +281,7 @@ export default {
   data() {
     return {
       appName,
+      backgroundImage,
       form: {
         firstName: '',
         middleName: '',
@@ -257,7 +291,9 @@ export default {
         username: '',
         company: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        agreeTerms: false  // ← ADD THIS
+
       },
       errors: {
         firstName: '',
@@ -266,7 +302,9 @@ export default {
         email: '',
         username: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+          agreeTerms: ''  // ← ADD THIS
+
       },
       isLoading: false,
       showPassword: false,
@@ -340,7 +378,9 @@ export default {
         email: '',
         username: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+          agreeTerms: ''  // ← ADD THIS
+
       }
 
       if (!this.form.firstName.trim()) {
@@ -384,6 +424,12 @@ export default {
         this.errors.confirmPassword = 'Passwords do not match'
         valid = false
       }
+
+      // ← ADD THIS CHECK
+     if (!this.form.agreeTerms) {
+    this.errors.agreeTerms = 'You must agree to the Terms of Service and Privacy Policy'
+    valid = false
+  }
 
       return valid
     },
