@@ -81,7 +81,6 @@
           <!-- Region -->
           <div>
             <label class="text-sm font-medium text-gray-700">Region <span class="text-red-500">*</span>               
-              <span class="text-xs ml-2 font-normal text-gray-400">Free Deliveries Only for Luzon</span>
  </label>
             <select 
               :value="deliveryAddress.region"

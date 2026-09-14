@@ -170,6 +170,7 @@ export function useOrders() {
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
       shippingFee: backendOrder.shippingFee || 0,
+      partialPayments: backendOrder.partialPayments || [],
       product: backendOrder.productName,
       quantity: backendOrder.quantity,
       sizes: backendOrder.size,

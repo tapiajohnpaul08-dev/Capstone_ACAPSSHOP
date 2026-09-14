@@ -1,34 +1,34 @@
 {
-    "id": "ORD-2026-888--COMP",
-    "orderId": "ORD-2026-888--COMP",
-    "orderNumber": "ORD-2026-888--COMP",
+    "id": "ORD-2026-383--COMP",
+    "orderId": "ORD-2026-383--COMP",
+    "orderNumber": "ORD-2026-383--COMP",
     "status": "Pending",
     "statusValue": "pending",
     "paymentStatus": "Partial",
     "isProvided": false,
     "supplyType": "Company Cups",
-    "hasDesign": false,
+    "hasDesign": true,
     "deliveryMethod": "Delivery",
-    "totalAmount": 925,
-    "shippingFee": 0,
+    "totalAmount": 1500,
+    "shippingFee": 500,
     "quantity": 500,
     "image": null,
     "date": "9/9/2026",
-    "createdAt": "2026-09-09T02:29:26.463Z",
+    "createdAt": "2026-09-09T02:56:03.979Z",
     "items": [
         {
-            "productId": "PRD-2026-262",
-            "name": "PP INJECTION CUPS",
-            "category": "Plastic Cups",
+            "productId": "PRD-2026-224",
+            "name": "PP T CUPS",
+            "category": "Paper Cups",
             "size": "12oz",
             "quantity": 500,
-            "estimatedTotal": 925,
-            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785914015/beverage/products/product-1785914013629-999590650.jpg",
+            "estimatedTotal": 500,
+            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1786125379/beverage/products/product-1786125378455-620382793.jpg",
             "design": {
-                "source": "no-design",
-                "printSize": "",
-                "printPlacement": "",
-                "designNotes": "No design - plain product, as is.",
+                "source": "saved",
+                "printSize": "3x3",
+                "printPlacement": "Front-Only",
+                "designNotes": "",
                 "files": []
             }
         }
@@ -36,7 +36,7 @@
     "customerName": "Jear Hachero",
     "customerEmail": "jearlangito@gmail.com",
     "customerPhone": "+639709406573",
-    "address": "purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Mindanao, Philippines",
+    "address": "purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Luzon, Philippines",
     "postalCode": "3007",
     "company": "JCups",
     "fulfillment": {
@@ -45,13 +45,13 @@
     },
     "designDetails": [
         {
-            "designSource": "no-design",
-            "printSize": "",
-            "printPlacement": "",
-            "designNotes": "No design - plain product, as is.",
+            "designSource": "saved",
+            "printSize": "3x3",
+            "printPlacement": "Front-Only",
+            "designNotes": "",
             "files": [],
             "imagePaths": [],
-            "_id": "6aa0c486684c503b7426eb6f"
+            "_id": "6aa0cac3f2df9ba9e35d1358"
         }
     ],
     "expectedDelivery": "9/17/2026",
@@ -59,11 +59,11 @@
     "preferredDate": null,
     "preferredTime": "",
     "productionSchedule": null,
-    "notes": "No Design - Plain product as is | Items: PP INJECTION CUPS",
+    "notes": "Individual Designs | Items: PP T CUPS",
     "statusHistory": [
         {
             "status": "Pending",
-            "timestamp": "2026-09-09T02:29:26.453Z",
+            "timestamp": "2026-09-09T02:56:03.973Z",
             "notes": "Order created",
             "productionSchedule": "",
             "updatedBy": "6a9aa6d39063b8237dba21db"

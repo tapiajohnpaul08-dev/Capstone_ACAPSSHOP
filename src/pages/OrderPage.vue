@@ -77,6 +77,9 @@
                   class="w-20 h-20 object-cover rounded-lg"
                   @error="handleImageError"
                 />
+                <div v-else class="w-20 h-20 flex items-center justify-center bg-gray-100 rounded-lg">
+                    <Package class="w-18 h-18 text-purple-600" />
+                </div>
               </div>
 
               <!-- Item Details -->
@@ -87,8 +90,14 @@
                     <div class="text-sm text-gray-500">{{ item.category }} • {{ item.size }}</div>
                   </div>
                   <div class="text-right">
-                    <div class="text-lg font-bold text-blue-600">{{ formatPrice(item.estimatedTotal) }}</div>
-                    <div class="text-sm text-gray-500">Quantity: {{ formatNumber(item.quantity) }} pcs</div>
+                    <div v-if="!order.isProvided" class="text-lg font-bold text-blue-600">{{ formatPrice(item.estimatedTotal) }}</div>
+                    <div  v-if="order.isProvided" class="flex items-center gap-1">
+                       <div class="text-sm text-gray-500">Quantity:</div>
+
+                      <div class="text-lg font-bold text-blue-600">{{ formatNumber(item.quantity) }} pcs</div>
+                    </div>
+
+                    <div v-if="!order.isProvided" class="text-sm text-gray-500">Quantity: {{ formatNumber(item.quantity) }} pcs</div>
                   </div>
                 </div>
 
@@ -157,7 +166,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOrders } from '@/composables/useOrders.js'
-
+import { Package } from 'lucide-vue-next'
 const router = useRouter()
 const { orders, fetchOrders } = useOrders()
 const selectedStatus = ref('all')

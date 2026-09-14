@@ -157,9 +157,6 @@
                       <span>{{ formatNumber(item.quantity) }} pcs</span>
                     </div>
                   </div>
-                  <div class="text-right">
-                    <span class="text-xs font-semibold text-blue-600">{{ formatPrice(item.estimatedTotal || item.totalPrice) }}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -180,18 +177,12 @@
             </div>
             <div class="p-2.5 space-y-1 text-xs">
               <!-- 1. Products Total -->
-              <div class="flex justify-between">
+              <div v-if="!order.isProvided" class="flex justify-between">
                 <span class="text-gray-500">Products Total</span>
                 <span class="font-medium">{{ formatPrice(productsTotal) }}</span>
               </div>
 
-              <!-- 2. Printing Service Fee (Own Cups only) -->
-              <div v-if="order.isProvided" class="flex justify-between">
-                <span class="text-gray-500">Printing Service Fee</span>
-                <span class="font-medium">{{ formatPrice(printingServiceFee) }}</span>
-              </div>
-
-              <!-- 3. Design Fee (Company Products with design) -->
+              <!-- 3. Design Fee -->
               <div v-if="order.hasDesign" class="flex justify-between">
                 <span class="text-gray-500">Design Fee</span>
                 <span class="font-medium">{{ formatPrice(designFee) }}</span>

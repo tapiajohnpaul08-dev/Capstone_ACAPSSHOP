@@ -440,7 +440,7 @@
         </div>
         <h3 class="text-xl font-bold mb-2">Order Submitted!</h3>
         <p class="text-gray-500 text-sm mb-6">
-          We'll contact you within 3-7 business days for design approval and payment confirmation.
+          We'll contact you within as soon as possible for design approval and payment confirmation.
         </p>
         <button @click="router.push('/customer/orders')" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           View My Orders
@@ -1429,4 +1429,4 @@ textarea.field {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-spin { animation: spin 1s linear infinite; }
-</style>a
+</style>
