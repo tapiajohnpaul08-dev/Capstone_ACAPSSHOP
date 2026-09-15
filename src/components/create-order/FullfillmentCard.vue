@@ -63,7 +63,24 @@
       <div v-if="modelValue.method === 'delivery'" class="space-y-3 border-t pt-4">
         <h5 class="text-sm font-semibold text-gray-800">Delivery Address <span class="text-red-500">*</span></h5>
         <p class="text-xs text-gray-500">Where should we deliver your order?</p>
-        
+
+        <!-- Saved address banner -->
+        <div v-if="showSavedAddressBanner" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 flex items-start gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" class="text-blue-600 shrink-0 mt-0.5">
+            <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-blue-900">Use your saved address</p>
+            <p class="text-[11px] text-blue-700 mt-0.5 truncate">{{ savedAddressSummary }}</p>
+          </div>
+          <button type="button" @click="$emit('use-saved-address')"
+            class="shrink-0 px-2.5 py-1 text-[11px] font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+            Use
+          </button>
+        </div>
+
         <div class="space-y-3">
           <div class="grid md:grid-cols-2 gap-3">
             <!-- Country (Philippines only) -->
@@ -350,12 +367,38 @@ const props = defineProps({
   },
   customerAddress: { type: Object, default: () => ({}) },
   errors: { type: Object, default: () => ({}) },
-  isOwnCups: { type: Boolean, default: false }
+  isOwnCups: { type: Boolean, default: false },
+    savedAddress: { type: Object, default: null },
+
 })
 
 const emit = defineEmits(['update:modelValue'])
 
+// Show banner only when we have saved address data AND the current form is missing the main fields
+const showSavedAddressBanner = computed(() => {
+  const sa = props.savedAddress
+  if (!sa) return false
+  // Require at least street + municipality + province to be considered "meaningful"
+  if (!sa.streetAddress || !sa.municipality || !sa.province) return false
 
+  // If the form already has address data, hide
+  const mv = props.modelValue
+  const hasAddress = mv.deliveryStreetAddress && mv.deliveryMunicipality && mv.deliveryProvince
+  if (hasAddress) return false
+
+  return true
+})
+
+const savedAddressSummary = computed(() => {
+  const sa = props.savedAddress || {}
+  const parts = [
+    sa.streetAddress,
+    sa.barangay,
+    sa.municipality,
+    sa.province,
+  ].filter(Boolean)
+  return parts.join(', ')
+})
 
 // ─── DELIVERY ADDRESS STATE ──────────────────────────────────────────────
 const deliveryAddress = computed({

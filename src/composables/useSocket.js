@@ -1,3 +1,4 @@
+// Customer Side
 import { ref, onUnmounted, computed } from 'vue'
 import io from 'socket.io-client'
 
@@ -55,6 +56,8 @@ export function useSocket() {
       socketId.value = socketInstance.id
       reconnectAttempts = 0
     })
+
+    
     
     socketInstance.on('disconnect', (reason) => {
       console.log('🔌 Socket disconnected:', reason)
@@ -83,6 +86,7 @@ export function useSocket() {
       console.log(`User ${userId} (${userType}) joined at ${timestamp}`)
     })
   }
+  
   
   const disconnect = () => {
     if (socketInstance) {
@@ -148,6 +152,7 @@ const markAsRead = (conversationId) => {
   // Event listeners
   const onNewMessage = (callback) => {
     if (socketInstance) {
+      socketInstance.off('new-message')
       socketInstance.on('new-message', callback)
     }
   }
@@ -155,23 +160,45 @@ const markAsRead = (conversationId) => {
   const onMessageSent = (callback) => {
     if (socketInstance) {
       socketInstance.on('message-sent', callback)
+      socketInstance.off('message-sent') 
     }
   }
+
+  const onMessageUnsent = (callback) => {
+  if (socketInstance) {
+    socketInstance.on('message-unsent', callback)
+  }
+}
+
+const onPaymentRequestUpdated = (callback) => {
+  if (socketInstance) {
+    socketInstance.on('payment-request-updated', callback)
+  }
+}
+
+const onPaymentProofUpdated = (callback) => {
+  if (socketInstance) {
+    socketInstance.on('payment-proof-updated', callback)
+  }
+}
   
   const onUserTyping = (callback) => {
     if (socketInstance) {
+      socketInstance.off('user-typing')
       socketInstance.on('user-typing', callback)
     }
   }
   
-  const onMessagesRead = (callback) => {
+   const onMessagesRead = (callback) => {
     if (socketInstance) {
+      socketInstance.off('messages-read')
       socketInstance.on('messages-read', callback)
     }
   }
   
   const onError = (callback) => {
     if (socketInstance) {
+      socketInstance.off('error')
       socketInstance.on('error', callback)
     }
   }
@@ -179,7 +206,37 @@ const markAsRead = (conversationId) => {
   const onOnlineStatuses = (callback) => {
     if (socketInstance) {
       socketInstance.on('online-statuses', callback)
+      socketInstance.off('online-statuses')
     }
+  }
+
+    const onQuoteReceived = (callback) => {
+    if (socketInstance) {
+      socketInstance.off('quote-received')
+      socketInstance.on('quote-received', callback)
+    }
+  }
+
+  const onQuoteResponded = (callback) => {
+    if (socketInstance) {
+      socketInstance.off('quote-responded')
+      socketInstance.on('quote-responded', callback)
+    }
+  }
+
+   const onOrderNegotiationUpdated = (callback) => {
+    if (socketInstance) {
+      socketInstance.off('order-negotiation-updated')
+      socketInstance.on('order-negotiation-updated', callback)
+    }
+  }
+
+  const respondToQuote = (messageId, response, reason = '') => {
+    if (socketInstance?.connected) {
+      socketInstance.emit('respond-to-quote', { messageId, response, reason })
+      return true
+    }
+    return false
   }
   
   const off = (event) => {
@@ -215,10 +272,17 @@ const markAsRead = (conversationId) => {
     // Event listeners
     onNewMessage,
     onMessageSent,
+    onMessageUnsent,
+    onPaymentRequestUpdated,
+    onPaymentProofUpdated,
     onUserTyping,
     onMessagesRead,
     onError,
     onOnlineStatuses,
+    onQuoteReceived,
+    onQuoteResponded,
+    onOrderNegotiationUpdated,
+    respondToQuote,
     off
   }
 }

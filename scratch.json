@@ -1,72 +1,127 @@
 {
-    "id": "ORD-2026-383--COMP",
-    "orderId": "ORD-2026-383--COMP",
-    "orderNumber": "ORD-2026-383--COMP",
-    "status": "Pending",
-    "statusValue": "pending",
-    "paymentStatus": "Partial",
-    "isProvided": false,
-    "supplyType": "Company Cups",
-    "hasDesign": true,
-    "deliveryMethod": "Delivery",
-    "totalAmount": 1500,
-    "shippingFee": 500,
-    "quantity": 500,
-    "image": null,
-    "date": "9/9/2026",
-    "createdAt": "2026-09-09T02:56:03.979Z",
-    "items": [
-        {
-            "productId": "PRD-2026-224",
-            "name": "PP T CUPS",
-            "category": "Paper Cups",
-            "size": "12oz",
-            "quantity": 500,
-            "estimatedTotal": 500,
-            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1786125379/beverage/products/product-1786125378455-620382793.jpg",
-            "design": {
-                "source": "saved",
-                "printSize": "3x3",
-                "printPlacement": "Front-Only",
-                "designNotes": "",
-                "files": []
+    "orderType": "company-product",
+    "selectedProduct": {
+        "id": "PRD-2026-560",
+        "name": "HARD CUPS",
+        "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916703/beverage/products/product-1785916701775-687209326.jpg",
+        "category": "Plastic Cups",
+        "minOrder": 500,
+        "sizes": [
+            {
+                "bulkPrices": {
+                    "500": 3425,
+                    "1000": 6850,
+                    "2000": 13700,
+                    "5000": 34250
+                },
+                "name": "16oz",
+                "price": 6.85,
+                "stock": 47000,
+                "_id": "6a72ed20854339361ebaefed"
+            },
+            {
+                "bulkPrices": {
+                    "500": 3675,
+                    "1000": 7350,
+                    "2000": 14700,
+                    "5000": 36750
+                },
+                "name": "22oz",
+                "price": 7.35,
+                "stock": 50000,
+                "_id": "6a72ed20854339361ebaefee"
+            },
+            {
+                "bulkPrices": {
+                    "500": 5000,
+                    "1000": 10000,
+                    "2000": 20000,
+                    "5000": 50000
+                },
+                "name": "1L",
+                "price": 10,
+                "stock": 50000,
+                "_id": "6a72ed20854339361ebaefef"
             }
-        }
-    ],
-    "customerName": "Jear Hachero",
-    "customerEmail": "jearlangito@gmail.com",
-    "customerPhone": "+639709406573",
-    "address": "purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Luzon, Philippines",
-    "postalCode": "3007",
-    "company": "JCups",
-    "fulfillment": {
-        "deliveryAddress": "",
-        "sameAsCustomer": false
+        ],
+        "description": ""
     },
-    "designDetails": [
+    "productType": "",
+    "quantity": 500,
+    "sizes": "1L",
+    "designSource": "",
+    "filesCount": 0,
+    "fulfillment": {
+        "method": "pickup",
+        "deliveryAddress": "",
+        "sameAsCustomer": false,
+        "preferredDate": "2026-09-17"
+    },
+    "paymentMethod": "cod",
+    "totalAmount": 5000,
+    "canSubmit": false,
+    "isSubmitting": false,
+    "validationHints": [],
+    "cartItems": [
         {
-            "designSource": "saved",
-            "printSize": "3x3",
-            "printPlacement": "Front-Only",
-            "designNotes": "",
-            "files": [],
-            "imagePaths": [],
-            "_id": "6aa0cac3f2df9ba9e35d1358"
+            "productId": "PRD-2026-560",
+            "name": "HARD CUPS",
+            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916703/beverage/products/product-1785916701775-687209326.jpg",
+            "category": "Plastic Cups",
+            "size": "1L",
+            "quantity": 500,
+            "minOrder": 500,
+            "sizes": [
+                {
+                    "bulkPrices": {
+                        "500": 3425,
+                        "1000": 6850,
+                        "2000": 13700,
+                        "5000": 34250
+                    },
+                    "name": "16oz",
+                    "price": 6.85,
+                    "stock": 47000,
+                    "_id": "6a72ed20854339361ebaefed"
+                },
+                {
+                    "bulkPrices": {
+                        "500": 3675,
+                        "1000": 7350,
+                        "2000": 14700,
+                        "5000": 36750
+                    },
+                    "name": "22oz",
+                    "price": 7.35,
+                    "stock": 50000,
+                    "_id": "6a72ed20854339361ebaefee"
+                },
+                {
+                    "bulkPrices": {
+                        "500": 5000,
+                        "1000": 10000,
+                        "2000": 20000,
+                        "5000": 50000
+                    },
+                    "name": "1L",
+                    "price": 10,
+                    "stock": 50000,
+                    "_id": "6a72ed20854339361ebaefef"
+                }
+            ],
+            "unitPrice": 10
         }
     ],
-    "expectedDelivery": "9/17/2026",
-    "fromCustomerToCompanyDeliveryDate": null,
-    "preferredDate": null,
+    "isCartOrder": false,
+    "hasDesign": false,
+    "customerInfo": {},
+    "deliveryAddress": "",
+    "preferredDate": "",
     "preferredTime": "",
-    "productionSchedule": null,
-    "notes": "Individual Designs | Items: PP T CUPS",
-    "statusHistory": [
-        {
-            "status": "Pending",
-            "timestamp": "2026-09-09T02:56:03.973Z",
-            "notes": "Order created",
-            "productionSchedule": "",
-            "updatedBy": "6a9aa6d39063b8237dba21db"
-        }
-    ]
+    "ownCupsDeliveryDate": "",
+    "printSize": "",
+    "printPlacement": "",
+    "specifications": "",
+    "paymentDetails": {},
+    "shippingFee": 0
 }

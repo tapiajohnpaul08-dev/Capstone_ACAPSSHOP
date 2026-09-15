@@ -1,8 +1,9 @@
+<!-- Customer Side -->
 <template>
   <div class="container mx-auto px-4 py-6 max-w-6xl">
     <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col" style="height: calc(100vh - 140px)">
-      
-      <!-- Header - Fixed at top -->
+
+      <!-- Header -->
       <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
@@ -22,23 +23,38 @@
               </div>
             </div>
           </div>
-          
-          <!-- <div class="flex items-center gap-2">
-            <div class="bg-gray-50 px-3 py-1.5 rounded-full">
-              <div class="flex items-center gap-1.5">
-                <div class="w-1.5 h-1.5 rounded-full" :class="isSocketConnected ? 'bg-green-500' : 'bg-red-500'"></div>
-                <span class="text-xs text-gray-600">
-                  {{ isSocketConnected ? 'Connected' : 'Connecting...' }}
-                </span>
-              </div>
-            </div>
-          </div> -->
         </div>
       </div>
 
-      <!-- Messages Container - Scrollable middle section -->
-      <div 
-        ref="messagesContainer" 
+      <!-- Order picker + negotiation panel -->
+      <div v-if="myPendingOrders.length > 0 || selectedOrder" class="shrink-0 px-4 pt-3 border-b bg-white">
+        <div v-if="!selectedOrder" class="flex items-center gap-2 pb-3">
+          <span class="text-xs font-semibold text-gray-500 whitespace-nowrap">Discuss an order:</span>
+          <div class="flex-1 min-w-0">
+            <select
+              v-model="showOrderPicker"
+              @change="handlePickOrder"
+              class="w-full text-xs px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="false">Select a pending order…</option>
+              <option v-for="o in myPendingOrders" :key="o.orderId" :value="o.orderId">
+                {{ o.orderId }} — ₱{{ (o.amount || 0).toLocaleString() }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div v-else class="pb-3">
+          <NegotiationOrderPanel
+            :order="selectedOrder"
+            @clear="clearSelectedOrder"
+          />
+        </div>
+      </div>
+
+      <!-- Messages Container -->
+      <div
+        ref="messagesContainer"
         class="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
       >
         <div v-if="isLoadingMessages" class="flex justify-center py-12">
@@ -53,49 +69,189 @@
             <div class="flex justify-center my-4">
               <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{{ formatDateHeader(group.date) }}</span>
             </div>
-            
+
             <div class="space-y-3">
-              <div 
-                v-for="msg in group.messages" 
+              <div
+                v-for="msg in group.messages"
                 :key="msg.messageId"
-                class="flex items-start group"
-                :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'"
+                class="group"
               >
-                <!-- Avatar for admin (left side) -->
-                <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
-                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
-                    <span class="text-white text-xs font-bold">A</span>
+
+                <!-- ✅ SYSTEM MESSAGE — full-width centered pill -->
+                <div
+                  v-if="msg.contentType === 'system'"
+                  class="w-full flex justify-center my-2"
+                >
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-medium"
+                    :class="msg.isDeleted
+                      ? 'bg-gray-100 text-gray-400 italic'
+                      : 'bg-blue-50 text-blue-700 border border-blue-100'"
+                  >
+                    {{ msg.content }}
+                  </span>
+                </div>
+
+                                <!-- 💳 PAYMENT REQUEST CARD -->
+                <div
+                  v-else-if="msg.contentType === 'payment-request'"
+                  class="w-full flex justify-start my-2"
+                >
+                  <div class="max-w-md w-full bg-white border-2 border-amber-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-3 border-b border-amber-200 flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600">
+                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                        <line x1="2" y1="10" x2="22" y2="10"/>
+                      </svg>
+                      <span class="font-bold text-amber-800 text-sm">Payment Request</span>
+                      <span
+                        v-if="msg.paymentRequestData?.status"
+                        class="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                        :class="{
+                          'bg-yellow-200 text-yellow-800': msg.paymentRequestData.status === 'pending',
+                          'bg-blue-200 text-blue-800': msg.paymentRequestData.status === 'proof-submitted',
+                          'bg-green-200 text-green-800': msg.paymentRequestData.status === 'verified',
+                          'bg-red-200 text-red-800': msg.paymentRequestData.status === 'rejected',
+                          'bg-gray-200 text-gray-700': msg.paymentRequestData.status === 'superseded',
+                        }"
+                      >
+                        {{ msg.paymentRequestData.status }}
+                      </span>
+                    </div>
+
+                    <div class="p-4 space-y-2 text-sm">
+                      <div class="flex justify-between">
+                        <span class="text-gray-500">Method</span>
+                        <span class="font-semibold">
+                          {{ msg.paymentRequestData?.method === 'gcash' ? 'GCash' : 'Bank Transfer' }}
+                        </span>
+                      </div>
+                      <div v-if="msg.paymentRequestData?.bankName" class="flex justify-between">
+                        <span class="text-gray-500">Bank</span>
+                        <span class="font-semibold">{{ msg.paymentRequestData.bankName }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="text-gray-500">Account Name</span>
+                        <span class="font-semibold">{{ msg.paymentRequestData?.accountName }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="text-gray-500">Account Number</span>
+                        <span class="font-mono font-semibold">{{ msg.paymentRequestData?.accountNumber }}</span>
+                      </div>
+                      <div class="flex justify-between pt-2 border-t border-gray-100">
+                        <span class="text-gray-500">Amount Due</span>
+                        <span class="font-bold text-amber-700">
+                          ₱{{ (msg.paymentRequestData?.amountDue || 0).toLocaleString() }}
+                        </span>
+                      </div>
+                      <p
+                        v-if="msg.paymentRequestData?.notes"
+                        class="text-xs text-gray-500 italic pt-2 border-t border-gray-100"
+                      >
+                        {{ msg.paymentRequestData.notes }}
+                      </p>
+
+                      <!-- CTA -->
+                      <button
+                        v-if="msg.paymentRequestData?.status === 'pending'"
+                        @click="openPaymentProofModal(msg)"
+                        class="w-full mt-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors"
+                      >
+                        I've Paid — Upload Proof
+                      </button>
+                      <div
+                        v-else-if="msg.paymentRequestData?.status === 'proof-submitted'"
+                        class="text-xs text-blue-600 text-center pt-2"
+                      >
+                        Proof submitted — awaiting admin review
+                      </div>
+                      <div
+                        v-else-if="msg.paymentRequestData?.status === 'verified'"
+                        class="text-xs text-green-600 text-center pt-2"
+                      >
+                        ✓ Payment verified — order confirmed
+                      </div>
+                      <div
+                        v-else-if="msg.paymentRequestData?.status === 'rejected'"
+                        class="text-xs text-red-600 text-center pt-2"
+                      >
+                        ✗ Payment rejected{{ msg.paymentRequestData.rejectionReason ? `: ${msg.paymentRequestData.rejectionReason}` : '' }}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                
-                <!-- Message Bubble with actions -->
-                <div class="flex items-center gap-1.5 max-w-[75%]">
-                  <!-- Action buttons - LEFT SIDE (for customer messages only) -->
-                  <div 
-                    v-if="msg.senderType === 'customer'"
-                    class="flex flex-row gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+
+                <!-- 🧾 PAYMENT PROOF CARD (customer's own) -->
+                <div
+                  v-else-if="msg.contentType === 'payment-proof'"
+                  class="w-full flex justify-end my-2"
+                >
+                  <div class="max-w-md w-full bg-blue-50 border border-blue-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="px-4 py-3 border-b border-blue-200 flex items-center justify-between">
+                      <span class="font-bold text-blue-800 text-sm">Payment Proof Submitted</span>
+                      <span
+                        class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
+                        :class="{
+                          'bg-yellow-200 text-yellow-800': msg.paymentProofData?.status === 'pending-review',
+                          'bg-green-200 text-green-800': msg.paymentProofData?.status === 'approved',
+                          'bg-red-200 text-red-800': msg.paymentProofData?.status === 'rejected',
+                        }"
+                      >
+                        {{ (msg.paymentProofData?.status || '').replace('-', ' ') }}
+                      </span>
+                    </div>
+                    <div class="p-4 space-y-2 text-sm">
+                      <div class="flex justify-between">
+                        <span class="text-gray-500">Amount</span>
+                        <span class="font-semibold">₱{{ (msg.paymentProofData?.amountPaid || 0).toLocaleString() }}</span>
+                      </div>
+                      <div class="flex justify-between">
+                        <span class="text-gray-500">Reference</span>
+                        <span class="font-mono text-xs">{{ msg.paymentProofData?.referenceNumber || '—' }}</span>
+                      </div>
+                      <img
+                        v-if="msg.paymentProofData?.proofImageUrl"
+                        :src="msg.paymentProofData.proofImageUrl"
+                        alt="Proof"
+                        class="w-full rounded-lg border border-blue-200 cursor-pointer"
+                        @click="openImageViewer(msg.paymentProofData.proofImageUrl)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- QUOTE / REGULAR message row -->
+                <div
+                  v-else
+                  class="flex items-start"
+                  :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'"
+                >
+
+                  <!-- Avatar for admin (left side) -->
+                  <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
+                      <span class="text-white text-xs font-bold">A</span>
+                    </div>
+                  </div>
+
+                  <!-- Reply + unsend — CUSTOMER's own messages, LEFT of bubble -->
+                  <div
+                    v-if="msg.senderType === 'customer' && !msg.isDeleted"
+                    class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center mr-2"
                   >
-                    <!-- Reply button -->
-                    <button
-                      v-if="!msg.isDeleted"
-                      @click="setReplyTo(msg)"
-                      class="p-1.5 rounded-full hover:bg-blue-200 transition-colors"
-                      title="Reply to this message"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-300 hover:text-blue-600">
+                    <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors" title="Reply">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-blue-600">
                         <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
                         <path d="M21 15l-5-5 5-5"/>
                       </svg>
                     </button>
-                    
-                    <!-- Unsend button (only for customer's own messages) -->
                     <button
                       v-if="canUnsendMessage(msg)"
                       @click="openUnsendModal(msg)"
-                      class="p-1.5 rounded-full hover:bg-red-200 transition-colors"
-                      title="Unsend message"
+                      class="p-1.5 rounded-full hover:bg-red-100 transition-colors"
+                      title="Unsend"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-red-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-red-600">
                         <path d="M3 6h18"/>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         <path d="M10 11v6"/>
@@ -104,115 +260,92 @@
                     </button>
                   </div>
 
-                  <!-- Bubble -->
+                  <!-- Regular bubble -->
                   <div
-                    class="rounded-2xl px-4 py-2.5 shadow-sm transition-all hover:shadow-md"
-                    :class="[
-                      msg.senderType === 'customer'
-                        ? 'bg-blue-600 text-white rounded-br-sm'
-                        : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200',
-                      msg.isDeleted ? 'opacity-60' : ''
-                    ]"
+                    class="relative max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm"
+                    :class="msg.senderType === 'customer'
+                      ? 'bg-blue-600 text-white rounded-br-sm'
+                      : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm'"
                   >
-                    <div v-if="msg.senderType === 'admin'" class="text-xs font-semibold mb-1 text-purple-600">
-                      ACAPSHOP Support
-                    </div>
-                    
                     <!-- Reply indicator -->
-                    <div v-if="msg.replyTo" class="text-xs mb-1.5 p-1.5 rounded bg-opacity-20" :class="msg.senderType === 'customer' ? 'bg-blue-500 bg-opacity-20' : 'bg-gray-100'">
-                      <span class="text-[10px] opacity-70">Replying to:</span>
+                    <div
+                      v-if="msg.replyTo"
+                      class="text-xs mb-1.5 p-1.5 rounded"
+                      :class="msg.senderType === 'customer' ? 'bg-blue-500 bg-opacity-20' : 'bg-gray-100'"
+                    >
+                      <span class="text-[10px] opacity-70">↩️ Replying to:</span>
                       <p class="text-xs truncate max-w-[200px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
                         {{ msg.replyTo.content }}
                       </p>
                     </div>
-                    
-                    <p v-if="msg.content && !msg.isDeleted" class="text-sm leading-relaxed whitespace-pre-wrap break-words">{{ msg.content }}</p>
-                    
+
+                    <!-- Text content -->
+                    <p v-if="msg.content && !msg.isDeleted" class="text-sm whitespace-pre-wrap break-words">{{ msg.content }}</p>
+
                     <!-- Unsend indicator -->
-                    <p v-if="msg.isDeleted" class="text-sm leading-relaxed whitespace-pre-wrap break-words italic" :class="msg.senderType === 'customer' ? 'text-blue-300' : 'text-gray-400'">
+                    <p v-if="msg.isDeleted" class="text-sm italic" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
                       This message was unsent
                     </p>
-                    
-<!-- Attachments -->
-<div v-if="msg.attachments && msg.attachments.length > 0 && !msg.isDeleted">
-  <div v-for="(file, idx) in msg.attachments" :key="idx">
-    <div v-if="isImageFile(file)" class="mt-2">
-      <img 
-        :src="getFileUrl(file)" 
-        :alt="file.name"
-        class="max-w-full max-h-64 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-        @click="openImageViewer(getFileUrl(file))"
-        @error="handleImageError"
-        :data-cloudinary="isCloudinaryUrl(getFileUrl(file))"
-      />
-      <p class="text-xs mt-1" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
-        📷 {{ file.name }}
-        <span v-if="isCloudinaryUrl(getFileUrl(file))" class="text-[10px] text-green-400 ml-1">(Cloudinary)</span>
-      </p>
-    </div>
-    <div v-else class="mt-2 flex items-center gap-2 p-2 rounded-lg bg-gray-100">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
-        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-        <polyline points="14 2 14 8 20 8"/>
-      </svg>
-      <a :href="getFileUrl(file)" target="_blank" class="text-sm text-blue-600 hover:underline truncate">
-        {{ file.name }}
-      </a>
-      <span class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</span>
-      <span v-if="isCloudinaryUrl(getFileUrl(file))" class="text-[10px] text-green-400">(Cloudinary)</span>
-    </div>
-  </div>
-</div>
-                    
-                    <!-- Time and Status -->
-                    <div class="flex items-center gap-1 mt-1" :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'">
+
+                    <!-- Attachments -->
+                    <div v-if="msg.attachments?.length && !msg.isDeleted" class="mt-2 space-y-2">
+                      <div v-for="(file, idx) in msg.attachments" :key="idx">
+                        <img
+                          v-if="isImageFile(file)"
+                          :src="getFileUrl(file)"
+                          :alt="file.name || 'Image'"
+                          class="max-w-full max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          @click="openImageViewer(getFileUrl(file))"
+                          @error="handleImageError"
+                        />
+                        <div v-else class="flex items-center gap-2 p-2 rounded-lg" :class="msg.senderType === 'customer' ? 'bg-blue-700' : 'bg-gray-100'">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="msg.senderType === 'customer' ? 'text-blue-300' : 'text-gray-500'">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                          </svg>
+                          <a :href="getFileUrl(file)" target="_blank" class="text-sm hover:underline truncate flex-1" :class="msg.senderType === 'customer' ? 'text-blue-100' : 'text-blue-600'">
+                            {{ file.name || 'Download' }}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Timestamp -->
+                    <div class="flex items-center gap-1 mt-1.5 justify-end">
                       <span class="text-[10px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
-                        {{ formatTime(msg.createdAt) }}
+                        {{ formatTime(msg.createdAt || msg.timestamp) }}
                       </span>
-                      <span v-if="msg.senderType === 'customer' && !msg.isPending && !msg.failed" class="text-blue-200">
-                        <svg v-if="msg.isRead" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M2 12l4 4 8-8"/>
-                          <path d="M22 7l-8 8-3-3"/>
-                        </svg>
-                      </span>
-                      <div v-if="msg.isPending" class="w-3 h-3 border-2 border-blue-200 border-t-transparent rounded-full animate-spin"></div>
-                      <span v-if="msg.failed" class="text-[10px] text-red-400">Failed</span>
                     </div>
                   </div>
 
-                  <!-- Action buttons - RIGHT SIDE (for admin messages only) -->
-                  <div 
-                    v-if="msg.senderType === 'admin'"
-                    class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  <!-- Reply — ADMIN messages only, RIGHT of bubble -->
+                  <div
+                    v-if="msg.senderType === 'admin' && !msg.isDeleted"
+                    class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center ml-2"
                   >
-                    <!-- Reply button only -->
-                    <button
-                      v-if="!msg.isDeleted"
-                      @click="setReplyTo(msg)"
-                      class="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
-                      title="Reply to this message"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-gray-700">
+                    <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors" title="Reply">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-blue-600">
                         <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
                         <path d="M21 15l-5-5 5-5"/>
                       </svg>
                     </button>
                   </div>
-                </div>
-                
-                <!-- Avatar for customer (right side) -->
-                <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
-                  <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                    <span class="text-white text-xs font-bold">{{ userInitial }}</span>
+
+                  <!-- Avatar for customer (right side) -->
+                  <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
+                      <span class="text-white text-xs font-bold">{{ userInitial }}</span>
+                    </div>
                   </div>
+
                 </div>
+
+                
               </div>
             </div>
+
           </template>
-          
+
           <!-- Typing Indicator -->
           <div v-if="isTyping" class="flex justify-start mt-2">
             <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
@@ -246,36 +379,33 @@
         </button>
       </div>
 
-      <!-- Input Area - Fixed at bottom -->
+      <!-- Input Area -->
       <div class="border-t bg-white p-4 shrink-0">
-        <!-- Attachment Preview - Updated -->
-<div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
-  <div v-for="(file, idx) in pendingAttachments" :key="idx" class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
-    <!-- Show image preview if available -->
-    <img v-if="file.previewUrl" :src="file.previewUrl" class="w-10 h-10 object-cover rounded" />
-    <svg v-else-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
-      <rect x="2" y="2" width="20" height="20" rx="2.18"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <path d="M21 15l-5-5-6 6-3-3-4 4"/>
-    </svg>
-    <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
-      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-      <polyline points="14 2 14 8 20 8"/>
-    </svg>
-    <div class="max-w-[150px]">
-      <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
-      <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
-    </div>
-    <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
-      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-      </svg>
-    </button>
-  </div>
-</div>
-        
+        <div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
+          <div v-for="(file, idx) in pendingAttachments" :key="idx" class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
+            <img v-if="file.previewUrl" :src="file.previewUrl" class="w-10 h-10 object-cover rounded" />
+            <svg v-else-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
+              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5-6 6-3-3-4 4"/>
+            </svg>
+            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <div class="max-w-[150px]">
+              <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
+              <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
+            </div>
+            <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
         <div class="flex gap-2 items-center">
-          <!-- Attachment Button -->
           <div class="relative">
             <input
               ref="fileInput"
@@ -296,22 +426,19 @@
               </svg>
             </button>
           </div>
-          
-          <!-- Message Input -->
-          <div class="flex-1  relative">
+
+          <div class="flex-1 relative">
             <textarea
               v-model="newMessage"
               @keydown.enter.exact.prevent="sendMessage"
               @keydown.enter.shift.exact="newMessage += '\n'"
               rows="1"
-              placeholder="Type your message (optional)..."
+              placeholder="Type your message..."
               class="w-full min-h-[42px] max-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors"
-              :style="{ height: 'auto' }"
               @input="handleTyping"
             ></textarea>
           </div>
-          
-          <!-- Send Button -->
+
           <button
             @click="sendMessage"
             :disabled="(pendingAttachments.length === 0 && !newMessage.trim()) || isSending"
@@ -324,12 +451,12 @@
             <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
           </button>
         </div>
-        
+
         <p class="text-xs text-gray-400 mt-3 text-center">Attach image/file or type a message</p>
       </div>
     </div>
 
-    <!-- Image Viewer Modal -->
+    <!-- Image Viewer -->
     <Teleport to="body">
       <transition name="modal">
         <div v-if="showImageViewer" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" @click.self="closeImageViewer">
@@ -354,14 +481,14 @@
 
     <!-- Unsend Confirmation Modal -->
     <Teleport to="body">
-      <div 
-        v-if="unsendModal.show" 
+      <div
+        v-if="unsendModal.show"
         class="fixed inset-0 z-[200] flex items-center justify-center p-4"
         @click.self="closeUnsendModal"
       >
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"></div>
-        
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-300">
+
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
           <div class="text-center">
             <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
@@ -371,14 +498,14 @@
                 <path d="M14 11v6"/>
               </svg>
             </div>
-            
+
             <h3 class="text-lg font-bold text-gray-900 mb-2">Unsend Message?</h3>
             <p class="text-sm text-gray-600 mb-6">
               This message will be removed for everyone in the conversation.
               <br>
               <span class="text-xs text-gray-400">This action cannot be undone.</span>
             </p>
-            
+
             <div class="flex gap-3">
               <button
                 @click="closeUnsendModal"
@@ -417,6 +544,48 @@
         </div>
       </transition>
     </Teleport>
+
+    <div v-if="showProofModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showProofModal = false">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+    <h3 class="text-lg font-bold mb-4">Upload Payment Proof</h3>
+
+    <div class="space-y-3">
+      <div class="bg-amber-50 rounded-lg p-3 text-sm">
+        <div class="flex justify-between">
+          <span class="text-gray-600">Amount Due</span>
+          <span class="font-bold text-amber-700">₱{{ selectedPaymentRequest.paymentRequestData.amountDue.toLocaleString() }}</span>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-1">This amount is set by the seller and cannot be changed.</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Reference Number</label>
+        <input v-model="proofReference" type="text" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 1234567890" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Upload Receipt / Screenshot</label>
+        <input ref="proofFileInput" type="file" accept="image/*" class="hidden" @change="handleProofFileSelect" />
+        <button @click="proofFileInput?.click()" class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400">
+          {{ proofFile ? proofFile.name : 'Choose image…' }}
+        </button>
+        <img v-if="proofPreview" :src="proofPreview" class="mt-2 w-full max-h-40 object-contain rounded-lg border" />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Note (optional)</label>
+        <textarea v-model="proofNote" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm resize-none"></textarea>
+      </div>
+    </div>
+
+    <div class="flex gap-3 mt-5">
+      <button @click="showProofModal = false" class="flex-1 py-2 border rounded-lg text-sm font-semibold">Cancel</button>
+      <button @click="submitPaymentProof" :disabled="!proofFile || isSubmittingProof" class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50">
+        {{ isSubmittingProof ? 'Submitting…' : 'Submit' }}
+      </button>
+    </div>
+  </div>
+</div>
   </div>
 </template>
 
@@ -424,24 +593,29 @@
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSocket } from '@/composables/useSocket'
-import { chatApi } from '@/api'
+import { chatApi, ordersApi } from '@/api'
+
+import NegotiationOrderPanel from '@/components/chat/NegotiationOrderPanel.vue'
 
 const { userInitial, customerId, token } = useAuth()
-const { 
-  isConnected: isSocketConnected, 
-  connect: connectSocket, 
-  joinConversation, 
-  sendMessage: sendSocketMessage, 
+const {
+  isConnected: isSocketConnected,
+  connect: connectSocket,
+  joinConversation,
+  sendMessage: sendSocketMessage,
   sendTyping,
   markAsRead,
   onNewMessage,
+  onMessageUnsent,
+  onPaymentRequestUpdated,
+  onPaymentProofUpdated,
   onUserTyping,
   onError,
   isAdminOnline,
-  onlineUsers 
+  onOrderNegotiationUpdated,
 } = useSocket()
 
-// State
+// ── State ──────────────────────────────────────────
 const messagesContainer = ref(null)
 const fileInput = ref(null)
 const newMessage = ref('')
@@ -460,7 +634,33 @@ const isUnsendLoading = ref(false)
 let typingTimeoutId = null
 let pendingTempId = null
 
-// ── Auto-scroll helpers ──────────────────────────────
+const myPendingOrders = ref([])
+const selectedOrder = ref(null)
+const showOrderPicker = ref(false)
+
+// ── Payment proof modal state ───────────────────────
+const showProofModal = ref(false)
+const selectedPaymentRequest = ref(null)
+const proofReference = ref('')
+const proofFile = ref(null)
+const proofPreview = ref('')
+const proofNote = ref('')
+const isSubmittingProof = ref(false)
+const proofFileInput = ref(null)
+
+// ── Persistence across navigation ───────────────────
+const ORDER_STORAGE_KEY = 'selectedNegotiationOrderId'
+
+function saveSelectedOrderId(orderId) {
+  if (orderId) sessionStorage.setItem(ORDER_STORAGE_KEY, orderId)
+  else sessionStorage.removeItem(ORDER_STORAGE_KEY)
+}
+
+function getSavedOrderId() {
+  return sessionStorage.getItem(ORDER_STORAGE_KEY)
+}
+
+// ── Auto-scroll ─────────────────────────────────────
 const scrollToBottom = async () => {
   await nextTick()
   if (messagesContainer.value) {
@@ -468,7 +668,7 @@ const scrollToBottom = async () => {
   }
 }
 
-// ── Computed ──────────────────────────────────────────
+// ── Grouped messages ────────────────────────────────
 const groupedMessages = computed(() => {
   const groups = {}
   messages.value.forEach(msg => {
@@ -481,12 +681,11 @@ const groupedMessages = computed(() => {
   return Object.values(groups)
 })
 
-// ── Helper Functions ──────────────────────────────────
+// ── Helpers ─────────────────────────────────────────
 function formatTime(dateValue) {
   if (!dateValue) return ''
   try {
-    const date = new Date(dateValue)
-    return date.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
+    return new Date(dateValue).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })
   } catch {
     return ''
   }
@@ -497,12 +696,11 @@ function formatDateHeader(dateValue) {
   const today = new Date()
   const yesterday = new Date(today)
   yesterday.setDate(yesterday.getDate() - 1)
-  
+
   if (date.toDateString() === today.toDateString()) return 'Today'
   if (date.toDateString() === yesterday.toDateString()) return 'Yesterday'
   return date.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
 }
-
 
 function formatFileSize(bytes) {
   if (!bytes) return ''
@@ -517,38 +715,22 @@ function isImageFile(file) {
 
 function getFileUrl(file) {
   if (!file) return ''
-  
-  // If it's already a full URL
-  if (file.url && file.url.startsWith('http')) {
-    return file.url
-  }
-  if (file.path && file.path.startsWith('http')) {
-    return file.path
-  }
-  
-  // Check if it's a Cloudinary public_id format (beverage/chat/...)
+  if (file.url && file.url.startsWith('http')) return file.url
+  if (file.path && file.path.startsWith('http')) return file.path
   if (file.path && (file.path.startsWith('beverage/') || file.path.includes('beverage/chat/'))) {
     const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'vwrxijez'
     const cleanPath = file.path.replace(/^\/+/, '')
     return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${cleanPath}`
   }
-  
-  // Check if it's an old local path format (uploads/...)
   if (file.path && file.path.startsWith('uploads/')) {
     const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-    const cleanPath = file.path.replace(/^\/+/, '')
-    return `${baseURL}/${cleanPath}`
+    return `${baseURL}/${file.path.replace(/^\/+/, '')}`
   }
-  
-  // Fallback
   return file.path || file.url || ''
 }
 
-function isCloudinaryUrl(url) {
-  return url && (url.includes('cloudinary.com') || url.includes('res.cloudinary.com'))
-}
-
 function handleImageError(e) {
+  e.target.onerror = null
   e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="1"%3E%3Crect x="3" y="3" width="18" height="18" rx="2"%3E%3C/rect%3E%3C/svg%3E'
 }
 
@@ -581,34 +763,27 @@ function openFileSelector() {
 function handleFileSelect(event) {
   const files = Array.from(event.target.files)
   const MAX_SIZE = 10 * 1024 * 1024
-  
   for (const file of files) {
     if (file.size > MAX_SIZE) {
       showToast('error', `${file.name} exceeds 10MB limit`)
       continue
     }
-    
-    // ✅ Store the actual File object with preview URL
     const fileData = {
-      file: file, // Store the actual File object
+      file,
       name: file.name,
       size: file.size,
       type: file.type,
-      lastModified: file.lastModified
+      lastModified: file.lastModified,
     }
-    
-    // Add preview URL for images
     if (file.type?.startsWith('image/')) {
       fileData.previewUrl = URL.createObjectURL(file)
     }
-    
     pendingAttachments.value.push(fileData)
   }
   event.target.value = ''
 }
 
 function removeAttachment(index) {
-  // Revoke the object URL to prevent memory leaks
   if (pendingAttachments.value[index]?.previewUrl) {
     URL.revokeObjectURL(pendingAttachments.value[index].previewUrl)
   }
@@ -618,7 +793,6 @@ function removeAttachment(index) {
 function handleTyping() {
   if (conversationId.value && isSocketConnected.value) {
     sendTyping(conversationId.value, true)
-    
     if (typingTimeoutId) clearTimeout(typingTimeoutId)
     typingTimeoutId = setTimeout(() => {
       sendTyping(conversationId.value, false)
@@ -626,24 +800,19 @@ function handleTyping() {
   }
 }
 
-// ── Reply feature ──
 function setReplyTo(msg) {
   replyToMessage.value = msg
-  if (fileInput.value) {
-    fileInput.value?.focus()
-  }
+  if (fileInput.value) fileInput.value?.focus()
 }
 
 function clearReply() {
   replyToMessage.value = null
 }
 
-// ── Unsend feature ──
 function canUnsendMessage(msg) {
   if (msg.isDeleted) return false
-  const msgTime = new Date(msg.createdAt).getTime()
-  const now = Date.now()
-  const ageInMinutes = (now - msgTime) / 60000
+  if (msg.senderType !== 'customer') return false
+  const ageInMinutes = (Date.now() - new Date(msg.createdAt).getTime()) / 60000
   return ageInMinutes <= 5
 }
 
@@ -655,22 +824,148 @@ function closeUnsendModal() {
   unsendModal.value = { show: false, message: null }
 }
 
+// ── Pending orders ──────────────────────────────────
+const loadPendingOrders = async () => {
+  try {
+    const resp = await ordersApi.getMyOrders()
+    if (resp.success && resp.data) {
+      myPendingOrders.value = resp.data.filter(
+        (o) => o.status === 'Pending' && o.paymentStatus === 'Unpaid'
+      )
+    }
+  } catch (e) {
+    console.error('Error loading pending orders:', e)
+  }
+}
+
+const handlePickOrder = async () => {
+  const orderId = showOrderPicker.value
+  if (!orderId) return
+  const found = myPendingOrders.value.find((o) => o.orderId === orderId)
+  if (!found) return
+
+  selectedOrder.value = found
+  saveSelectedOrderId(orderId)
+
+  if (!conversationId.value) {
+    showToast('error', 'Conversation not ready yet')
+    selectedOrder.value = null
+    saveSelectedOrderId(null)
+    return
+  }
+
+  const resp = await chatApi.linkOrderToConversation(conversationId.value, orderId)
+  if (!resp.success) {
+    showToast('error', resp.message || 'Failed to link order')
+    selectedOrder.value = null
+    saveSelectedOrderId(null)
+    return
+  }
+
+  showToast('success', 'Order shared with admin — waiting for their response')
+}
+
+const clearSelectedOrder = () => {
+  selectedOrder.value = null
+  saveSelectedOrderId(null)
+  showOrderPicker.value = false
+}
+
+// ── Payment proof upload ────────────────────────────
+function openPaymentProofModal(msg) {
+  selectedPaymentRequest.value = msg
+  proofReference.value = ''
+  proofFile.value = null
+  proofPreview.value = ''
+  proofNote.value = ''
+  showProofModal.value = true
+}
+
+function handleProofFileSelect(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('error', 'Image exceeds 10MB limit')
+    return
+  }
+  proofFile.value = file
+  const reader = new FileReader()
+  reader.onload = (e) => { proofPreview.value = e.target.result }
+  reader.readAsDataURL(file)
+}
+
+async function submitPaymentProof() {
+  if (!proofFile.value || !selectedPaymentRequest.value) return
+  if (!conversationId.value) {
+    showToast('error', 'Conversation not ready')
+    return
+  }
+
+  isSubmittingProof.value = true
+  try {
+    // 1. Upload image to Cloudinary via existing chat upload endpoint
+    const uploadResult = await chatApi.uploadFiles([proofFile.value])
+    if (!uploadResult.success || !uploadResult.files?.length) {
+      showToast('error', uploadResult.message || 'Failed to upload image')
+      return
+    }
+    const proofImageUrl = uploadResult.files[0].path || uploadResult.files[0].url
+
+    // 2. Send payment proof
+    const res = await chatApi.sendPaymentProof(conversationId.value, {
+      paymentRequestMessageId: selectedPaymentRequest.value.messageId,
+      referenceNumber: proofReference.value.trim(),
+      proofImageUrl,
+      note: proofNote.value.trim(),
+    })
+
+    if (res.success) {
+      showToast('success', 'Payment proof submitted — awaiting review')
+      showProofModal.value = false
+      // The socket event will append the proof message; but if socket is down,
+      // optimistically push it so it renders immediately
+      if (res.data) {
+        const exists = messages.value.some(m => m.messageId === res.data.messageId)
+        if (!exists) messages.value.push(res.data)
+      }
+      // Flip the request status locally
+      const idx = messages.value.findIndex(m => m.messageId === selectedPaymentRequest.value.messageId)
+      if (idx !== -1) {
+        messages.value[idx] = {
+          ...messages.value[idx],
+          paymentRequestData: {
+            ...messages.value[idx].paymentRequestData,
+            status: 'proof-submitted',
+          },
+        }
+      }
+      scrollToBottom()
+    } else {
+      showToast('error', res.message || 'Failed to submit proof')
+    }
+  } catch (e) {
+    console.error('submitPaymentProof error:', e)
+    showToast('error', 'Failed to submit proof')
+  } finally {
+    isSubmittingProof.value = false
+  }
+}
+
+
+// ── Unsend ──────────────────────────────────────────
 async function confirmUnsend() {
   const msg = unsendModal.value.message
   if (!msg) return
-  
   isUnsendLoading.value = true
-  
   try {
     const result = await chatApi.unsendMessage(msg.messageId)
-    
     if (result.success) {
       const index = messages.value.findIndex(m => m.messageId === msg.messageId)
       if (index !== -1) {
         messages.value[index] = {
           ...messages.value[index],
           isDeleted: true,
-          content: 'This message was unsent'
+          content: 'This message was unsent',
         }
       }
       showToast('success', 'Message unsent successfully')
@@ -686,21 +981,19 @@ async function confirmUnsend() {
   }
 }
 
+// ── Messages ────────────────────────────────────────
 async function loadMessages() {
   if (!conversationId.value) return
-  
   isLoadingMessages.value = true
   try {
     const response = await chatApi.getMessages(conversationId.value, 100)
     if (response.success && response.data) {
       messages.value = response.data
       await scrollToBottom()
-      
       if (isSocketConnected.value) {
         markAsRead(conversationId.value)
-        // Dispatch event for unread count update
-        window.dispatchEvent(new CustomEvent('messageRead', { 
-          detail: { conversationId: conversationId.value }
+        window.dispatchEvent(new CustomEvent('messageRead', {
+          detail: { conversationId: conversationId.value },
         }))
       }
     }
@@ -714,51 +1007,34 @@ async function loadMessages() {
 async function sendMessage() {
   const content = newMessage.value.trim()
   if (pendingAttachments.value.length === 0 && !content) return
-  
   isSending.value = true
-  
   try {
     let uploadedFiles = []
-    
     if (pendingAttachments.value.length > 0) {
-      try {
-        // ✅ Extract the actual File objects from our stored data
-        const filesToUpload = pendingAttachments.value
-          .map(f => f.file || f) // Get the actual File object
-          .filter(f => f instanceof File || f.name) // Filter out invalid files
-        
-        if (filesToUpload.length === 0) {
-          showToast('error', 'Invalid files selected')
-          isSending.value = false
-          return
-        }
-        
-        const uploadResult = await chatApi.uploadFiles(filesToUpload)
-        if (uploadResult.success && uploadResult.files) {
-          uploadedFiles = uploadResult.files
-          console.log('✅ Files uploaded to Cloudinary:', uploadedFiles)
-        } else {
-          showToast('error', uploadResult.message || 'Failed to upload files')
-          isSending.value = false
-          return
-        }
-      } catch (error) {
-        console.error('File upload error:', error)
-        showToast('error', error.message || 'Failed to upload files')
+      const filesToUpload = pendingAttachments.value
+        .map(f => f.file || f)
+        .filter(f => f instanceof File || f.name)
+      if (filesToUpload.length === 0) {
+        showToast('error', 'Invalid files selected')
+        isSending.value = false
+        return
+      }
+      const uploadResult = await chatApi.uploadFiles(filesToUpload)
+      if (uploadResult.success && uploadResult.files) {
+        uploadedFiles = uploadResult.files
+      } else {
+        showToast('error', uploadResult.message || 'Failed to upload files')
         isSending.value = false
         return
       }
     }
-    
+
     const tempId = 'temp_' + Date.now()
     pendingTempId = tempId
-    
     const replyToMsg = replyToMessage.value
     const replyToMessageId = replyToMsg?.messageId || null
-    
-    // Create temp message
     const tempAttachments = uploadedFiles.length > 0 ? uploadedFiles : []
-    
+
     const tempMessage = {
       messageId: tempId,
       conversationId: conversationId.value,
@@ -769,61 +1045,33 @@ async function sendMessage() {
       createdAt: new Date().toISOString(),
       isPending: true,
       isRead: false,
-      replyTo: replyToMsg ? {
-        messageId: replyToMsg.messageId,
-        content: replyToMsg.content || '📎 Attachment'
-      } : null
+      replyTo: replyToMsg
+        ? { messageId: replyToMsg.messageId, content: replyToMsg.content || '📎 Attachment' }
+        : null,
     }
-    
     messages.value.push(tempMessage)
     newMessage.value = ''
     clearReply()
-    
-    // Clear pending attachments
     pendingAttachments.value = []
     await scrollToBottom()
-    
+
     const messageContent = content || (uploadedFiles.length > 0 ? '📎 Attachment' : '')
-    
-    // Send via socket or REST
+
     if (isSocketConnected.value && conversationId.value) {
-      console.log('🔵 Sending via socket with files:', uploadedFiles)
-      const sent = sendSocketMessage(
-        conversationId.value,
-        messageContent,
-        uploadedFiles,
-        replyToMessageId
-      )
-      
+      const sent = sendSocketMessage(conversationId.value, messageContent, uploadedFiles, replyToMessageId)
       if (!sent) {
-        console.log('🔵 Socket failed, using REST fallback')
-        const response = await chatApi.sendMessage(
-          conversationId.value,
-          messageContent,
-          uploadedFiles,
-          replyToMessageId
-        )
+        const response = await chatApi.sendMessage(conversationId.value, messageContent, uploadedFiles, replyToMessageId)
         if (response.success && response.data) {
           const index = messages.value.findIndex(m => m.messageId === tempId)
-          if (index !== -1) {
-            messages.value[index] = { ...response.data, isPending: false }
-          }
+          if (index !== -1) messages.value[index] = { ...response.data, isPending: false }
           pendingTempId = null
         }
       }
     } else {
-      console.log('🔵 Socket not connected, using REST')
-      const response = await chatApi.sendMessage(
-        conversationId.value,
-        messageContent,
-        uploadedFiles,
-        replyToMessageId
-      )
+      const response = await chatApi.sendMessage(conversationId.value, messageContent, uploadedFiles, replyToMessageId)
       if (response.success && response.data) {
         const index = messages.value.findIndex(m => m.messageId === tempId)
-        if (index !== -1) {
-          messages.value[index] = { ...response.data, isPending: false }
-        }
+        if (index !== -1) messages.value[index] = { ...response.data, isPending: false }
         pendingTempId = null
       }
     }
@@ -846,7 +1094,6 @@ async function initConversation() {
     if (response.success && response.data) {
       conversationId.value = response.data.conversationId
       await loadMessages()
-      
       if (isSocketConnected.value) {
         joinConversation(conversationId.value)
         markAsRead(conversationId.value)
@@ -858,73 +1105,85 @@ async function initConversation() {
   }
 }
 
+// ── Socket listeners ────────────────────────────────
 function setupSocketListeners() {
   onNewMessage((message) => {
-    console.log('📩 New message received via socket:', message.messageId)
-    console.log('📩 Pending temp ID:', pendingTempId)
-    
-    // If this is our own pending message, replace it
     if (pendingTempId) {
       const index = messages.value.findIndex(m => m.messageId === pendingTempId)
       if (index !== -1) {
-        console.log('📩 Replacing temp message with real message')
-        messages.value[index] = { 
-          ...message, 
+        messages.value[index] = {
+          ...message,
           isPending: false,
-          replyTo: message.replyTo || messages.value[index].replyTo
+          replyTo: message.replyTo || messages.value[index].replyTo,
         }
         pendingTempId = null
-        // ✅ Auto-scroll to bottom after replacing
         scrollToBottom()
         return
       }
     }
-    
-    // Check if message already exists (prevent duplicates)
     const exists = messages.value.some(m => m.messageId === message.messageId)
     if (!exists) {
-      console.log('📩 Adding new message to list')
       messages.value.push(message)
-      
-      // ✅ Auto-scroll to bottom for new messages
       scrollToBottom()
-      
       if (conversationId.value && message.conversationId === conversationId.value) {
         markAsRead(conversationId.value)
       }
-    } else {
-      console.log('📩 Message already exists, skipping duplicate')
     }
-
-    window.dispatchEvent(new CustomEvent('newMessageReceived', { 
-      detail: { conversationId: message.conversationId }
+    window.dispatchEvent(new CustomEvent('newMessageReceived', {
+      detail: { conversationId: message.conversationId },
     }))
   })
-  
-  onUserTyping(({ userType, isTyping: typing }) => {
-    if (userType === 'admin') {
-      isTyping.value = typing
+  onMessageUnsent(({ messageId }) => {
+    const index = messages.value.findIndex(m => m.messageId === messageId)
+    if (index !== -1) {
+      messages.value[index] = {
+        ...messages.value[index],
+        isDeleted: true,
+        content: 'This message was unsent',
+      }
     }
   })
-  
+
+    onPaymentRequestUpdated((updatedReq) => {
+    if (!updatedReq) return
+    const idx = messages.value.findIndex(m => m.messageId === updatedReq.messageId)
+    if (idx !== -1) {
+      messages.value[idx] = { ...messages.value[idx], paymentRequestData: updatedReq.paymentRequestData }
+    }
+  })
+
+  onPaymentProofUpdated((updatedProof) => {
+    if (!updatedProof) return
+    const idx = messages.value.findIndex(m => m.messageId === updatedProof.messageId)
+    if (idx !== -1) {
+      messages.value[idx] = { ...messages.value[idx], paymentProofData: updatedProof.paymentProofData }
+    }
+  })
+
+onOrderNegotiationUpdated((updatedOrder) => {
+  if (!updatedOrder) return
+  if (selectedOrder.value?.orderId === updatedOrder.orderId) {
+    if (updatedOrder.status === 'Pending' && updatedOrder.paymentStatus === 'Unpaid') {
+      selectedOrder.value = updatedOrder
+    } else {
+      clearSelectedOrder()
+    }
+  }
+})
+
+  onUserTyping(({ userType, isTyping: typing }) => {
+    if (userType === 'admin') isTyping.value = typing
+  })
+
   onError((error) => {
     console.error('Socket error:', error)
     showToast('error', error.message || 'Connection error')
   })
 }
 
-// ── Watchers for auto-scroll ─────────────────────────
-// Watch for messages length changes (new messages)
-watch(() => messages.value.length, () => {
-  scrollToBottom()
-}, { flush: 'post' })
-
-// Watch for grouped messages changes (when new messages arrive)
-watch(groupedMessages, () => {
-  scrollToBottom()
-}, { flush: 'post' })
-
-// Watch for socket connection and conversation changes
+// ── Watchers ────────────────────────────────────────
+watch(() => messages.value.length, () => scrollToBottom(), { flush: 'post' })
+watch(groupedMessages, () => scrollToBottom(), { flush: 'post' })
 watch(isSocketConnected, (connected) => {
   if (connected && conversationId.value) {
     joinConversation(conversationId.value)
@@ -932,16 +1191,32 @@ watch(isSocketConnected, (connected) => {
   }
 })
 
-// ── Lifecycle ─────────────────────────────────────────
+// ── Lifecycle ───────────────────────────────────────
 onMounted(async () => {
   if (token.value) {
     connectSocket(token.value, customerId.value, 'customer')
     setupSocketListeners()
   }
-  
+
   await initConversation()
-  
-  // ✅ Initial scroll to bottom after mount
+  await loadPendingOrders()
+
+  // Restore previously picked order
+  const savedId = getSavedOrderId()
+  if (savedId) {
+    const found = myPendingOrders.value.find((o) => o.orderId === savedId)
+    if (found) {
+      selectedOrder.value = found
+      showOrderPicker.value = savedId
+      if (conversationId.value) {
+        await chatApi.linkOrderToConversation(conversationId.value, savedId)
+      }
+    } else {
+      // Order no longer negotiable — clear it
+      saveSelectedOrderId(null)
+    }
+  }
+
   await nextTick()
   scrollToBottom()
 })
@@ -958,43 +1233,12 @@ onUnmounted(() => {
 }
 .animate-bounce { animation: bounce 0.8s ease-in-out infinite; }
 
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-enter-from, .modal-leave-to {
-  opacity: 0;
-}
+.modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
 
-.toast-enter-active, .toast-leave-active {
-  transition: all 0.3s ease;
-}
+.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
 .toast-enter-from, .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(12px);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes zoomIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.animate-in {
-  animation-duration: 0.3s;
-  animation-fill-mode: both;
-}
-.fade-in {
-  animation-name: fadeIn;
-}
-.zoom-in {
-  animation-name: zoomIn;
 }
 </style>

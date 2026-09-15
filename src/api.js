@@ -349,6 +349,18 @@ export const chatApi = {
       })
     );
   },
+
+  sendPaymentProof: async (conversationId, payload) => {
+  return handleResponse(
+    axiosInstance.post('/chat/customer/payment-proof', {
+      conversationId,
+      paymentRequestMessageId: payload.paymentRequestMessageId,
+      referenceNumber: payload.referenceNumber || '',
+      proofImageUrl: payload.proofImageUrl,
+      note: payload.note || '',
+    })
+  );
+},
   
   // Get unread count
   getUnreadCount: async () => {
@@ -380,6 +392,22 @@ export const chatApi = {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
     )
+  },
+
+    // Respond to a quote (accept/reject)
+  respondToQuote: async (messageId, response, reason = '') => {
+    return handleResponse(
+      axiosInstance.post(`/chat/customer/quote/${messageId}/respond`, {
+        response,
+        reason,
+      })
+    );
+  },
+
+    linkOrderToConversation: async (conversationId, orderId) => {
+    return handleResponse(
+      axiosInstance.patch(`/chat/customer/conversations/${conversationId}/link-order`, { orderId })
+    );
   },
 };
 

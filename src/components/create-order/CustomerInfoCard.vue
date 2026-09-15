@@ -4,6 +4,28 @@
       <h4 class="font-semibold text-gray-900">Customer Information</h4>
       <p class="text-xs text-gray-500 mt-0.5">Pre-filled from your account. Edit if needed.</p>
     </div>
+
+    <!-- Saved profile banner -->
+    <div v-if="showSavedBanner" class="px-6 pt-4">
+      <div class="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 flex items-start gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" class="text-blue-600 shrink-0 mt-0.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 8v4M12 16h.01" />
+        </svg>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-semibold text-blue-900">We have your saved info</p>
+          <p class="text-[11px] text-blue-700 mt-0.5 leading-snug">
+            {{ savedSummary }}
+          </p>
+        </div>
+        <button type="button" @click="$emit('use-saved')"
+          class="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+          Use it
+        </button>
+      </div>
+    </div>
+
     <div class="px-6 py-5 space-y-4">
       <div class="grid md:grid-cols-2 gap-4">
         <div class="space-y-1.5">
@@ -101,10 +123,35 @@ import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
 
 const props = defineProps({
   modelValue: { type: Object, required: true },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  savedProfile: { type: Object, default: null },
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'use-saved'])
+
+// Show banner only when there is a saved profile AND the form is currently
+// missing the main fields (name / email / phone)
+const showSavedBanner = computed(() => {
+  const sp = props.savedProfile
+  if (!sp) return false
+  if (!sp.name && !sp.email && !sp.phone) return false
+
+  // If the form already has name + email + phone, don't offer again
+  const mv = props.modelValue
+  const hasAll = mv.name?.trim() && mv.email?.trim() && mv.phone?.trim()
+  if (hasAll) return false
+
+  return true
+})
+
+const savedSummary = computed(() => {
+  const sp = props.savedProfile || {}
+  const parts = []
+  if (sp.name) parts.push(sp.name)
+  if (sp.email) parts.push(sp.email)
+  if (sp.phone) parts.push(sp.phone)
+  return parts.join(' · ')
+})
 
 // Local validation errors
 const localErrors = ref({
