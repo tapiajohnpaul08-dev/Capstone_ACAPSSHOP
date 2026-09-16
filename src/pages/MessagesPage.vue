@@ -1,7 +1,13 @@
-<!-- Customer Side -->
 <template>
-  <div class="container mx-auto px-4 py-6 max-w-6xl">
-    <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col" style="height: calc(100vh - 140px)">
+  <div class="container mx-auto px-4 py-6 max-w-7xl">
+    <div
+      class="grid gap-4"
+      :class="selectedOrder ? 'grid-cols-1 lg:grid-cols-[1fr_380px]' : 'grid-cols-1'"
+      style="height: calc(100vh - 140px)"
+    >
+
+      <!-- ────── LEFT: Chat panel ────── -->
+      <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0">
 
       <!-- Header -->
       <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0">
@@ -26,9 +32,9 @@
         </div>
       </div>
 
-      <!-- Order picker + negotiation panel -->
-      <div v-if="myPendingOrders.length > 0 || selectedOrder" class="shrink-0 px-4 pt-3 border-b bg-white">
-        <div v-if="!selectedOrder" class="flex items-center gap-2 pb-3">
+      <!-- Order picker (only when no order is selected) -->
+      <div v-if="!selectedOrder && myPendingOrders.length > 0" class="shrink-0 px-4 pt-3 pb-3 border-b bg-white">
+        <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-gray-500 whitespace-nowrap">Discuss an order:</span>
           <div class="flex-1 min-w-0">
             <select
@@ -42,13 +48,6 @@
               </option>
             </select>
           </div>
-        </div>
-
-        <div v-else class="pb-3">
-          <NegotiationOrderPanel
-            :order="selectedOrder"
-            @clear="clearSelectedOrder"
-          />
         </div>
       </div>
 
@@ -92,7 +91,7 @@
                   </span>
                 </div>
 
-                                <!-- 💳 PAYMENT REQUEST CARD -->
+                <!-- 💳 PAYMENT REQUEST CARD -->
                 <div
                   v-else-if="msg.contentType === 'payment-request'"
                   class="w-full flex justify-start my-2"
@@ -151,7 +150,6 @@
                         {{ msg.paymentRequestData.notes }}
                       </p>
 
-                      <!-- CTA -->
                       <button
                         v-if="msg.paymentRequestData?.status === 'pending'"
                         @click="openPaymentProofModal(msg)"
@@ -226,15 +224,12 @@
                   class="flex items-start"
                   :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'"
                 >
-
-                  <!-- Avatar for admin (left side) -->
                   <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
                       <span class="text-white text-xs font-bold">A</span>
                     </div>
                   </div>
 
-                  <!-- Reply + unsend — CUSTOMER's own messages, LEFT of bubble -->
                   <div
                     v-if="msg.senderType === 'customer' && !msg.isDeleted"
                     class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center mr-2"
@@ -260,14 +255,12 @@
                     </button>
                   </div>
 
-                  <!-- Regular bubble -->
                   <div
                     class="relative max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm"
                     :class="msg.senderType === 'customer'
                       ? 'bg-blue-600 text-white rounded-br-sm'
                       : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm'"
                   >
-                    <!-- Reply indicator -->
                     <div
                       v-if="msg.replyTo"
                       class="text-xs mb-1.5 p-1.5 rounded"
@@ -279,15 +272,12 @@
                       </p>
                     </div>
 
-                    <!-- Text content -->
                     <p v-if="msg.content && !msg.isDeleted" class="text-sm whitespace-pre-wrap break-words">{{ msg.content }}</p>
 
-                    <!-- Unsend indicator -->
                     <p v-if="msg.isDeleted" class="text-sm italic" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
                       This message was unsent
                     </p>
 
-                    <!-- Attachments -->
                     <div v-if="msg.attachments?.length && !msg.isDeleted" class="mt-2 space-y-2">
                       <div v-for="(file, idx) in msg.attachments" :key="idx">
                         <img
@@ -310,7 +300,6 @@
                       </div>
                     </div>
 
-                    <!-- Timestamp -->
                     <div class="flex items-center gap-1 mt-1.5 justify-end">
                       <span class="text-[10px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
                         {{ formatTime(msg.createdAt || msg.timestamp) }}
@@ -318,7 +307,6 @@
                     </div>
                   </div>
 
-                  <!-- Reply — ADMIN messages only, RIGHT of bubble -->
                   <div
                     v-if="msg.senderType === 'admin' && !msg.isDeleted"
                     class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center ml-2"
@@ -331,7 +319,6 @@
                     </button>
                   </div>
 
-                  <!-- Avatar for customer (right side) -->
                   <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
                     <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
                       <span class="text-white text-xs font-bold">{{ userInitial }}</span>
@@ -339,11 +326,8 @@
                   </div>
 
                 </div>
-
-                
               </div>
             </div>
-
           </template>
 
           <!-- Typing Indicator -->
@@ -454,138 +438,21 @@
 
         <p class="text-xs text-gray-400 mt-3 text-center">Attach image/file or type a message</p>
       </div>
-    </div>
+      </div>
+      <!-- ────── /LEFT: Chat panel ────── -->
 
-    <!-- Image Viewer -->
-    <Teleport to="body">
-      <transition name="modal">
-        <div v-if="showImageViewer" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" @click.self="closeImageViewer">
-          <div class="relative max-w-full max-h-full">
-            <img :src="viewerImage" class="max-w-full max-h-[90vh] object-contain rounded-lg" />
-            <button @click="closeImageViewer" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors flex items-center justify-center backdrop-blur-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-              </svg>
-            </button>
-            <button @click="downloadImage" class="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors flex items-center justify-center backdrop-blur-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </transition>
-    </Teleport>
-
-    <!-- Unsend Confirmation Modal -->
-    <Teleport to="body">
+      <!-- ────── RIGHT: Negotiation panel ────── -->
       <div
-        v-if="unsendModal.show"
-        class="fixed inset-0 z-[200] flex items-center justify-center p-4"
-        @click.self="closeUnsendModal"
+        v-if="selectedOrder"
+        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0"
       >
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"></div>
-
-        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-          <div class="text-center">
-            <div class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
-                <path d="M3 6h18"/>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                <path d="M10 11v6"/>
-                <path d="M14 11v6"/>
-              </svg>
-            </div>
-
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Unsend Message?</h3>
-            <p class="text-sm text-gray-600 mb-6">
-              This message will be removed for everyone in the conversation.
-              <br>
-              <span class="text-xs text-gray-400">This action cannot be undone.</span>
-            </p>
-
-            <div class="flex gap-3">
-              <button
-                @click="closeUnsendModal"
-                class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                @click="confirmUnsend"
-                :disabled="isUnsendLoading"
-                class="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-              >
-                <svg v-if="isUnsendLoading" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                </svg>
-                {{ isUnsendLoading ? 'Unsend...' : 'Yes, Unsend' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- Toast -->
-    <Teleport to="body">
-      <transition name="toast">
-        <div v-if="toast.show" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium" :class="toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'">
-          <svg v-if="toast.type === 'success'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <svg v-else xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          {{ toast.message }}
-        </div>
-      </transition>
-    </Teleport>
-
-    <div v-if="showProofModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" @click.self="showProofModal = false">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-    <h3 class="text-lg font-bold mb-4">Upload Payment Proof</h3>
-
-    <div class="space-y-3">
-      <div class="bg-amber-50 rounded-lg p-3 text-sm">
-        <div class="flex justify-between">
-          <span class="text-gray-600">Amount Due</span>
-          <span class="font-bold text-amber-700">₱{{ selectedPaymentRequest.paymentRequestData.amountDue.toLocaleString() }}</span>
-        </div>
-        <p class="text-[10px] text-gray-500 mt-1">This amount is set by the seller and cannot be changed.</p>
+        <NegotiationOrderPanel
+          :order="selectedOrder"
+          @clear="clearSelectedOrder"
+        />
       </div>
 
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Reference Number</label>
-        <input v-model="proofReference" type="text" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 1234567890" />
-      </div>
-
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Upload Receipt / Screenshot</label>
-        <input ref="proofFileInput" type="file" accept="image/*" class="hidden" @change="handleProofFileSelect" />
-        <button @click="proofFileInput?.click()" class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400">
-          {{ proofFile ? proofFile.name : 'Choose image…' }}
-        </button>
-        <img v-if="proofPreview" :src="proofPreview" class="mt-2 w-full max-h-40 object-contain rounded-lg border" />
-      </div>
-
-      <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1">Note (optional)</label>
-        <textarea v-model="proofNote" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm resize-none"></textarea>
-      </div>
     </div>
-
-    <div class="flex gap-3 mt-5">
-      <button @click="showProofModal = false" class="flex-1 py-2 border rounded-lg text-sm font-semibold">Cancel</button>
-      <button @click="submitPaymentProof" :disabled="!proofFile || isSubmittingProof" class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50">
-        {{ isSubmittingProof ? 'Submitting…' : 'Submit' }}
-      </button>
-    </div>
-  </div>
-</div>
   </div>
 </template>
 
@@ -854,12 +721,40 @@ const handlePickOrder = async () => {
     return
   }
 
+  // Link the order to the conversation first
   const resp = await chatApi.linkOrderToConversation(conversationId.value, orderId)
   if (!resp.success) {
     showToast('error', resp.message || 'Failed to link order')
     selectedOrder.value = null
     saveSelectedOrderId(null)
     return
+  }
+
+  // Send an automated greeting so the admin knows the customer wants to negotiate
+  try {
+    const messageContent =
+      `Hi! I'd like to discuss the details of my order ${orderId}. ` +
+      `Can we go over the pricing and any adjustments before proceeding? Thank you.`
+
+    const sentMessage = await chatApi.sendMessage(
+      conversationId.value,
+      messageContent,
+      null,
+      null
+    )
+
+    if (sentMessage?.success && sentMessage.data) {
+      // Optimistic append so the customer sees it immediately,
+      // even if the socket echo is delayed.
+      const exists = messages.value.some(m => m.messageId === sentMessage.data.messageId)
+      if (!exists) {
+        messages.value.push(sentMessage.data)
+        scrollToBottom()
+      }
+    }
+  } catch (e) {
+    console.error('Failed to send auto-message:', e)
+    // Don't block the flow — the order is still linked
   }
 
   showToast('success', 'Order shared with admin — waiting for their response')

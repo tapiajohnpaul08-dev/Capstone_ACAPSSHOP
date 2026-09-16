@@ -194,19 +194,21 @@ const showUserMenu = ref(false)
 const mobileMenuOpen = ref(false)
 const userMenuRef = ref(null)
 
-// ✅ Check if user is authenticated (token exists and not expired)
+// Reactive token version — bumped on auth events so the computed re-evaluates
+const tokenVersion = ref(0)
+
+// Auth check — looks at both the token and the cached user object
 const isAuthenticated = computed(() => {
+  // Reference tokenVersion so we re-run when auth state changes
+  tokenVersion.value
+  const token = localStorage.getItem('customerToken')
   const currentUser = localStorage.getItem('currentUser')
-  console.log('Current User:', currentUser) // Debugging line
-  try {
-    if (!currentUser) return false
-    if (currentUser){
-      return true
-    }
-  } catch {
-    return false
-  }
+  return !!token || !!currentUser
 })
+
+function syncAuth() {
+  tokenVersion.value++
+}
 
 function isActive(path) {
   return route.path === path
@@ -230,6 +232,15 @@ function handleClickOutside(event) {
   }
 }
 
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('storage', syncAuth)
+  window.addEventListener('authChanged', syncAuth)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('storage', syncAuth)
+  window.removeEventListener('authChanged', syncAuth)
+})
 </script>

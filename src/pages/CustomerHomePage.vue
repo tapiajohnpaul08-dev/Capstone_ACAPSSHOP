@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-gray-50">
+    <!-- Navbar — only when logged in -->
+    <NavigationBar v-if="showNavbar" />
+
     <!-- Hero Banner -->
     <div class="bg-white border-b">
       <div class="container mx-auto px-4 py-8 max-w-6xl">
@@ -9,7 +12,6 @@
             <p class="text-gray-500 mt-1">Cups, tumblers, lighters — printed with your brand.</p>
           </div>
           <div class="flex items-center gap-3 shrink-0">
-            <!-- Cart button -->
             <button @click="openCart"
               class="relative inline-flex items-center gap-2 px-5 py-3 border border-gray-300 bg-white text-gray-700 rounded-lg font-semibold text-sm hover:bg-gray-50 transition-colors shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -23,7 +25,8 @@
                 class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{
                 cartCount }}</span>
             </button>
-            <!-- Primary CTA: own cups order - hidden when not logged in -->
+
+            <!-- Logged in → CTA -->
             <button v-if="isLoggedIn" @click="createOwnCupsOrder"
               class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -34,14 +37,17 @@
               Create Order (I'll Provide My Items)
             </button>
 
-            <router-link v-if="!isLoggedIn" to="/customer/login"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm shrink-0">
-              Sign In
-            </router-link>
-            <router-link v-if="!isLoggedIn" to="/customer/signup"
-              class="inline-flex items-center gap-2 px-6 py-3 font-underline  text-blue-600 rounded-lg font-semibold text-sm hover:border-blue-600 hover:bg-blue-50 transition-colors shadow-sm shrink-0 border border-transparent">
-              Sign Up
-            </router-link>
+            <!-- Anonymous → Sign In / Sign Up -->
+            <template v-if="!isLoggedIn">
+              <router-link to="/customer/login"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700 transition-colors shadow-sm shrink-0">
+                Sign In
+              </router-link>
+              <router-link to="/customer/signup"
+                class="inline-flex items-center gap-2 px-6 py-3 text-blue-600 rounded-lg font-semibold text-sm hover:bg-blue-50 transition-colors shadow-sm shrink-0 border border-transparent">
+                Sign Up
+              </router-link>
+            </template>
           </div>
         </div>
 
@@ -261,6 +267,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { productsApi, ordersApi, authApi } from '@/api'
+import NavigationBar from '@/components/NavigationBar.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -277,6 +284,7 @@ const toast = ref({ show: false, message: '' })
 const products = ref([])
 const loading = ref(true)
 const user = ref(null)
+const tokenVersion = ref(0)
 
 const categories = [
   { label: 'All', value: 'all' },
@@ -318,10 +326,33 @@ const filteredProducts = computed(() => {
   return list
 })
 
-// ✅ Computed: user is logged in if both user object and token exist
 const isLoggedIn = computed(() => {
-  return !!user.value && !!localStorage.getItem('customerToken')
+  tokenVersion.value
+  const hasToken = !!localStorage.getItem('customerToken')
+  const hasCachedUser = !!localStorage.getItem('currentUser')
+  const hasLiveUser = !!user.value
+  return hasToken || hasCachedUser || hasLiveUser
 })
+
+
+// Navbar shows only when:
+// 1. A user is present (token or cached user), AND
+// 2. The current route is NOT already inside MainLayout
+//    (i.e., not a /customer/* path — those already have their own navbar)
+const isInsideMainLayout = computed(() => {
+  return route.path.startsWith('/customer')
+})
+
+const showNavbar = computed(() => {
+  tokenVersion.value
+  const hasUser = !!localStorage.getItem('customerToken') || !!localStorage.getItem('currentUser')
+  return hasUser && !isInsideMainLayout.value
+})
+
+function syncAuth() {
+  tokenVersion.value++
+  loadUserInfo()
+}
 
 // --- Carousel methods ---
 let slideInterval = null
@@ -541,11 +572,12 @@ function loadUserInfo() {
 
 // --- Lifecycle ---
 onMounted(async () => {
-  console.log('📊 Dashboard mounted')
+  console.log('📊 Home page mounted')
   const tokenHandled = handleOAuthToken()
   loadUserInfo()
   await loadProducts()
   loadCartFromLocalStorage()
+
   if (tokenHandled) {
     try {
       const response = await authApi.getProfile()
@@ -557,11 +589,18 @@ onMounted(async () => {
       console.error('Error fetching user profile:', error)
     }
   }
+
   startAutoSlide()
+
+  // React to auth changes from other tabs or in-session events
+  window.addEventListener('storage', syncAuth)
+  window.addEventListener('authChanged', syncAuth)
 })
 
 onBeforeUnmount(() => {
   stopAutoSlide()
+  window.removeEventListener('storage', syncAuth)
+  window.removeEventListener('authChanged', syncAuth)
 })
 </script>
 

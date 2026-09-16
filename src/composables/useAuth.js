@@ -9,7 +9,7 @@ const token = ref(null)
 
 try {
   const rawUser = localStorage.getItem('currentUser')
-  if (rawUser) { 
+  if (rawUser) {
     currentUser.value = JSON.parse(rawUser)
     token.value = localStorage.getItem('customerToken')
   }
@@ -17,14 +17,19 @@ try {
   console.error('Error loading auth state:', error)
 }
 
+// Broadcast an auth state change to any listeners (NavigationBar, CustomerHomePage, etc.)
+function broadcastAuthChange() {
+  window.dispatchEvent(new Event('authChanged'))
+}
+
 export function useAuth() {
   const isAuthenticated = computed(() => !!token.value && !!currentUser.value)
-  
+
   // Full name from backend (already split for both local and OAuth users)
   const userName = computed(() => {
     const user = currentUser.value
     if (!user) return localStorage.getItem('userName') || ''
-    
+
     // Backend already provides firstName and lastName for all users
     if (user.firstName && user.lastName) {
       return `${user.firstName} ${user.lastName}`.trim()
@@ -33,32 +38,32 @@ export function useAuth() {
     if (user.name) return user.name
     return user.email?.split('@')[0] || 'User'
   })
-  
+
   const userEmail = computed(() => currentUser.value?.email || localStorage.getItem('userEmail') || '')
-  
+
   const userInitial = computed(() => {
     const name = userName.value
     return name ? name.charAt(0).toUpperCase() : 'U'
   })
-  
+
   // First name from backend
   const userFirstName = computed(() => {
     const user = currentUser.value
     return user?.firstName || userName.value.split(' ')[0] || ''
   })
-  
+
   // Last name from backend
   const userLastName = computed(() => {
     const user = currentUser.value
     return user?.lastName || ''
   })
-  
+
   // Provider (local, google, facebook) - set by backend
   const userProvider = computed(() => currentUser.value?.provider || 'local')
-  
+
   // Check if user has local account (can change password)
   const isLocalAccount = computed(() => userProvider.value === 'local')
-  
+
   // Customer ID for API calls
   const customerId = computed(() => {
     const user = currentUser.value
@@ -72,12 +77,13 @@ export function useAuth() {
       currentUser.value = customer
       console.log('Login successful, customer:', currentUser.value)
       token.value = res.data.token
-      
+
       localStorage.setItem('customerToken', res.data.token)
       localStorage.setItem('currentUser', JSON.stringify(customer))
       localStorage.setItem('userName', `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || customer.email)
       localStorage.setItem('userEmail', customer.email)
       localStorage.setItem('userProvider', customer.provider || 'local')
+      broadcastAuthChange()
     }
     return res
   }
@@ -86,13 +92,13 @@ export function useAuth() {
   function setOAuthUser(userData, authToken) {
     currentUser.value = userData
     token.value = authToken
-    
+
     localStorage.setItem('customerToken', authToken)
     localStorage.setItem('currentUser', JSON.stringify(userData))
     localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
     localStorage.setItem('userEmail', userData.email)
     localStorage.setItem('userProvider', userData.provider || 'local')
-
+    broadcastAuthChange()
   }
 
   async function register(userData) {
@@ -102,27 +108,30 @@ export function useAuth() {
         // Auto-login after registration
         currentUser.value = res.data.customer
         token.value = res.data.token
-        
+
         localStorage.setItem('customerToken', res.data.token)
         localStorage.setItem('currentUser', JSON.stringify(res.data.customer))
         localStorage.setItem('userName', `${res.data.customer.firstName || ''} ${res.data.customer.lastName || ''}`.trim() || res.data.customer.email)
         localStorage.setItem('userEmail', res.data.customer.email)
+        broadcastAuthChange()
       }
     }
     return res
   }
 
   function logout() {
-    // Call logout API
+    // Call logout API (fire and forget)
     authApi.logout().catch(console.error)
-    
+
     currentUser.value = null
     token.value = null
-    
+
     localStorage.removeItem('customerToken')
     localStorage.removeItem('currentUser')
     localStorage.removeItem('userName')
     localStorage.removeItem('userEmail')
+    localStorage.removeItem('userProvider')
+    broadcastAuthChange()
   }
 
   async function updateProfile(updateData) {
@@ -130,7 +139,7 @@ export function useAuth() {
     if (!id) {
       return { success: false, message: 'User not authenticated' }
     }
-    
+
     const res = await authApi.updateCustomer(id, updateData)
     if (res.success && res.data) {
       // Update current user state
@@ -140,24 +149,25 @@ export function useAuth() {
       }
       localStorage.setItem('currentUser', JSON.stringify(currentUser.value))
       localStorage.setItem('userName', `${currentUser.value.firstName || ''} ${currentUser.value.lastName || ''}`.trim() || currentUser.value.email)
+      broadcastAuthChange()
     }
     return res
   }
 
-  return { 
-    currentUser, 
-    token, 
-    isAuthenticated, 
-    userName, 
-    userEmail, 
+  return {
+    currentUser,
+    token,
+    isAuthenticated,
+    userName,
+    userEmail,
     userInitial,
     userFirstName,
     userLastName,
     userProvider,
     isLocalAccount,
     customerId,
-    login, 
-    register, 
+    login,
+    register,
     logout,
     setOAuthUser,
     updateProfile
