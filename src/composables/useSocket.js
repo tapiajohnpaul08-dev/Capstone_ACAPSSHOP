@@ -8,11 +8,22 @@ let socketInstance = null
 let reconnectAttempts = 0
 const maxReconnectAttempts = 5
 
+// The room we want to be in. Module-scoped so the deferred join survives
+// across every `useSocket()` caller (MainLayout, MessagesPage, etc.).
+let pendingJoinRoom = null
+
+// ── Shared reactive state (module-scoped so every caller shares the same refs) ──
+const isConnected = ref(false)
+const isConnecting = ref(false)
+const socketId = ref(null)
+const onlineUsers = ref([])
+
 export function useSocket() {
-  const isConnected = ref(false)
-  const isConnecting = ref(false)
-  const socketId = ref(null)
-  const onlineUsers = ref([])
+  // `isConnected` / `isConnecting` / `socketId` / `onlineUsers` are defined
+  // at module scope above so multiple callers (MessagesPage, MainLayout,
+  // etc.) all share the same state. Previously they were created per-call,
+  // which meant only the caller that actually invoked `connect()` saw
+  // isConnected turn true — everyone else stayed false.
 
   // Computed: Check if any admin is online
   const isAdminOnline = computed(() => {
@@ -48,15 +59,20 @@ export function useSocket() {
       timeout: 20000
     })
     
-    // Connection events
-    socketInstance.on('connect', () => {
-      console.log('🔌 Socket connected')
-      isConnected.value = true
-      isConnecting.value = false
-      socketId.value = socketInstance.id
-      reconnectAttempts = 0
-    })
+   socketInstance.on('connect', () => {
+  console.log('🔌 Socket connected')
+  isConnected.value = true
+  isConnecting.value = false
+  socketId.value = socketInstance.id
+  reconnectAttempts = 0
 
+  // If a room join was requested before we were connected, flush it now
+  if (pendingJoinRoom) {
+    socketInstance.emit('join-conversation', { conversationId: pendingJoinRoom })
+    console.log(`✅ (deferred) Joined conversation: ${pendingJoinRoom}`)
+    pendingJoinRoom = null
+  }
+})
     
     
     socketInstance.on('disconnect', (reason) => {
@@ -98,13 +114,19 @@ export function useSocket() {
     onlineUsers.value = []
   }
   
-  const joinConversation = (conversationId) => {
-    if (socketInstance?.connected && conversationId) {
-      socketInstance.emit('join-conversation', { conversationId })
-      console.log(`Joined conversation: ${conversationId}`)
-    }
+const joinConversation = (conversationId) => {
+  if (!conversationId) return
+
+  // If socket isn't ready yet, remember the room and join it on 'connect'
+  if (!socketInstance?.connected) {
+    pendingJoinRoom = conversationId
+    console.log(`⏳ Deferring join for conversation: ${conversationId} until socket connects`)
+    return
   }
-  
+
+  socketInstance.emit('join-conversation', { conversationId })
+  console.log(`✅ Joined conversation: ${conversationId}`)
+}
   const leaveConversation = (conversationId) => {
     if (socketInstance?.connected && conversationId) {
       socketInstance.emit('leave-conversation', { conversationId })

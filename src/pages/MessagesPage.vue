@@ -454,6 +454,106 @@
 
     </div>
   </div>
+
+  <!-- ────── Payment Proof Upload Modal ────── -->
+  <Teleport to="body">
+    <div
+      v-if="showProofModal"
+      class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @click.self="showProofModal = false"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h3 class="text-lg font-bold mb-4">Upload Payment Proof</h3>
+
+        <div class="space-y-3">
+          <!-- Amount due (view-only) -->
+          <div class="bg-amber-50 rounded-lg p-3 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Amount Due</span>
+              <span class="font-bold text-amber-700">
+                ₱{{ (selectedPaymentRequest?.paymentRequestData?.amountDue || 0).toLocaleString() }}
+              </span>
+            </div>
+            <p class="text-[10px] text-gray-500 mt-1">
+              This amount is set by the seller and cannot be changed.
+            </p>
+          </div>
+
+          <!-- Reference number -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Reference Number</label>
+            <input
+              v-model="proofReference"
+              type="number"
+              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="e.g. 1234567890"
+            />
+          </div>
+
+          <!-- Image picker -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">
+              Upload Receipt / Screenshot
+            </label>
+            <input
+              ref="proofFileInput"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleProofFileSelect"
+            />
+            <button
+              type="button"
+              @click="proofFileInput?.click()"
+              class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
+            >
+              {{ proofFile ? proofFile.name : 'Choose image…' }}
+            </button>
+            <img
+              v-if="proofPreview"
+              :src="proofPreview"
+              class="mt-2 w-full max-h-40 object-contain rounded-lg border"
+            />
+          </div>
+
+          <!-- Note -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Note (optional)</label>
+            <textarea
+              v-model="proofNote"
+              rows="2"
+              class="w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Anything the admin should know…"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-3 mt-5">
+          <button
+            type="button"
+            @click="showProofModal = false"
+            :disabled="isSubmittingProof"
+            class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            @click="submitPaymentProof"
+            :disabled="!proofFile || isSubmittingProof"
+            class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+          >
+            <svg v-if="isSubmittingProof" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            {{ isSubmittingProof ? 'Submitting…' : 'Submit' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -809,7 +909,7 @@ async function submitPaymentProof() {
     // 2. Send payment proof
     const res = await chatApi.sendPaymentProof(conversationId.value, {
       paymentRequestMessageId: selectedPaymentRequest.value.messageId,
-      referenceNumber: proofReference.value.trim(),
+      referenceNumber: proofReference.value,
       proofImageUrl,
       note: proofNote.value.trim(),
     })
@@ -988,6 +1088,8 @@ async function initConversation() {
     const response = await chatApi.getOrCreateConversation('Customer Support')
     if (response.success && response.data) {
       conversationId.value = response.data.conversationId
+      console.log('🔍 [customer] conversationId set:', conversationId.value)
+
       await loadMessages()
       if (isSocketConnected.value) {
         joinConversation(conversationId.value)
@@ -1002,7 +1104,15 @@ async function initConversation() {
 
 // ── Socket listeners ────────────────────────────────
 function setupSocketListeners() {
+  
   onNewMessage((message) => {
+
+     console.log('📩 [customer] onNewMessage received:', {
+    messageId: message.messageId,
+    contentType: message.contentType,
+    conversationId: message.conversationId,
+    senderType: message.senderType,
+  })
     if (pendingTempId) {
       const index = messages.value.findIndex(m => m.messageId === pendingTempId)
       if (index !== -1) {
@@ -1080,6 +1190,7 @@ onOrderNegotiationUpdated((updatedOrder) => {
 watch(() => messages.value.length, () => scrollToBottom(), { flush: 'post' })
 watch(groupedMessages, () => scrollToBottom(), { flush: 'post' })
 watch(isSocketConnected, (connected) => {
+  console.log('🔍 [customer] isSocketConnected changed:', connected)
   if (connected && conversationId.value) {
     joinConversation(conversationId.value)
     markAsRead(conversationId.value)
@@ -1089,8 +1200,16 @@ watch(isSocketConnected, (connected) => {
 // ── Lifecycle ───────────────────────────────────────
 onMounted(async () => {
   if (token.value) {
-    connectSocket(token.value, customerId.value, 'customer')
-    setupSocketListeners()
+connectSocket(token.value, customerId.value, 'customer')
+setupSocketListeners()
+
+// DIAGNOSTIC: log socket state 1s after mount
+setTimeout(() => {
+  console.log('🔍 [customer] socket state after 1s:', {
+    isConnected: isSocketConnected.value,
+    conversationId: conversationId.value,
+  })
+}, 1000)
   }
 
   await initConversation()
