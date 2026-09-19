@@ -210,7 +210,39 @@
                 <p class="text-sm text-gray-400">Your cart is empty.</p>
               </div>
 
-              <div v-for="(item, idx) in cart" :key="idx" class="flex gap-3 bg-gray-50 rounded-xl p-3">
+              <!-- ✅ Select All row -->
+              <div v-if="cart.length > 0"
+                class="flex items-center justify-between px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    :checked="selectedCount === cart.length"
+                    :indeterminate.prop="selectedCount > 0 && selectedCount < cart.length"
+                    @change="toggleSelectAll"
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span class="text-xs font-semibold text-gray-700">
+                    Select all
+                  </span>
+                </label>
+                <span class="text-xs text-gray-500">
+                  {{ selectedCount }} of {{ cart.length }} selected
+                </span>
+              </div>
+
+              <div v-for="(item, idx) in cart" :key="idx"
+                class="flex gap-3 rounded-xl p-3 transition-colors"
+                :class="isItemSelected(idx) ? 'bg-blue-50/50 border border-blue-200' : 'bg-gray-50 border border-transparent'">
+                <!-- ✅ Checkbox -->
+                <label class="flex items-start pt-1 cursor-pointer select-none shrink-0">
+                  <input
+                    type="checkbox"
+                    :checked="isItemSelected(idx)"
+                    @change="toggleItemSelection(idx)"
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </label>
+
                 <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-gray-100">
                   <img :src="getImageUrl(item.image)" :alt="item.name" class="w-full h-full object-cover" />
                 </div>
@@ -235,9 +267,22 @@
             </div>
 
             <div v-if="cart.length > 0" class="px-5 py-4 border-t border-gray-100 space-y-3">
-              <button @click="proceedToOrder"
-                class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
-                Proceed to Order
+              <!-- ✅ Selected summary -->
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-gray-500">
+                  {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected
+                </span>
+                <span class="font-bold text-blue-600">
+                  {{ formatPriceAmount(selectedSubtotal) }}
+                </span>
+              </div>
+
+              <button
+                @click="proceedToOrder"
+                :disabled="selectedCount === 0"
+                class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Order {{ selectedCount }} Selected Item{{ selectedCount === 1 ? '' : 's' }}
               </button>
               <button @click="clearCart"
                 class="w-full py-2 text-xs text-gray-400 hover:text-red-500 transition-colors">Clear cart</button>
@@ -246,7 +291,6 @@
         </div>
       </transition>
     </Teleport>
-
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
@@ -267,10 +311,26 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { productsApi, ordersApi, authApi } from '@/api'
+import { useCart } from '@/composables/useCart.js'
 import NavigationBar from '@/components/NavigationBar.vue'
 
 const router = useRouter()
 const route = useRoute()
+
+const {
+  cartItems,
+  selectedSubtotal,
+  selectedCount,
+  selectedItems,
+  loadCart,
+  addToCart: addToCartState,
+  removeFromCart: removeCartItem,
+  clearCart: clearCartState,
+  isItemSelected,
+  toggleItemSelection,
+  selectAll,
+  deselectAll,
+} = useCart()
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
 const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
@@ -279,7 +339,6 @@ const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
 const searchQuery = ref('')
 const selectedCategory = ref('all')
 const showCart = ref(false)
-const cart = ref([])
 const toast = ref({ show: false, message: '' })
 const products = ref([])
 const loading = ref(true)
@@ -312,7 +371,8 @@ const howItWorks = [
 ]
 
 // --- Computed ---
-const cartCount = computed(() => cart.value.length)
+const cart = computed(() => cartItems.value)
+const cartCount = computed(() => cartItems.value.length)
 
 const filteredProducts = computed(() => {
   let list = [...products.value]
@@ -430,7 +490,8 @@ async function addToCart(product) {
       estimatedTotal = priceResult.data.total;
     }
   }
-  cart.value.push({
+  // ✅ Use the composable's addToCart
+  addToCartState({
     productId: product.id,
     name: product.name,
     image: product.image,
@@ -442,9 +503,8 @@ async function addToCart(product) {
     designNotes: '',
     estimatedTotal: estimatedTotal,
     sizes: product.sizes || [],
-    minOrder: product.minOrder || 500
+    minOrder: product.minOrder || 500,
   });
-  saveCartToLocalStorage();
   showToast(`${product.name} (${defaultSize}) added to cart!`);
 }
 
@@ -453,23 +513,30 @@ function goToProductDetail(product) {
 }
 
 function removeFromCart(idx) {
-  cart.value.splice(idx, 1)
-  saveCartToLocalStorage()
+  removeCartItem(idx)
 }
 
 function clearCart() {
-  cart.value = []
-  saveCartToLocalStorage()
+  clearCartState()
   showToast('Cart cleared')
 }
 
+// ✅ Toggle select-all helper
+function toggleSelectAll(e) {
+  if (e.target.checked) {
+    selectAll()
+  } else {
+    deselectAll()
+  }
+}
+
+// Legacy localStorage helpers kept for compatibility
 function saveCartToLocalStorage() {
-  localStorage.setItem('customerCart', JSON.stringify(cart.value))
+  localStorage.setItem('customerCart', JSON.stringify(cartItems.value))
 }
 
 function loadCartFromLocalStorage() {
-  const savedCart = localStorage.getItem('customerCart')
-  if (savedCart) cart.value = JSON.parse(savedCart)
+  loadCart()
 }
 
 function openCart() {
@@ -483,7 +550,9 @@ async function proceedToOrder() {
     setTimeout(() => router.push('/customer/login'), 1500)
     return
   }
-  const enrichedCart = cart.value.map(item => ({
+
+  // ✅ Only include the SELECTED items
+  const selected = selectedItems.value.map(({ item }) => ({
     productId: item.productId,
     name: item.name,
     image: item.image,
@@ -499,11 +568,16 @@ async function proceedToOrder() {
     selectedTemplate: item.selectedTemplate || null,
     estimatedTotal: item.estimatedTotal
   }))
-  sessionStorage.setItem('pendingCart', JSON.stringify(enrichedCart))
+
+  if (selected.length === 0) {
+    showToast('Please select at least one item')
+    return
+  }
+
+  sessionStorage.setItem('pendingCart', JSON.stringify(selected))
   showCart.value = false
   router.push('/customer/orders/create?type=company-product&source=cart')
 }
-
 function showToast(message) {
   toast.value = { show: true, message }
   setTimeout(() => { toast.value.show = false }, 2500)

@@ -235,6 +235,7 @@
             :errors="errors.fulfillment"
             :is-own-cups="isOwnCups"
             :saved-address="savedAddress"
+            :saved-addresses="savedAddresses"
             @use-saved-address="applySavedAddress"
           />
           <div class="mt-4 flex items-center justify-between">
@@ -573,6 +574,8 @@ const errors = ref({ customer: {}, fulfillment: {} })
 const savedProfile = ref(null)
 const savedAddress = ref(null)
 
+// ✅ NEW — full list of the customer's saved addresses
+const savedAddresses = ref([])
 // ─── PRICE CONSTANTS ────────────────────────────────────────────────────────
 const FEES = {
   DESIGN_AND_PRINTING_SERVICE_FEE: 500,
@@ -1136,7 +1139,10 @@ async function handleSubmit() {
 
     if (response.success) {
       if (isCartOrder.value) {
-        localStorage.removeItem('customerCart')
+        // ✅ Only remove the items the customer actually ordered.
+        // Unchecked cart items stay for a later order.
+        const { removeSelectedFromCart } = useCart()
+        removeSelectedFromCart()
         sessionStorage.removeItem('pendingCart')
       }
       if (customerInfo.value.saveAsDefault) {
@@ -1393,19 +1399,31 @@ onMounted(async () => {
         email: p.email || '',
         phone: p.phone || '',
       }
-      // If profile has an address block, hydrate savedAddress
-      if (p.address || p.deliveryAddress) {
-        const addr = p.address || p.deliveryAddress
-        if (typeof addr === 'object') {
-          savedAddress.value = {
-            streetAddress: addr.streetAddress || '',
-            barangay: addr.barangay || '',
-            municipality: addr.municipality || '',
-            province: addr.province || '',
-            postalCode: addr.postalCode || '',
-            region: addr.region || '',
-            country: addr.country || 'Philippines',
+
+      // ✅ NEW — fetch saved addresses for the dropdown
+      if (p.customerId) {
+        try {
+          const { addressesApi } = await import('@/api.js')
+          const addrRes = await addressesApi.getAll(p.customerId)
+          if (addrRes.success && Array.isArray(addrRes.data)) {
+            savedAddresses.value = addrRes.data
+
+            // If there's a default, expose it as the legacy savedAddress
+            const def = addrRes.data.find((a) => a.isDefault) || addrRes.data[0]
+            if (def) {
+              savedAddress.value = {
+                streetAddress: def.streetAddress || '',
+                barangay: def.barangay || '',
+                municipality: def.municipality || '',
+                province: def.province || '',
+                postalCode: def.postalCode || '',
+                region: def.region || '',
+                country: def.country || 'Philippines',
+              }
+            }
           }
+        } catch (addrErr) {
+          console.warn('Failed to load saved addresses:', addrErr)
         }
       }
     }

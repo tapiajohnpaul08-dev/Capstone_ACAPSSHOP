@@ -141,6 +141,39 @@ export const oauthApi = {
   }
 };
 
+// ─── Saved Addresses API ─────────────────────────────────────────────────────
+export const addressesApi = {
+  async getAll(customerId) {
+    return handleResponse(
+      axiosInstance.get(`/customer/${customerId}/addresses`)
+    );
+  },
+
+  async add(customerId, addressData) {
+    return handleResponse(
+      axiosInstance.post(`/customer/${customerId}/addresses`, addressData)
+    );
+  },
+
+  async update(customerId, addressId, addressData) {
+    return handleResponse(
+      axiosInstance.put(`/customer/${customerId}/addresses/${addressId}`, addressData)
+    );
+  },
+
+  async remove(customerId, addressId) {
+    return handleResponse(
+      axiosInstance.delete(`/customer/${customerId}/addresses/${addressId}`)
+    );
+  },
+
+  async setDefault(customerId, addressId) {
+    return handleResponse(
+      axiosInstance.patch(`/customer/${customerId}/addresses/${addressId}/default`)
+    );
+  },
+};
+
 // ─── Customer Profile ─────────────────────────────────────────────────────────
 export const profileApi = {
   async getProfile() {

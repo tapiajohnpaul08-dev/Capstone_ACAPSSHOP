@@ -64,7 +64,26 @@
         <h5 class="text-sm font-semibold text-gray-800">Delivery Address <span class="text-red-500">*</span></h5>
         <p class="text-xs text-gray-500">Where should we deliver your order?</p>
 
-        <!-- Saved address banner -->
+        <!-- ✅ NEW — Saved addresses dropdown -->
+        <div v-if="savedAddresses && savedAddresses.length > 0" class="space-y-1.5">
+          <label class="text-sm font-medium text-gray-700">Use a Saved Address</label>
+          <select
+            :value="selectedAddressId"
+            @change="selectSavedAddress($event.target.value)"
+            class="field"
+          >
+            <option value="">— Choose a saved address or enter manually —</option>
+            <option
+              v-for="addr in savedAddresses"
+              :key="addr._id"
+              :value="addr._id"
+            >
+              {{ addr.label || 'Address' }}{{ addr.isDefault ? ' (Default)' : '' }} · {{ shorten(addr) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Saved address banner (legacy) -->
         <div v-if="showSavedAddressBanner" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5 flex items-start gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" class="text-blue-600 shrink-0 mt-0.5">
@@ -369,7 +388,9 @@ const props = defineProps({
   errors: { type: Object, default: () => ({}) },
   isOwnCups: { type: Boolean, default: false },
     savedAddress: { type: Object, default: null },
-
+    
+      // ✅ NEW — full list of saved addresses
+  savedAddresses: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -388,6 +409,38 @@ const showSavedAddressBanner = computed(() => {
 
   return true
 })
+
+// ✅ NEW — track which saved address is currently selected
+const selectedAddressId = ref('')
+
+// ✅ NEW — apply a saved address to the delivery fields
+function selectSavedAddress(addressId) {
+  selectedAddressId.value = addressId
+  if (!addressId) return
+
+  const addr = props.savedAddresses.find((a) => a._id === addressId)
+  if (!addr) return
+
+  // Merge into modelValue
+  emit('update:modelValue', {
+    ...props.modelValue,
+    deliveryStreetAddress: addr.streetAddress || '',
+    deliveryBarangay: addr.barangay || '',
+    deliveryMunicipality: addr.municipality || '',
+    deliveryProvince: addr.province || '',
+    deliveryPostalCode: addr.postalCode || '',
+    deliveryRegion: addr.region || '',
+    deliveryCountry: addr.country || 'Philippines',
+  })
+}
+
+// ✅ NEW — short preview for the dropdown options
+function shorten(addr) {
+  return [addr.streetAddress, addr.municipality, addr.province]
+    .filter(Boolean)
+    .join(', ')
+    .slice(0, 40)
+}
 
 const savedAddressSummary = computed(() => {
   const sa = props.savedAddress || {}

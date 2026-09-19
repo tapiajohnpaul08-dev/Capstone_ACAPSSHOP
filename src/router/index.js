@@ -139,6 +139,11 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
+  path: '/customer/profile/addresses',
+  name: 'SavedAddresses',
+  component: () => import('@/pages/SavedAddressesPage.vue'),
+},
+        {
           path: 'profile/customer-info',
           name: 'CustomerInfoTemplate',
           component: () => import('@/pages/AccountInfoPage.vue'),

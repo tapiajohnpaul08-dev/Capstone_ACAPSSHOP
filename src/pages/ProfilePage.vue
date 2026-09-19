@@ -91,6 +91,8 @@ const showDeleteConfirm = ref(false)
 // All menu items
 const allMenuItems = ref([
   { id: 'account', icon: 'User', title: 'Account Information', description: 'Manage your personal information', to: '/customer/profile/account' },
+  // ✅ NEW — Saved Addresses
+  { id: 'addresses', icon: 'MapPin', title: 'Saved Addresses', description: 'Manage delivery addresses for faster checkout', to: '/customer/profile/addresses' },
   { id: 'designs', icon: 'Image', title: 'My Design Templates', description: 'View and manage saved designs', to: '/customer/designs' },
   { id: 'order-history', icon: 'History', title: 'Order History', description: 'View all past orders', to: '/customer/order-history' },
   // { id: 'change-password', icon: 'Settings', title: 'Change Password', description: 'Update your account password', to: '/customer/profile/change-password', requiresLocal: true },
