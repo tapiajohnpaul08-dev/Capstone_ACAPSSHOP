@@ -6,14 +6,13 @@ import CustomerHomePage from '@/pages/CustomerHomePage.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    // ─── OAUTH ───
-    {
-      path: '/oauth/callback',
-      name: 'OAuthCallback',
-      component: () => import('@/views/OAuthCallback.vue'),
-      meta: { requiresAuth: false },
-    },
-
+    // ✅ OAuth callback — must be top-level so /oauth/callback matches exactly
+{
+  path: '/oauth/callback',
+  name: 'OAuthCallback',
+  component: () => import('@/pages/OAuthCallbackPage.vue'),
+  meta: { requiresAuth: false },
+},
     // ─── PUBLIC AUTH ROUTES (no layout) ───
     {
       path: '/customer/login',
