@@ -138,10 +138,11 @@ const router = createRouter({
           meta: { requiresAuth: true },
         },
         {
-  path: '/customer/profile/addresses',
-  name: 'SavedAddresses',
-  component: () => import('@/pages/SavedAddressesPage.vue'),
-},
+          path: 'profile/addresses',
+          name: 'SavedAddresses',
+          component: () => import('@/pages/SavedAddressesPage.vue'),
+          meta: { requiresAuth: true },
+        },
         {
           path: 'profile/customer-info',
           name: 'CustomerInfoTemplate',
