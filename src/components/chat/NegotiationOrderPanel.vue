@@ -3,10 +3,10 @@
   <div class="h-full flex flex-col">
 
     <!-- ── Panel header (mirrors chat header styling) ── -->
-    <div class="shrink-0 px-5 py-4 border-b bg-gradient-to-r from-blue-50 to-white">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
+    <div class="shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b bg-gradient-to-r from-blue-50 to-white">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -35,7 +35,7 @@
     <div class="flex-1 overflow-y-auto">
 
       <!-- Status row -->
-      <div class="px-5 py-3 border-b bg-white">
+      <div class="px-4 sm:px-5 py-3 border-b bg-white">
         <div class="flex flex-wrap items-center gap-1.5">
           <span
             class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
@@ -63,7 +63,7 @@
       </div>
 
       <!-- Order details -->
-      <div class="px-5 py-4 space-y-3">
+      <div class="px-4 sm:px-5 py-3 sm:py-4 space-y-2.5 sm:space-y-3">
         <div class="flex items-center justify-between">
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Order Details</p>
         </div>
@@ -93,7 +93,7 @@
       </div>
 
       <!-- Total card -->
-      <div class="px-5 pb-4">
+      <div class="px-4 sm:px-5 pb-3 sm:pb-4">
         <div class="rounded-xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 px-4 py-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-gray-500 uppercase tracking-wide">Total</span>
@@ -106,7 +106,7 @@
       </div>
 
       <!-- Info note -->
-      <div class="px-5 pb-4">
+      <div class="px-4 sm:px-5 pb-3 sm:pb-4">
         <div class="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0 mt-0.5">
@@ -122,7 +122,10 @@
     </div>
 
     <!-- ── Footer ── -->
-    <div class="shrink-0 px-5 py-3 border-t bg-gray-50">
+    <div
+      class="shrink-0 px-4 sm:px-5 py-3 border-t bg-gray-50"
+      style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));"
+    >
       <button
         @click="$emit('clear')"
         class="w-full py-2 rounded-lg text-xs font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-100 transition-colors"

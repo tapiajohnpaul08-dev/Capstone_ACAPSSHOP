@@ -85,34 +85,150 @@
               </div>
             </div>
 
-            <!-- Timeline Content - Compact -->
-            <div class="p-3 max-h-[280px] overflow-y-auto">
-              <div v-if="filteredStatusHistory && filteredStatusHistory.length > 0" class="relative">
-                <div class="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                
-                <div v-for="(event, index) in filteredStatusHistory" :key="index" class="relative pl-7 pb-3 last:pb-0">
-                  <div class="absolute left-0 top-0 w-4 h-4 rounded-full flex items-center justify-center z-10 border border-white" 
-                    :class="getTimelineIconColor(event.displayStatus || event.status, index)">
-                    <component :is="getTimelineIcon(event.displayStatus || event.status)" class="w-2 h-2" />
+            <!-- ✅ NEW — Horizontal Progress Stepper -->
+            <div
+              v-if="order.status !== 'Cancelled'"
+              class="px-3 py-3 border-b bg-white overflow-x-auto"
+            >
+              <div class="flex items-center min-w-max">
+                <template v-for="(step, idx) in STATUS_STEPPER" :key="step.key">
+                  <div class="flex flex-col items-center flex-shrink-0">
+                    <!-- Step dot -->
+                    <div
+                      class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
+                      :class="[
+                        isStepReached(idx)
+                          ? (isStepCurrent(idx)
+                            ? 'bg-blue-600 text-white ring-4 ring-blue-200 scale-110'
+                            : 'bg-blue-500 text-white')
+                          : 'bg-gray-200 text-gray-400',
+                      ]"
+                    >
+                      <span v-if="isStepReached(idx) && !isStepCurrent(idx)" class="text-white">✓</span>
+                      <span v-else>{{ idx + 1 }}</span>
+                    </div>
+                    <!-- Step label -->
+                    <span
+                      class="text-[9px] font-semibold mt-1 whitespace-nowrap"
+                      :class="[
+                        isStepCurrent(idx)
+                          ? 'text-blue-700'
+                          : isStepReached(idx)
+                            ? 'text-blue-600'
+                            : 'text-gray-400',
+                      ]"
+                    >
+                      {{ getStepperLabel(step) }}
+                    </span>
                   </div>
-                  
+                  <!-- Connector line -->
+                  <div
+                    v-if="idx < STATUS_STEPPER.length - 1"
+                    class="flex-1 h-0.5 mx-1 min-w-[20px]"
+                    :class="isStepReached(idx + 1) ? 'bg-blue-500' : 'bg-gray-200'"
+                  ></div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Timeline Content — newest first -->
+            <div class="p-3 max-h-[340px] overflow-y-auto">
+              <div v-if="filteredStatusHistory && filteredStatusHistory.length > 0" class="relative">
+                <div class="absolute left-2 top-2 bottom-2 w-0.5 bg-gray-200"></div>
+
+                <div
+                  v-for="(event, index) in filteredStatusHistory"
+                  :key="index"
+                  class="relative pl-7 pb-4 last:pb-0"
+                >
+                  <!-- Marker -->
+                  <div
+                    class="absolute left-0 top-0 rounded-full flex items-center justify-center z-10 border-2 border-white transition-all"
+                    :class="[
+                      event.isCurrent ? 'w-5 h-5 -left-0.5 ring-2 ring-offset-1' : 'w-4 h-4',
+                      getTimelineIconColor(event.displayStatus || event.status, index, event.isCurrent),
+                    ]"
+                  >
+                    <component
+                      :is="getTimelineIcon(event.displayStatus || event.status)"
+                      :class="event.isCurrent ? 'w-2.5 h-2.5' : 'w-2 h-2'"
+                    />
+                  </div>
+
                   <div class="flex flex-wrap items-start justify-between gap-1">
                     <div class="flex-1 min-w-0">
+                      <!-- Title row -->
                       <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="font-semibold text-xs text-gray-900">
+                        <span
+                          class="font-semibold text-xs"
+                          :class="event.isCurrent ? 'text-blue-700' : 'text-gray-900'"
+                        >
                           {{ formatStatusForDisplay(event.displayStatus || event.status) }}
+                        </span>
+                        <span v-if="event.isCurrent" class="text-[9px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                          Current
                         </span>
                         <span class="text-[10px] text-gray-400">{{ formatDateShort(event.timestamp) }}</span>
                       </div>
+
+                      <!-- Description -->
                       <p class="text-[11px] text-gray-500 mt-0.5">
                         {{ getStatusDescription(event.displayStatus || event.status) }}
                       </p>
-                      <p v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'" class="text-[11px] text-gray-400 mt-0.5 italic truncate">
+
+                      <!-- Notes -->
+                      <p
+                        v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'"
+                        class="text-[11px] text-gray-400 mt-0.5 italic"
+                      >
                         "{{ event.notes }}"
                       </p>
-                      <div v-if="event.status === 'Scheduled' && event.productionSchedule" class="mt-0.5 flex items-center gap-1">
+
+                      <!-- Production schedule inline -->
+                      <div
+                        v-if="event.status === 'Scheduled' && event.productionSchedule"
+                        class="mt-1 flex items-center gap-1"
+                      >
                         <Calendar class="w-2.5 h-2.5 text-blue-500" />
-                        <span class="text-[10px] text-blue-600">Scheduled: {{ formatProductionDate(event.productionSchedule) }}</span>
+                        <span class="text-[10px] text-blue-600">
+                          Scheduled: {{ formatProductionDate(event.productionSchedule) }}
+                        </span>
+                      </div>
+
+                      <!-- ✅ NEW — Duration hint -->
+                      <div
+                        v-if="event.durationHint && event.displayStatus !== 'Cancelled'"
+                        class="mt-1 flex items-center gap-1 text-[10px] text-gray-400"
+                      >
+                        <Clock class="w-2.5 h-2.5" />
+                        <span>{{ event.durationHint }}</span>
+                      </div>
+
+                      <!-- ✅ NEW — Next-step hint (only on the current event) -->
+                      <div
+                        v-if="event.isCurrent && nextStatusHint"
+                        class="mt-1.5 inline-flex items-center gap-1 text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full"
+                      >
+                        <span class="font-semibold">Next:</span>
+                        <span>{{ nextStatusHint.label }}</span>
+                        <span v-if="nextStatusHint.durationHint" class="text-amber-500">
+                          · {{ nextStatusHint.durationHint }}
+                        </span>
+                      </div>
+
+                      <!-- ✅ NEW — Proof of delivery thumbnail -->
+                      <div v-if="event.podImage" class="mt-2">
+                        <p class="text-[10px] text-gray-400 mb-1 flex items-center gap-1">
+                          <Image class="w-2.5 h-2.5" />
+                          Proof of Delivery
+                        </p>
+                        <img
+                          :src="getImageUrl(event.podImage)"
+                          alt="Proof of delivery"
+                          class="w-20 h-20 object-cover rounded-lg border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
+                          @click="openPodLightbox(getImageUrl(event.podImage))"
+                          @error="handleImageError"
+                        />
                       </div>
                     </div>
                   </div>
@@ -344,15 +460,6 @@
           Print
         </button>
 
-        <!-- ✅ Submit Feedback Button - Only for Completed Orders without feedback -->
-        <button 
-          v-if="order.status?.toLowerCase() === 'completed' && !hasFeedback" 
-          @click="openFeedbackModal"
-          class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
-        >
-          <MessageSquare class="w-3 h-3" />
-          Submit Feedback
-        </button>
       </div>
 
       <!-- Status Messages - Compact -->
@@ -559,6 +666,32 @@
       :order="order"
       @submitted="onFeedbackSubmitted"
     />
+
+    <!-- ✅ NEW — Proof of Delivery Lightbox -->
+    <Teleport to="body">
+      <Transition name="modal-fade">
+        <div
+          v-if="showPodLightbox"
+          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          @click.self="closePodLightbox"
+        >
+          <div class="relative max-w-4xl max-h-[90vh]">
+            <img
+              :src="podLightboxImage"
+              alt="Proof of Delivery"
+              class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            />
+            <button
+              @click="closePodLightbox"
+              class="absolute -top-3 -right-3 w-9 h-9 rounded-full bg-white text-gray-700 hover:bg-gray-100 flex items-center justify-center shadow-lg transition-colors"
+              title="Close"
+            >
+              <XCircle class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -593,11 +726,35 @@ import {
   Star,
   ThumbsUp,
   ThumbsDown,
-  Loader2
+  Loader2,
+  Image,   // ✅ NEW — for POD thumbnail label
 } from 'lucide-vue-next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
 const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
+
+// ✅ NEW — Estimated durations per status (business days)
+// Used in the timeline to tell the customer what to expect.
+const STATUS_DURATIONS = {
+  'Pending': 'Awaiting admin review',
+  'Confirmed': 'Usually ready to schedule within 1 business day',
+  'Scheduled': 'Production usually starts on the scheduled date',
+  'In Production': 'Usually takes a few hours depends on order quantity',
+  'Out for Delivery': 'Usually arrives same day',
+  'Ready to Pick-up': 'Ready for pickup — no delivery wait',
+  'Completed': 'Order delivered successfully',
+  'Cancelled': 'No further action needed',
+}
+
+// ✅ NEW — Status flow used for the horizontal stepper
+const STATUS_STEPPER = [
+  { key: 'Pending', label: 'Placed' },
+  { key: 'Confirmed', label: 'Confirmed' },
+  { key: 'Scheduled', label: 'Scheduled' },
+  { key: 'In Production', label: 'In Production' },
+  { key: 'Out for Delivery', label: 'Delivery' },
+  { key: 'Completed', label: 'Completed' },
+]
 
 // ─── TIMELINE ICONS ──────────────────────────────────────────────────────
 const ClockIcon = { render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', width: '14', height: '14', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', 'stroke-width': '2' }, [h('circle', { cx: '12', cy: '12', r: '10' }), h('polyline', { points: '12 6 12 12 16 14' })]) }
@@ -652,23 +809,98 @@ const displayStatus = computed(() => {
   return status
 })
 
+// ✅ UPDATED — Reverse order (newest first), enrich each event with
+// duration hint and POD info, and mark the "isCurrent" event.
 const filteredStatusHistory = computed(() => {
   if (!order.value?.statusHistory) return []
-  
-  return order.value.statusHistory.map(event => {
-    if (order.value.receivingMode === 'Pick-up' && event.status === 'Out for Delivery') {
-      return {
-        ...event,
-        status: 'Ready to Pick-up',
-        displayStatus: 'Ready to Pick-up'
-      }
-    }
+
+  const isPickup = order.value.receivingMode === 'Pick-up'
+
+  // 1. Map each event to its display shape
+  const mapped = order.value.statusHistory.map(event => {
+    const isPickupAlias = isPickup && event.status === 'Out for Delivery'
+    const displayStatus = isPickupAlias ? 'Ready to Pick-up' : event.status
+
     return {
       ...event,
-      displayStatus: event.status
+      displayStatus,
+      durationHint: STATUS_DURATIONS[displayStatus] || '',
+      // POD image only applies to the Completed event for delivery orders
+      podImage: (event.status === 'Completed' && order.value.proofOfDelivery)
+        ? order.value.proofOfDelivery
+        : null,
     }
   })
+
+  // 2. Reverse so newest is first
+  const reversed = [...mapped].reverse()
+
+  // 3. Mark the first (latest) event as current
+  if (reversed.length > 0) {
+    reversed[0] = { ...reversed[0], isCurrent: true }
+  }
+
+  return reversed
 })
+
+// ✅ NEW — Figure out the next status after the current one
+const nextStatusHint = computed(() => {
+  if (!order.value) return null
+  const currentStatus = order.value.status
+  if (currentStatus === 'Completed' || currentStatus === 'Cancelled') return null
+
+  const currentIdx = STATUS_STEPPER.findIndex(s => s.key === currentStatus)
+  if (currentIdx === -1 || currentIdx >= STATUS_STEPPER.length - 1) return null
+
+  const next = STATUS_STEPPER[currentIdx + 1]
+  const isPickup = order.value.receivingMode === 'Pick-up'
+  const label = isPickup && next.key === 'Out for Delivery' ? 'Ready to Pick-up' : next.label
+
+  return {
+    label,
+    durationHint: STATUS_DURATIONS[next.key] || '',
+  }
+})
+
+// ✅ NEW — Compute the index of the current status for the stepper
+const currentStepperIndex = computed(() => {
+  if (!order.value) return 0
+  const idx = STATUS_STEPPER.findIndex(s => s.key === order.value.status)
+  return idx === -1 ? 0 : idx
+})
+
+// ✅ NEW — Lightbox state for POD preview
+const showPodLightbox = ref(false)
+const podLightboxImage = ref('')
+
+function openPodLightbox(imageUrl) {
+  if (!imageUrl) return
+  podLightboxImage.value = imageUrl
+  showPodLightbox.value = true
+}
+
+function closePodLightbox() {
+  showPodLightbox.value = false
+  podLightboxImage.value = ''
+}
+
+// ✅ NEW — Helper for the stepper: was a step already reached?
+function isStepReached(index) {
+  return index <= currentStepperIndex.value
+}
+
+function isStepCurrent(index) {
+  return index === currentStepperIndex.value
+}
+
+// ✅ NEW — Compute the display label for a stepper step
+// (e.g., "Delivery" for pickup becomes "Pickup")
+function getStepperLabel(step) {
+  if (!order.value) return step.label
+  const isPickup = order.value.receivingMode === 'Pick-up'
+  if (isPickup && step.key === 'Out for Delivery') return 'Pickup'
+  return step.label
+}
 
 const hasDesignDetails = computed(() => {
   if (!order.value?.items) return false
@@ -765,27 +997,37 @@ function getTimelineIcon(status) {
   return icons[statusLower] || ClockIcon
 }
 
-function getTimelineIconColor(status, index) {
+function getTimelineIconColor(status, index, isCurrent = false) {
   const statusLower = status?.toLowerCase() || ''
-  
-  if (statusLower === 'completed' && index === 0) {
-    return 'bg-green-500 text-white ring-2 ring-green-300'
+
+  // ✅ Current step gets a bolder, ring-highlighted treatment
+  if (isCurrent) {
+    const currentColors = {
+      'pending': 'bg-yellow-400 text-white ring-yellow-200',
+      'confirmed': 'bg-teal-500 text-white ring-teal-200',
+      'scheduled': 'bg-blue-500 text-white ring-blue-200',
+      'in production': 'bg-purple-500 text-white ring-purple-200',
+      'out for delivery': 'bg-green-500 text-white ring-green-200',
+      'ready to pick-up': 'bg-green-500 text-white ring-green-200',
+      'completed': 'bg-green-600 text-white ring-green-200',
+      'cancelled': 'bg-red-500 text-white ring-red-200',
+    }
+    return currentColors[statusLower] || 'bg-blue-500 text-white ring-blue-200'
   }
-  
+
+  // Past events: muted background
   const colors = {
     'pending': 'bg-yellow-100 text-yellow-600',
-    'confirmed': 'bg-teal-100 text-teal-600',    // ← ADD THIS
-
+    'confirmed': 'bg-teal-100 text-teal-600',
     'scheduled': 'bg-blue-100 text-blue-600',
     'in production': 'bg-purple-100 text-purple-600',
     'out for delivery': 'bg-green-100 text-green-600',
     'ready to pick-up': 'bg-green-100 text-green-600',
     'completed': 'bg-green-500 text-white',
-    'cancelled': 'bg-red-100 text-red-600'
+    'cancelled': 'bg-red-100 text-red-600',
   }
   return colors[statusLower] || 'bg-gray-100 text-gray-600'
 }
-
 // ─── FORMATTING FUNCTIONS ────────────────────────────────────────────
 function getImageUrl(imagePath) {
   if (!imagePath) return `${STATIC_BASE_URL}/uploads/products/default-product.jpg`
@@ -1200,5 +1442,15 @@ onMounted(async () => {
   button, .action-buttons {
     display: none !important;
   }
+}
+
+/* ✅ NEW — Lightbox transition */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
 }
 </style>

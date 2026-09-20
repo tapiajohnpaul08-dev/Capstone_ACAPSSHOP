@@ -6,17 +6,27 @@
       :unread-count="unreadCount"
       @bell-click="handleBell"
     />
-    <main class="flex-1">
+    <main class="flex-1 min-h-0">
       <router-view />
     </main>
-    <Footer />
+    <!-- Hide footer on chat / immersive pages -->
+    <Footer v-if="!hideFooter" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import NavigationBar from '@/components/NavigationBar.vue'
 import Footer from '@/components/Footer.vue'
+
+const route = useRoute()
+
+// Hide the footer on immersive pages (chat, full-screen flows)
+const HIDE_FOOTER_ROUTES = ['/customer/messages', '/customer/orders/create']
+const hideFooter = computed(() =>
+  HIDE_FOOTER_ROUTES.some((p) => route.path.startsWith(p)),
+)
 import { useCart } from '@/composables/useCart.js'
 import { chatApi } from '@/api'
 

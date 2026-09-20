@@ -78,19 +78,19 @@
         <!-- Detailed Ratings - Horizontal Compact -->
         <div class="p-2.5 bg-gray-50 rounded-lg">
           <p class="text-xs font-medium text-gray-600 mb-1.5">Detailed Ratings (Optional)</p>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
-            <div v-for="(label, key) in detailedRatingLabels" :key="key" class="text-center">
-              <label class="text-[10px] text-gray-500 block">{{ label }}</label>
-              <div class="flex gap-0.5 justify-center mt-0.5">
+          <div class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2">
+            <div v-for="(label, key) in detailedRatingLabels" :key="key" class="text-center bg-white rounded-lg py-1.5 px-1 border border-gray-100">
+              <label class="text-[10px] text-gray-500 block truncate">{{ label }}</label>
+              <div class="flex gap-0.5 justify-center mt-1">
                 <button
                   v-for="star in 5"
                   :key="star"
                   @click="form.detailedRatings[key] = star"
-                  class="text-xs transition-colors"
+                  class="p-0.5 transition-colors"
                 >
                   <Star 
                     :class="star <= (form.detailedRatings[key] || 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'" 
-                    class="w-3 h-3" 
+                    class="w-3.5 h-3.5" 
                   />
                 </button>
               </div>

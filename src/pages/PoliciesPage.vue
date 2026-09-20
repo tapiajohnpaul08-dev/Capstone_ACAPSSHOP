@@ -13,8 +13,8 @@
       </div>
 
       <!-- Tab Navigation -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-        <div class="overflow-x-auto">
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6 -mx-4 sm:mx-0">
+        <div class="overflow-x-auto scrollbar-hide">
           <div class="flex border-b border-gray-200 min-w-max">
             <button
               v-for="tab in tabs"

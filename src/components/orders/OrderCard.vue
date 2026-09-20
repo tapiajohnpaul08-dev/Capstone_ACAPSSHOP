@@ -64,7 +64,7 @@
         </div>
 
         <!-- Amount Section -->
-        <div class="flex-shrink-0 text-right">
+        <div class="flex-shrink-0 text-left">
           <div class="text-sm text-gray-600">Total Amount</div>
           <div class="text-xl font-bold text-blue-600">{{ formatPrice(order.totalAmount || order.amount) }}</div>
           <span 

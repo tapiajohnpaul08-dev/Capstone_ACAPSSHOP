@@ -2,26 +2,24 @@
   <div class="container mx-auto px-4 py-6">
     <h1 class="text-2xl font-bold mb-6">My Orders</h1>
 
-    <!-- Status Tabs -->
+    <!-- Status Tabs — responsive grid, wraps on mobile -->
     <div class="mb-6">
-      <div class="relative w-full whitespace-nowrap overflow-x-auto pb-2">
-        <div class="flex gap-2">
-          <button
-            v-for="tab in statusTabs"
-            :key="tab.value"
-            @click="selectedStatus = tab.value"
-            class="px-4 py-2 rounded-lg transition-colors flex-shrink-0"
-            :class="selectedStatus === tab.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'"
+      <div class="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
+        <button
+          v-for="tab in statusTabs"
+          :key="tab.value"
+          @click="selectedStatus = tab.value"
+          class="px-3 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium text-center flex items-center justify-center gap-1.5 truncate"
+          :class="selectedStatus === tab.value ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'"
+        >
+          <span class="truncate">{{ tab.label }}</span>
+          <span
+            class="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold shrink-0"
+            :class="selectedStatus === tab.value ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'"
           >
-            {{ tab.label }}
-            <span
-              class="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium ml-2"
-              :class="selectedStatus === tab.value ? 'bg-white text-blue-600' : 'bg-gray-200 text-gray-700'"
-            >
-              {{ getOrderCount(tab.value) }}
-            </span>
-          </button>
-        </div>
+            {{ getOrderCount(tab.value) }}
+          </span>
+        </button>
       </div>
     </div>
 
@@ -145,7 +143,7 @@
       <span>{{ order.receivingMode || order.deliveryMethod || 'Pick-up' }}</span>
     </div>
   </div>
-  <div class="text-right">
+  <div class="text-right md:text-left">
     <div class="text-sm text-gray-500">Total Order Amount</div>
     <div class="text-lg font-bold text-blue-600">
       {{ formatPrice(order.totalAmount || order.amount || (order.isProvided ? 500 : 0)) }}
@@ -311,4 +309,7 @@ onMounted(async () => {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

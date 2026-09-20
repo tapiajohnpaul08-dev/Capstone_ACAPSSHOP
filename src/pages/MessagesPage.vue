@@ -1,53 +1,155 @@
 <template>
-  <div class="container mx-auto px-4 py-6 max-w-7xl">
+  <div class="container mx-auto px-4 py-6 max-w-[1400px]">
+    <!-- Mobile view switcher: 'list' shows sidebar, 'chat' shows the conversation -->
     <div
-      class="grid gap-4"
-      :class="selectedOrder ? 'grid-cols-1 lg:grid-cols-[1fr_380px]' : 'grid-cols-1'"
-      style="height: calc(100vh - 140px)"
+      class="lg:grid lg:gap-4 lg:grid-cols-[320px_1fr] lg:h-[calc(100vh-140px)]"
+      :class="selectedOrder ? 'xl:grid-cols-[320px_1fr_380px]' : ''"
     >
 
-      <!-- ────── LEFT: Chat panel ────── -->
-      <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0">
+      <!-- ────── LEFT: Conversations sidebar ────── -->
+      <!-- On mobile: shown when mobileView === 'list'; hidden when mobileView === 'chat' -->
+      <div
+        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0"
+        :class="mobileView === 'list' ? 'flex' : 'hidden lg:flex'"
+        style="height: calc(100dvh - 140px);"
+      >
+        <!-- Sidebar header -->
+        <div class="shrink-0 px-4 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <MessageSquare class="w-4 h-4 text-blue-600" />
+              <h4 class="font-semibold text-sm text-gray-900">Conversations</h4>
+              <span
+                v-if="conversations.length > 0"
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700"
+              >
+                {{ conversations.length }}
+              </span>
+            </div>
+            <button
+              @click="loadConversationList"
+              :disabled="isLoadingConversations"
+              class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
+              title="Refresh"
+            >
+              <RefreshCw :class="['w-3.5 h-3.5', isLoadingConversations ? 'animate-spin' : '']" />
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="isLoadingConversations && conversations.length === 0" class="flex-1 flex items-center justify-center">
+          <div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <!-- Empty -->
+        <div v-else-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+          <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-3">
+            <MessageSquare class="w-6 h-6 text-blue-400" />
+          </div>
+          <p class="text-sm font-semibold text-gray-600">No conversations yet</p>
+          <p class="text-xs text-gray-400 mt-0.5">
+            Start by creating an order — your chat with admin will appear here.
+          </p>
+        </div>
+
+        <!-- Conversation list -->
+        <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100">
+          <button
+            v-for="conv in conversations"
+            :key="conv.conversationId"
+            @click="selectConversationFromList(conv)"
+            class="w-full text-left px-4 py-3 hover:bg-blue-50/50 transition-colors"
+            :class="activeConversationId === conv.conversationId ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'"
+          >
+            <div class="flex items-start gap-2.5">
+              <div class="flex-1 min-w-0">
+                <!-- Row 1: orderId + time -->
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-xs font-bold text-gray-900 font-mono truncate">
+                    {{ conv.orderId || 'General' }}
+                  </span>
+                  <span class="text-[10px] text-gray-400 flex-shrink-0">
+                    {{ formatConversationTime(conv.lastMessageAt) }}
+                  </span>
+                </div>
+                <!-- Row 2: subject/preview -->
+                <p class="text-[11px] text-gray-500 truncate mt-0.5">
+                  {{ conv.lastMessage || conv.subject || 'No messages yet' }}
+                </p>
+                <!-- Row 3: badges -->
+                <div class="flex items-center gap-1 mt-1 flex-wrap">
+                  <span
+                    v-if="conv.unreadCount > 0"
+                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white"
+                  >
+                    {{ conv.unreadCount }} new
+                  </span>
+                  <span
+                    v-if="conv.status === 'resolved'"
+                    class="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600"
+                  >
+                    Resolved
+                  </span>
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ────── MIDDLE: Chat panel ────── -->
+      <!-- On mobile: shown when mobileView === 'chat' -->
+      <div
+        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0 relative"
+        :class="mobileView === 'chat' ? 'flex' : 'hidden lg:flex'"
+        style="height: calc(100dvh - 140px);"
+      >
+        <!-- Mobile back button -->
+        <button
+          @click="mobileView = 'list'"
+          class="lg:hidden absolute top-3 left-3 z-10 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+          aria-label="Back to conversations"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+        </button>
 
       <!-- Header -->
-      <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md">
-              <span class="text-white font-bold text-sm">AC</span>
+      <div class="px-6 py-3 sm:py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0 pl-14 lg:pl-6">
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 sm:w-10 sm:h-10 rounded-full bg-white-600 flex items-center justify-center shadow-md shrink-0">
+                  <img :src="Logo" alt="ACAPS TRADING" class="w-10 h-10"  />
             </div>
-            <div>
-              <h4 class="font-semibold text-gray-900">ACAPSHOP</h4>
+            <div class="min-w-0">
+              <h4 class="font-semibold text-gray-900 text-sm sm:text-base">ACAPSHOP</h4>
               <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="relative flex h-2 w-2">
+                <span class="relative flex h-2 w-2 shrink-0">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <span class="text-xs text-gray-500">
-                  {{ isAdminOnline ? 'Online • Usually replies in minutes' : 'Offline • Will reply when available' }}
+                <span class="text-[11px] sm:text-xs text-gray-500 truncate">
+                  {{ isAdminOnline ? 'Online' : 'Offline' }}
                 </span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- Order picker (only when no order is selected) -->
-      <div v-if="!selectedOrder && myPendingOrders.length > 0" class="shrink-0 px-4 pt-3 pb-3 border-b bg-white">
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-semibold text-gray-500 whitespace-nowrap">Discuss an order:</span>
-          <div class="flex-1 min-w-0">
-            <select
-              v-model="showOrderPicker"
-              @change="handlePickOrder"
-              class="w-full text-xs px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="false">Select a pending order…</option>
-              <option v-for="o in myPendingOrders" :key="o.orderId" :value="o.orderId">
-                {{ o.orderId }} — ₱{{ (o.amount || 0).toLocaleString() }}
-              </option>
-            </select>
-          </div>
+          <!-- ✅ Reopen negotiation panel button -->
+          <button
+            v-if="!selectedOrder && myPendingOrders.length > 0"
+            @click="reopenNegotiationPanel"
+            class="shrink-0 inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+            title="View order details & negotiate"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span class="hidden xs:inline">Order</span>
+          </button>
         </div>
       </div>
 
@@ -439,18 +541,70 @@
         <p class="text-xs text-gray-400 mt-3 text-center">Attach image/file or type a message</p>
       </div>
       </div>
-      <!-- ────── /LEFT: Chat panel ────── -->
+      <!-- ────── /MIDDLE: Chat panel ────── -->
+
+      <!-- ────── RIGHT: Negotiation panel (bottom sheet on mobile) ────── -->
+      <Teleport to="body">
+        <!-- Mobile: bottom sheet -->
+        <div
+          v-if="selectedOrder"
+          class="fixed inset-x-0 bottom-0 z-40 lg:hidden bg-white rounded-t-2xl border-t shadow-2xl max-h-[70vh] flex flex-col"
+        >
+          <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mt-2 shrink-0"></div>
+          <div class="flex-1 min-h-0 overflow-hidden">
+            <NegotiationOrderPanel
+              :order="selectedOrder"
+              @clear="clearSelectedOrder"
+            />
+          </div>
+        </div>
+      </Teleport>
 
       <!-- ────── RIGHT: Negotiation panel ────── -->
+      <!-- Desktop / tablet landscape: inline third column -->
       <div
         v-if="selectedOrder"
-        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0"
+        class="hidden xl:flex bg-white rounded-xl border shadow-sm overflow-hidden flex-col min-h-0 xl:col-span-1"
       >
         <NegotiationOrderPanel
           :order="selectedOrder"
           @clear="clearSelectedOrder"
         />
       </div>
+
+      <!-- Tablet portrait & mobile: bottom sheet -->
+      <Teleport to="body">
+        <Transition name="sheet">
+          <div
+            v-if="selectedOrder"
+            class="xl:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col"
+          >
+            <!-- Backdrop -->
+            <div
+              class="fixed inset-0 bg-black/40 -z-10"
+              @click="clearSelectedOrder"
+            ></div>
+
+            <!-- Sheet -->
+            <div
+              class="bg-white rounded-t-2xl border-t shadow-2xl flex flex-col max-h-[80vh]"
+              style="padding-bottom: env(safe-area-inset-bottom);"
+            >
+              <!-- Drag handle -->
+              <div class="shrink-0 pt-2 pb-1 flex justify-center">
+                <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+              </div>
+
+              <div class="flex-1 min-h-0 overflow-hidden">
+                <NegotiationOrderPanel
+                  :order="selectedOrder"
+                  @clear="clearSelectedOrder"
+                />
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
     </div>
   </div>
@@ -561,8 +715,9 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useSocket } from '@/composables/useSocket'
 import { chatApi, ordersApi } from '@/api'
-
+import { MessageSquare, RefreshCw } from 'lucide-vue-next'
 import NegotiationOrderPanel from '@/components/chat/NegotiationOrderPanel.vue'
+import Logo from '@/assets/images/ACAPS_LOGO_ONLY.png'
 
 const { userInitial, customerId, token } = useAuth()
 const {
@@ -586,6 +741,10 @@ const {
 const messagesContainer = ref(null)
 const fileInput = ref(null)
 const newMessage = ref('')
+
+// ✅ Mobile view switcher: 'list' | 'chat'
+// Desktop ignores this and shows both side by side
+const mobileView = ref('list')
 const isTyping = ref(false)
 const isSending = ref(false)
 const isLoadingMessages = ref(true)
@@ -604,6 +763,11 @@ let pendingTempId = null
 const myPendingOrders = ref([])
 const selectedOrder = ref(null)
 const showOrderPicker = ref(false)
+
+// ✅ NEW — Conversation list (sidebar)
+const conversations = ref([])
+const activeConversationId = ref(null)
+const isLoadingConversations = ref(false)
 
 // ── Payment proof modal state ───────────────────────
 const showProofModal = ref(false)
@@ -805,11 +969,48 @@ const loadPendingOrders = async () => {
   }
 }
 
-const handlePickOrder = async () => {
+// ✅ NEW — Auto-select the most recent Pending order (convenience).
+// If the customer only has ONE pending order (the common case), we skip
+// the manual picker entirely and jump straight into the negotiation panel.
+// If they have multiple, the picker stays visible so they can choose.
+const autoSelectPendingOrder = async () => {
+  // Don't override a user's saved choice
+  if (selectedOrder.value) return
+
+  // Nothing to select
+  if (!myPendingOrders.value.length) return
+
+  // Don't auto-select if we already have one saved in sessionStorage
+  const savedId = getSavedOrderId()
+  if (savedId && myPendingOrders.value.some((o) => o.orderId === savedId)) {
+    return
+  }
+
+  // Pick the most recent Pending order (backend returns newest first)
+  const latest = myPendingOrders.value[0]
+  if (!latest) return
+
+  // Wait for conversation to be ready
+  if (!conversationId.value) {
+    console.log('⏳ autoSelectPendingOrder: conversation not ready yet')
+    return
+  }
+
+  // Reuse the existing picker flow, but skip the auto-greeting so the
+  // customer isn't spammed with "Hi! I'd like to discuss..." on every
+  // page navigation.
+  showOrderPicker.value = latest.orderId
+  await handlePickOrder(true)   // ← skipGreeting = true
+}
+
+const handlePickOrder = async (skipGreeting = false) => {
   const orderId = showOrderPicker.value
   if (!orderId) return
   const found = myPendingOrders.value.find((o) => o.orderId === orderId)
   if (!found) return
+
+  // If we already have this order selected, skip the re-link + greeting
+  const alreadySelected = selectedOrder.value?.orderId === orderId
 
   selectedOrder.value = found
   saveSelectedOrderId(orderId)
@@ -821,12 +1022,21 @@ const handlePickOrder = async () => {
     return
   }
 
-  // Link the order to the conversation first
+  // ✅ Link the order to the conversation, then reload the list so the
+  // sidebar reflects the new order.
   const resp = await chatApi.linkOrderToConversation(conversationId.value, orderId)
+  await loadConversationList()
   if (!resp.success) {
     showToast('error', resp.message || 'Failed to link order')
     selectedOrder.value = null
     saveSelectedOrderId(null)
+    return
+  }
+
+  // ✅ Skip the auto-greeting if this was an automatic selection OR
+  // the order was already selected (prevents duplicate greetings on
+  // every page load / navigation).
+  if (alreadySelected || skipGreeting) {
     return
   }
 
@@ -844,8 +1054,6 @@ const handlePickOrder = async () => {
     )
 
     if (sentMessage?.success && sentMessage.data) {
-      // Optimistic append so the customer sees it immediately,
-      // even if the socket echo is delayed.
       const exists = messages.value.some(m => m.messageId === sentMessage.data.messageId)
       if (!exists) {
         messages.value.push(sentMessage.data)
@@ -854,7 +1062,6 @@ const handlePickOrder = async () => {
     }
   } catch (e) {
     console.error('Failed to send auto-message:', e)
-    // Don't block the flow — the order is still linked
   }
 
   showToast('success', 'Order shared with admin — waiting for their response')
@@ -864,6 +1071,27 @@ const clearSelectedOrder = () => {
   selectedOrder.value = null
   saveSelectedOrderId(null)
   showOrderPicker.value = false
+}
+
+// ✅ Reopen the negotiation panel by restoring the last selected order
+// (or the most recent pending order if there's no saved selection).
+const reopenNegotiationPanel = () => {
+  if (!myPendingOrders.value.length) {
+    showToast('info', 'No pending orders to negotiate')
+    return
+  }
+
+  // Try the last saved order first
+  const savedId = getSavedOrderId()
+  let order = savedId
+    ? myPendingOrders.value.find((o) => o.orderId === savedId)
+    : null
+
+  // Fall back to the newest pending order
+  if (!order) order = myPendingOrders.value[0]
+
+  selectedOrder.value = order
+  saveSelectedOrderId(order.orderId)
 }
 
 // ── Payment proof upload ────────────────────────────
@@ -1081,13 +1309,16 @@ async function sendMessage() {
   } finally {
     isSending.value = false
   }
-}
+} 
 
-async function initConversation() {
+// ✅ UPDATED — Now accepts an optional `orderId` so we can open a
+// specific per-order conversation directly.
+async function initConversation(orderId = null) {
   try {
-    const response = await chatApi.getOrCreateConversation('Customer Support')
+    const response = await chatApi.getOrCreateConversation('Customer Support', orderId)
     if (response.success && response.data) {
       conversationId.value = response.data.conversationId
+      activeConversationId.value = response.data.conversationId
       console.log('🔍 [customer] conversationId set:', conversationId.value)
 
       await loadMessages()
@@ -1102,6 +1333,89 @@ async function initConversation() {
   }
 }
 
+// ✅ NEW — Load all conversations for the customer (sidebar data)
+async function loadConversationList() {
+  isLoadingConversations.value = true
+  try {
+    const response = await chatApi.getMyConversations()
+    if (response.success && Array.isArray(response.data)) {
+      conversations.value = response.data.map((c) => ({
+        conversationId: c.conversationId,
+        orderId: c.orderId || null,
+        subject: c.subject || 'General Inquiry',
+        lastMessage: c.lastMessage || '',
+        lastMessageAt: c.lastMessageAt || c.updatedAt,
+        unreadCount: c.unreadCount || c.customerUnreadCount || 0,
+        status: c.status,
+      }))
+    } else {
+      conversations.value = []
+    }
+  } catch (error) {
+    console.error('Error loading conversation list:', error)
+    conversations.value = []
+  } finally {
+    isLoadingConversations.value = false
+  }
+}
+
+// ✅ NEW — Switch to a specific conversation from the sidebar
+async function selectConversationFromList(conv) {
+  if (!conv?.conversationId) return
+
+  // ✅ On mobile, switch to the chat view
+  if (window.matchMedia('(max-width: 1023px)').matches) {
+    mobileView.value = 'chat'
+  }
+
+  if (activeConversationId.value === conv.conversationId) return
+
+  // Leave the current room
+  conversationId.value = conv.conversationId
+  activeConversationId.value = conv.conversationId
+
+  // Clear local chat state
+  messages.value = []
+  replyToMessage.value = null
+  pendingAttachments.value = []
+  selectedOrder.value = null
+
+  // Join + load
+  if (isSocketConnected.value) {
+    joinConversation(conv.conversationId)
+  }
+  await loadMessages()
+  if (isSocketConnected.value) {
+    markAsRead(conv.conversationId)
+  }
+
+  // If the conversation has a linked order, load it
+  if (conv.orderId) {
+    const found = myPendingOrders.value.find((o) => o.orderId === conv.orderId)
+    if (found) {
+      selectedOrder.value = found
+      showOrderPicker.value = conv.orderId
+      saveSelectedOrderId(conv.orderId)
+    }
+  }
+
+  await scrollToBottom()
+}
+
+// ✅ NEW — Format relative time for the sidebar
+function formatConversationTime(dateValue) {
+  if (!dateValue) return ''
+  const diff = Date.now() - new Date(dateValue).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'now'
+  if (mins < 60) return `${mins}m`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h`
+  const days = Math.floor(hours / 24)
+  if (days < 7) return `${days}d`
+  return new Date(dateValue).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })
+}
+
 // ── Socket listeners ────────────────────────────────
 function setupSocketListeners() {
   
@@ -1113,6 +1427,17 @@ function setupSocketListeners() {
     conversationId: message.conversationId,
     senderType: message.senderType,
   })
+
+    // ✅ Update sidebar preview in real time
+    const sidebarConv = conversations.value.find(c => c.conversationId === message.conversationId)
+    if (sidebarConv) {
+      sidebarConv.lastMessage = message.content
+      sidebarConv.lastMessageAt = message.createdAt || new Date().toISOString()
+      if (message.senderType === 'admin' && activeConversationId.value !== message.conversationId) {
+        sidebarConv.unreadCount = (sidebarConv.unreadCount || 0) + 1
+      }
+    }
+
     if (pendingTempId) {
       const index = messages.value.findIndex(m => m.messageId === pendingTempId)
       if (index !== -1) {
@@ -1200,35 +1525,52 @@ watch(isSocketConnected, (connected) => {
 // ── Lifecycle ───────────────────────────────────────
 onMounted(async () => {
   if (token.value) {
-connectSocket(token.value, customerId.value, 'customer')
-setupSocketListeners()
+    connectSocket(token.value, customerId.value, 'customer')
+    setupSocketListeners()
 
-// DIAGNOSTIC: log socket state 1s after mount
-setTimeout(() => {
-  console.log('🔍 [customer] socket state after 1s:', {
-    isConnected: isSocketConnected.value,
-    conversationId: conversationId.value,
-  })
-}, 1000)
+    // DIAGNOSTIC: log socket state 1s after mount
+    setTimeout(() => {
+      console.log('🔍 [customer] socket state after 1s:', {
+        isConnected: isSocketConnected.value,
+        conversationId: conversationId.value,
+      })
+    }, 1000)
   }
 
-  await initConversation()
+  // ✅ Load the conversation list first (sidebar data)
+  await loadConversationList()
   await loadPendingOrders()
 
-  // Restore previously picked order
-  const savedId = getSavedOrderId()
-  if (savedId) {
-    const found = myPendingOrders.value.find((o) => o.orderId === savedId)
-    if (found) {
-      selectedOrder.value = found
-      showOrderPicker.value = savedId
-      if (conversationId.value) {
-        await chatApi.linkOrderToConversation(conversationId.value, savedId)
-      }
-    } else {
-      // Order no longer negotiable — clear it
-      saveSelectedOrderId(null)
+  // ✅ Decide which conversation to open:
+  //   1. If sessionStorage has a saved order, open the conversation for it
+  //   2. Else if there's an open conversation in the list, open the newest
+  //   3. Else create a fresh general conversation
+  const savedOrderId = getSavedOrderId()
+  const targetConv = savedOrderId
+    ? conversations.value.find((c) => c.orderId === savedOrderId)
+    : conversations.value[0]
+
+  if (targetConv) {
+    // Open the specific conversation
+    conversationId.value = targetConv.conversationId
+    activeConversationId.value = targetConv.conversationId
+    if (isSocketConnected.value) {
+      joinConversation(targetConv.conversationId)
     }
+    await loadMessages()
+
+    // If it has an order, restore the negotiation panel
+    if (targetConv.orderId) {
+      const found = myPendingOrders.value.find((o) => o.orderId === targetConv.orderId)
+      if (found) {
+        selectedOrder.value = found
+        showOrderPicker.value = targetConv.orderId
+      }
+    }
+  } else {
+    // No conversations at all — create a general one so the page isn't blank
+    await initConversation()
+    await loadConversationList()
   }
 
   await nextTick()
@@ -1254,5 +1596,23 @@ onUnmounted(() => {
 .toast-enter-from, .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(12px);
+}
+
+/* ────── Bottom sheet animation ────── */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Fixed viewport heights so mobile browser chrome doesn't fight the layout */
+@media (max-width: 1023px) {
+  .min-h-0 {
+    min-height: 0;
+  }
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-    <!-- Full Background Image with Blur -->
+  <div class="min-h-screen flex items-center justify-center px-4 py-8 sm:py-4 relative overflow-hidden">
+        <!-- Full Background Image with Blur -->
     <div class="absolute inset-0 bg-cover bg-center bg-no-repeat"
          :style="{ backgroundImage: `url(${backgroundImage})` }">
     </div>
@@ -102,7 +102,7 @@
 
         <!-- Right Column: Login Form -->
         <div class="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
-          <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-6 md:p-8">
+          <div class="bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 p-5 sm:p-6 md:p-8">
             
             <!-- Form Header -->
             <div class="text-center mb-6">

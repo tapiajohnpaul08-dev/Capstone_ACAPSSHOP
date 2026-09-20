@@ -12,3 +12,47 @@ button:focus-visible {
 button:disabled {
   cursor: not-allowed;
 }
+
+/* Hide scrollbars but keep scrolling functional */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area support for iOS notch / home indicator */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent iOS text-size auto-adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Prevent horizontal overflow globally */
+body {
+  overflow-x: hidden;
+}
+
+/* Use dynamic viewport height so mobile browser chrome doesn't cause layout jumps */
+@supports (height: 100dvh) {
+  .h-screen-dynamic {
+    height: 100dvh;
+  }
+}
+
+/* Prevent the whole page from scrolling when chat shell is open */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* iOS momentum scroll inside overflow areas */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}

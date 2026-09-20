@@ -34,7 +34,7 @@
                 <path d="M5 12h14" />
                 <path d="M12 5v14" />
               </svg>
-              Create Order (I'll Provide My Items)
+              Print Service
             </button>
 
             <!-- Anonymous → Sign In / Sign Up -->
@@ -266,8 +266,7 @@
               </div>
             </div>
 
-            <div v-if="cart.length > 0" class="px-5 py-4 border-t border-gray-100 space-y-3">
-              <!-- ✅ Selected summary -->
+            <div v-if="cart.length > 0" class="px-5 py-4 border-t border-gray-100 space-y-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">              <!-- ✅ Selected summary -->
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-500">
                   {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected

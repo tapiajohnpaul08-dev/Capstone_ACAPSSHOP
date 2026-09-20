@@ -18,7 +18,7 @@
       <div v-else-if="product" class="flex flex-col lg:flex-row gap-8">
         <!-- Product Image -->
         <div class="lg:w-1/2">
-          <div class="bg-white rounded-2xl border p-6 sticky top-24">
+          <div class="bg-white rounded-2xl border p-3 sm:p-6 lg:sticky lg:top-24">
             <div class="aspect-square w-full flex items-center justify-center bg-gray-50 rounded-xl overflow-hidden">
               <img 
                 :src="productImageUrl" 
@@ -42,12 +42,12 @@
             <!-- Size Selection -->
             <div class="mb-6">
               <label class="text-sm font-medium text-gray-700 block mb-2">Select Size</label>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 <button
                   v-for="size in product.sizes"
                   :key="size.name"
                   @click="selectedSize = size"
-                  class="p-3 rounded-xl border-2 text-left transition-all"
+                  class="p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all"
                   :class="selectedSize?.name === size.name
                     ? 'border-blue-600 bg-blue-50'
                     : 'border-gray-200 hover:border-gray-300'"
@@ -64,11 +64,11 @@
             <!-- Quantity Selection -->
             <div class="mb-6">
               <label class="text-sm font-medium text-gray-700 block mb-2">Quantity</label>
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 sm:gap-3">
                 <button
                   @click="updateQuantity(-500)"
                   :disabled="quantity <= (product.minOrder || 500)"
-                  class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40"
+                  class="w-11 h-11 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 shrink-0"
                 >
                   <Minus class="w-4 h-4" />
                 </button>
@@ -79,12 +79,12 @@
                   :min="product.minOrder || 500"
                   :max="selectedSize?.stock || 0"
                   step="500"
-                  class="w-32 text-center py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="flex-1 min-w-0 text-center py-2.5 sm:py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold"
                 />
                 <button
                   @click="updateQuantity(500)"
                   :disabled="selectedSize && quantity >= selectedSize.stock"
-                  class="w-10 h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40"
+                  class="w-11 h-11 sm:w-10 sm:h-10 rounded-lg border flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 shrink-0"
                 >
                   <Plus class="w-4 h-4" />
                 </button>
@@ -114,11 +114,11 @@
             </div>
 
             <!-- Action Buttons -->
-            <div v-if="checkToken()" class="flex gap-3">
+            <div v-if="checkToken()" class="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 @click="addToCart"
                 :disabled="!selectedSize || selectedSize.stock < product.minOrder"
-                class="flex-1 py-3 rounded-xl font-semibold transition-all border-2 border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex-1 py-3 rounded-xl font-semibold transition-all border-2 border-blue-600 text-blue-600 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
               >
                 <ShoppingCart class="w-4 h-4 inline mr-2" />
                 Add to Cart
@@ -126,12 +126,11 @@
               <button
                 @click="orderNow"
                 :disabled="!selectedSize || selectedSize.stock < product.minOrder"
-                class="flex-1 py-3 rounded-xl font-semibold transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                class="flex-1 py-3 rounded-xl font-semibold transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-sm"
               >
                 Order Now
               </button>
             </div>
-
             <div v-else class="flex flex-col gap-3">
               <!-- Add to Cart Button -->
             <button 

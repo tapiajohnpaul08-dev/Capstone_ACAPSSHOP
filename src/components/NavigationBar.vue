@@ -1,7 +1,9 @@
 <!-- components/NavigationBar.vue -->
 <template>
-  <nav class="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
-    <div class="container mx-auto px-4">
+  <nav
+    class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm"
+    style="padding-top: env(safe-area-inset-top);"
+  >    <div class="container mx-auto px-4">
       <!-- ✅ Always show the navbar, but conditionally show content -->
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
@@ -129,53 +131,253 @@
       </div>
     </div>
 
-    <!-- Mobile Menu -->
-    <div v-if="mobileMenuOpen" class="md:hidden border-t border-gray-100 bg-white">
-      <div class="container mx-auto px-4 py-2 space-y-1">
-        <!-- Public mobile links -->
-        <router-link to="/" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-          <span>Home</span>
-        </router-link>
-        <router-link to="/catalog" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
-          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-          <span>Catalog</span>
-        </router-link>
+    <!-- Mobile Menu — slide-in drawer from the right -->
+    <Teleport to="body">
+      <Transition name="drawer-backdrop">
+        <div
+          v-if="mobileMenuOpen"
+          class="md:hidden fixed inset-0 z-[60]"
+          @click.self="mobileMenuOpen = false"
+        >
+          <!-- Backdrop -->
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="mobileMenuOpen = false"></div>
 
-        <!-- Auth links for mobile -->
-        <template v-if="!isAuthenticated">
-          <router-link to="/customer/login" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-blue-600 hover:bg-blue-50" @click="mobileMenuOpen = false">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            <span>Log In</span>
-          </router-link>
-          <router-link to="/customer/signup" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all bg-blue-600 text-white hover:bg-blue-700" @click="mobileMenuOpen = false">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-            <span>Sign Up</span>
-          </router-link>
-        </template>
+          <!-- Drawer panel -->
+          <Transition name="drawer-panel" appear>
+            <aside
+              class="absolute top-0 right-0 h-full w-[85%] max-w-sm bg-white shadow-2xl flex flex-col"
+              style="padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);"
+            >
+              <!-- ── Header ── -->
+              <div class="shrink-0 px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center bg-blue-50">
+                    <img src="../assets/images/ACAPS_LOGO_ONLY.png" alt="ACAPSHOP" class="w-full h-full object-contain" />
+                  </div>
+                  <div>
+                    <h2 class="text-sm font-black text-gray-900 leading-tight">ACAPSHOP</h2>
+                    <p class="text-[10px] text-gray-400 -mt-0.5">We Are Committed to You</p>
+                  </div>
+                </div>
+                <button
+                  @click="mobileMenuOpen = false"
+                  class="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  aria-label="Close menu"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
 
-        <!-- Protected mobile links (only when authenticated) -->
-        <template v-if="isAuthenticated">
-          <router-link to="/customer/orders" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/></svg>
-            <span>My Orders</span>
-          </router-link>
-          <router-link to="/customer/messages" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>Messages</span>
-          </router-link>
-          <router-link to="/customer/profile" class="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-gray-600 hover:bg-gray-100" @click="mobileMenuOpen = false">
-            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>Profile</span>
-          </router-link>
-        </template>
-      </div>
-    </div>
+              <!-- ── User greeting (when logged in) ── -->
+              <div v-if="isAuthenticated" class="shrink-0 px-5 py-4 border-b border-gray-100 bg-gradient-to-br from-blue-50 to-white">
+                <div class="flex items-center gap-3">
+                  <div class="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {{ (userName || 'C').charAt(0).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm font-semibold text-gray-900 truncate">{{ userName || 'Customer' }}</p>
+                    <p class="text-[11px] text-gray-500 truncate">{{ userEmail || '' }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Scrollable nav area ── -->
+              <nav class="flex-1 min-h-0 overflow-y-auto py-2">
+                <!-- Main links (when logged in) -->
+                <template v-if="isAuthenticated">
+                  <p class="px-5 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    Menu
+                  </p>
+
+                  <router-link
+                    to="/customer/dashboard"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    :class="route.path === '/customer/dashboard' ? 'text-blue-600 bg-blue-50/60 font-semibold' : ''"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+                      <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    <span class="text-sm">Home</span>
+                  </router-link>
+
+                  <router-link
+                    to="/customer/orders"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    :class="route.path.startsWith('/customer/orders') ? 'text-blue-600 bg-blue-50/60 font-semibold' : ''"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                      <path d="M3 6h18"/>
+                      <path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                    <span class="text-sm">My Orders</span>
+                  </router-link>
+
+                  <router-link
+                    to="/customer/messages"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    :class="route.path.startsWith('/customer/messages') ? 'text-blue-600 bg-blue-50/60 font-semibold' : ''"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    <span class="text-sm">Messages</span>
+                    <span
+                      v-if="unreadCount > 0"
+                      class="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold rounded-full bg-red-500 text-white"
+                    >
+                      {{ unreadCount > 99 ? '99+' : unreadCount }}
+                    </span>
+                  </router-link>
+
+                  <router-link
+                    to="/customer/designs"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    :class="route.path.startsWith('/customer/designs') ? 'text-blue-600 bg-blue-50/60 font-semibold' : ''"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                      <circle cx="9" cy="9" r="2"/>
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                    </svg>
+                    <span class="text-sm">My Designs</span>
+                  </router-link>
+
+                  <router-link
+                    to="/customer/profile"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    :class="route.path.startsWith('/customer/profile') ? 'text-blue-600 bg-blue-50/60 font-semibold' : ''"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    <span class="text-sm">Profile</span>
+                  </router-link>
+
+                  <div class="my-2 mx-5 border-t border-gray-100"></div>
+
+                  <p class="px-5 pt-2 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    Support
+                  </p>
+
+                  <router-link
+                    to="/customer/policies?tab=faq"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <path d="M12 17h.01"/>
+                    </svg>
+                    <span class="text-sm">Help & Policies</span>
+                  </router-link>
+                </template>
+
+                <!-- Guest links -->
+                <template v-else>
+                  <p class="px-5 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    Menu
+                  </p>
+
+                  <router-link
+                    to="/"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/>
+                      <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    </svg>
+                    <span class="text-sm">Home</span>
+                  </router-link>
+
+                  <router-link
+                    to="/catalog"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                    </svg>
+                    <span class="text-sm">Catalog</span>
+                  </router-link>
+
+                  <router-link
+                    to="/customer/policies?tab=faq"
+                    class="flex items-center gap-3 px-5 py-3 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    @click="mobileMenuOpen = false"
+                  >
+                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                      <path d="M12 17h.01"/>
+                    </svg>
+                    <span class="text-sm">Help</span>
+                  </router-link>
+                </template>
+              </nav>
+
+              <!-- ── Footer actions ── -->
+              <div class="shrink-0 border-t border-gray-100 px-5 py-4">
+                <template v-if="isAuthenticated">
+                  <button
+                    @click="logout"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 transition-colors"
+                  >
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                  </button>
+                </template>
+
+                <template v-else>
+                  <div class="flex flex-col gap-2">
+                    <router-link
+                      to="/customer/login"
+                      class="w-full text-center py-2.5 rounded-xl text-sm font-semibold text-blue-600 border border-blue-200 hover:bg-blue-50 transition-colors"
+                      @click="mobileMenuOpen = false"
+                    >
+                      Log In
+                    </router-link>
+                    <router-link
+                      to="/customer/signup"
+                      class="w-full text-center py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-sm"
+                      @click="mobileMenuOpen = false"
+                    >
+                      Sign Up
+                    </router-link>
+                  </div>
+                </template>
+
+                <p class="text-center text-[10px] text-gray-400 mt-3">
+                  ACAPSHOP · We Are Committed to You
+                </p>
+              </div>
+            </aside>
+          </Transition>
+        </div>
+      </Transition>
+    </Teleport>
   </nav>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
 
@@ -227,10 +429,21 @@ function logout() {
 
 
 function handleClickOutside(event) {
+  // Skip while the mobile drawer is open — the drawer has its own backdrop
+  // click handler and we don't want a race between the two.
+  if (mobileMenuOpen.value) return
+
   if (userMenuRef.value && !userMenuRef.value.contains(event.target)) {
     showUserMenu.value = false
   }
 }
+
+// Lock body scroll when the mobile menu is open so the page beneath
+// doesn't shift on iOS Safari.
+watch(mobileMenuOpen, (open) => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
@@ -242,5 +455,30 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('storage', syncAuth)
   window.removeEventListener('authChanged', syncAuth)
+  document.body.style.overflow = ''
 })
 </script>
+
+<style scoped>
+/* ── Backdrop fade ── */
+.drawer-backdrop-enter-active,
+.drawer-backdrop-leave-active {
+  transition: opacity 0.25s ease;
+}
+.drawer-backdrop-enter-from,
+.drawer-backdrop-leave-to {
+  opacity: 0;
+}
+
+/* ── Slide-in panel ── */
+.drawer-panel-enter-active {
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.drawer-panel-leave-active {
+  transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.drawer-panel-enter-from,
+.drawer-panel-leave-to {
+  transform: translateX(100%);
+}
+</style>
