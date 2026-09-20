@@ -149,6 +149,21 @@
                 </div>
               </div>
 
+              <!-- ✅ Inline error banner (replaces alert + stale isError flag) -->
+              <transition name="fade">
+                <div
+                  v-if="errorMessage"
+                  class="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-red-50 border border-red-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-red-500 flex-shrink-0 mt-0.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p class="text-xs text-red-700 leading-snug">{{ errorMessage }}</p>
+                </div>
+              </transition>
+
               <div class="text-right">
                 <button type="button" @click="handleForgotPassword" class="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors">
                   Forgot Password?
@@ -216,12 +231,12 @@ import Logo from '@/assets/images/ACAPSLogo.png'
 
 export default {
   name: 'LoginView',
-  
+
   components: {
     Eye,
-    EyeOff
+    EyeOff,
   },
-  
+
   data() {
     return {
       appName,
@@ -231,44 +246,65 @@ export default {
       socialLoading: null,
       showPassword: false,
       backgroundImage,
-      Logo
+      Logo,
+      // ✅ Component-scoped error message (not a module ref)
+      errorMessage: '',
     }
   },
 
   mounted() {
+    // Handle OAuth error redirects (e.g. ?error=auth_failed)
     const urlParams = new URLSearchParams(window.location.search)
     const error = urlParams.get('error')
     if (error) {
-      alert('Login failed. Please try again.')
+      this.errorMessage =
+        error === 'auth_failed'
+          ? 'Sign-in with Google failed. Please try again or use email & password.'
+          : 'Login failed. Please try again.'
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   },
 
   methods: {
     async handleLogin() {
-      if (!this.form.email || !this.form.password) return
-      
+      // Reset previous error on every new attempt
+      this.errorMessage = ''
+
+      if (!this.form.email || !this.form.password) {
+        this.errorMessage = 'Please enter both email and password.'
+        return
+      }
+
       this.isLoading = true
-      
+
       try {
         const result = await authApi.login(this.form.email, this.form.password)
-        
-        if (result.success) {
-          if (result.data?.token) {
+
+        if (result.success && result.data) {
+          if (result.data.token) {
             localStorage.setItem('customerToken', result.data.token)
             localStorage.setItem('token', result.data.token)
-            localStorage.setItem('currentUser', JSON.stringify(result.data.customer))
-            localStorage.setItem('userName', `${result.data.customer.firstName} ${result.data.customer.lastName}`)
-            localStorage.setItem('userEmail', result.data.customer.email)
+            localStorage.setItem(
+              'currentUser',
+              JSON.stringify(result.data.customer),
+            )
+            localStorage.setItem(
+              'userName',
+              `${result.data.customer.firstName || ''} ${result.data.customer.lastName || ''}`.trim(),
+            )
+            localStorage.setItem('userEmail', result.data.customer.email || '')
           }
-          
+
           this.$router.push('/customer/dashboard')
         } else {
-          alert(result.message || 'Invalid email or password')
+          // ✅ Show inline error instead of alert()
+          this.errorMessage =
+            result.message || 'Invalid email or password. Please try again.'
         }
       } catch (error) {
         console.error('Login error:', error)
-        alert('Login failed. Please try again.')
+        this.errorMessage =
+          'Something went wrong. Please check your connection and try again.'
       } finally {
         this.isLoading = false
       }
@@ -276,10 +312,11 @@ export default {
 
     handleSocialLogin(provider) {
       this.socialLoading = provider
-      
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
+
+      const backendUrl =
+        import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
       const baseUrl = backendUrl.replace(/\/api\/v1$/, '')
-      
+
       if (provider === 'google') {
         window.location.href = `${baseUrl}/api/v1/auth/google`
       } else if (provider === 'facebook') {
@@ -293,8 +330,8 @@ export default {
 
     handleSignUp() {
       this.$router.push('/customer/signup')
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -397,5 +434,16 @@ button[type="submit"]:active:not(:disabled) {
   .min-h-screen {
     padding: 1rem;
   }
+}
+
+/* Error banner fade-in */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>

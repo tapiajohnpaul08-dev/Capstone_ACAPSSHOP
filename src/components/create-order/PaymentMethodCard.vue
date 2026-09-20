@@ -46,16 +46,6 @@
         </div>
       </div>
 
-      <!-- CTA -->
-      <button
-        type="button"
-        @click="$emit('open-messages')"
-        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 transition-colors"
-      >
-        <MessageSquare class="w-4 h-4" />
-        Preview Messages Page
-      </button>
-
       <p class="text-[11px] text-gray-400 text-center leading-snug">
         After you submit, our admin will reach out in Messages to finalize the
         details and send payment instructions.

@@ -41,13 +41,17 @@
 
         <!-- Buttons -->
         <div class="flex gap-3">
-          <button
-            v-if="showCancel"
-            @click="close"
-            class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
-            {{ cancelLabel }}
-          </button>
+<button
+  v-if="showCancel"
+  @click="close"
+  :disabled="loading"
+  class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors
+         hover:bg-gray-50
+         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+>
+  {{ cancelLabel }}
+</button>
           <button
             @click="confirm"
             :disabled="loading"

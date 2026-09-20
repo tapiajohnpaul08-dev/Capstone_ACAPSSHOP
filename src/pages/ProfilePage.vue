@@ -122,7 +122,7 @@ function handleMenuClick(item) {
 
 function logout() {
   authLogout()
-  router.push('/customer/login')
+  router.push('/')
 }
 
 function deleteAccount() {

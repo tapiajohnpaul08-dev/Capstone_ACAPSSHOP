@@ -38,11 +38,27 @@
                 <div>
                   <label class="text-xs font-medium text-gray-700">Quantity</label>
                   <div class="flex items-center gap-2">
-                    <button type="button" @click="updateQuantity(idx, -500)" :disabled="item.quantity <= (item.minOrder || 500)" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50 disabled:opacity-40">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
-                    </button>
+<button
+  type="button"
+  @click="updateQuantity(idx, -500)"
+  :disabled="item.quantity <= (item.minOrder || 500)"
+  class="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center transition-colors
+         hover:bg-gray-50 hover:border-gray-400
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+  :title="item.quantity <= (item.minOrder || 500) ? `Minimum is ${item.minOrder || 500} pcs` : 'Decrease by 500'"
+>
+  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+</button>
                     <input type="number" v-model.number="item.quantity" @input="updateItem(idx, 'quantity', $event.target.value)" :min="item.minOrder || 500" step="500" class="field text-center" />
-                    <button type="button" @click="updateQuantity(idx, 500)" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50">
+<button
+  type="button"
+  @click="updateQuantity(idx, 500)"
+  :disabled="item.stock != null && item.quantity + 500 > item.stock"
+  class="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center transition-colors
+         hover:bg-gray-50 hover:border-gray-400
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+  :title="item.stock != null && item.quantity + 500 > item.stock ? `Only ${item.stock.toLocaleString()} pcs in stock` : 'Increase by 500'"
+>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                     </button>
                   </div>
@@ -79,12 +95,26 @@
             <div>
               <label class="text-xs font-medium text-gray-700">Quantity <span class="text-red-500">*</span></label>
               <div class="flex items-center gap-2">
-                <button type="button" @click="updateSingleQuantity(-500)" :disabled="singleQuantity <= (selectedProductData.minOrder || 500)" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50 disabled:opacity-40">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+<button
+  type="button"
+  @click="updateSingleQuantity(-500)"
+  :disabled="singleQuantity <= (selectedProductData.minOrder || 500)"
+  class="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center transition-colors
+         hover:bg-gray-50 hover:border-gray-400
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+  :title="singleQuantity <= (selectedProductData.minOrder || 500) ? `Minimum is ${selectedProductData.minOrder || 500} pcs` : 'Decrease by 500'"
+>                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
                 </button>
                 <input type="number" v-model.number="singleQuantity" @input="onQuantityChange" :min="selectedProductData.minOrder || 500" step="500" class="field text-center" />
-                <button type="button" @click="updateSingleQuantity(500)" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+<button
+  type="button"
+  @click="updateSingleQuantity(500)"
+  :disabled="getSelectedSizeStock > 0 && singleQuantity + 500 > getSelectedSizeStock"
+  class="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center transition-colors
+         hover:bg-gray-50 hover:border-gray-400
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+  :title="getSelectedSizeStock > 0 && singleQuantity + 500 > getSelectedSizeStock ? `Only ${getSelectedSizeStock.toLocaleString()} pcs in stock` : 'Increase by 500'"
+>                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
                 </button>
               </div>
               <p class="text-xs text-gray-400 mt-1">Min: {{ selectedProductData.minOrder || 500 }} pcs · Multiples of 500</p>
@@ -111,8 +141,15 @@
         <div>
           <label class="text-sm font-medium text-gray-700">Quantity <span class="text-red-500">*</span></label>
           <div class="flex items-center gap-2">
-            <button type="button" @click="updateOwnCupsQuantity(-500)" :disabled="ownCupsData.quantity <= 500" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50 disabled:opacity-40">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
+<button
+  type="button"
+  @click="updateOwnCupsQuantity(-500)"
+  :disabled="ownCupsData.quantity <= 500"
+  class="w-8 h-8 border border-gray-300 rounded-md flex items-center justify-center transition-colors
+         hover:bg-gray-50 hover:border-gray-400
+         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-gray-300"
+  :title="ownCupsData.quantity <= 500 ? 'Minimum is 500 pcs' : 'Decrease by 500'"
+>              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg>
             </button>
             <input type="number" v-model.number="ownCupsData.quantity" min="500" step="500" class="field text-center" />
             <button type="button" @click="updateOwnCupsQuantity(500)" class="w-8 h-8 border rounded-md flex items-center justify-center hover:bg-gray-50">
@@ -135,7 +172,9 @@ const props = defineProps({
   orderType: { type: String, default: 'company-product' },
   isCartOrder: { type: Boolean, default: false },
   selectedProduct: { type: Object, default: null },
-  isOwnCups: { type: Boolean, default: false }
+  isOwnCups: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false },
+
 })
 
 const emit = defineEmits(['update:modelValue', 'product-changed'])
@@ -175,6 +214,21 @@ function getImageUrl(imagePath) {
 
 function handleImageError(e) {
   e.target.src = `${API_BASE_URL}/uploads/products/default-product.jpg`
+}
+
+// ✅ Get stock for a cart item's currently-selected size
+function getStockForItem(item) {
+  if (!item?.sizes || !item?.size) return null
+  const size = item.sizes.find(s => s.name === item.size)
+  return size?.stock ?? null
+}
+
+// ✅ Clamp a quantity value to [minOrder, stock]
+function clampQuantity(value, minOrder = 500, stock = null) {
+  let q = Number(value) || 0
+  if (q < minOrder) q = minOrder
+  if (stock != null && stock > 0 && q > stock) q = stock
+  return q
 }
 
 function getSizesForItem(item) {
@@ -246,8 +300,20 @@ watch(() => props.modelValue, (newItems) => {
 
 function updateItem(index, field, value) {
   const newItems = [...props.modelValue]
+  const item = newItems[index]
+
   if (field === 'quantity') {
-    newItems[index][field] = parseInt(value) || 0
+    const min = item.minOrder || 500
+    const stock = getStockForItem(item)
+    newItems[index][field] = clampQuantity(value, min, stock)
+  } else if (field === 'size') {
+    newItems[index][field] = value
+    // Re-clamp quantity to the new size's stock
+    const newStock = getStockForItem(newItems[index])
+    const min = item.minOrder || 500
+    if (newStock != null && newStock > 0 && newItems[index].quantity > newStock) {
+      newItems[index].quantity = Math.max(min, newStock)
+    }
   } else {
     newItems[index][field] = value
   }
@@ -257,13 +323,17 @@ function updateItem(index, field, value) {
 
 function updateQuantity(index, delta) {
   const newItems = [...props.modelValue]
-  const newQty = (newItems[index].quantity || 0) + delta
-  const min = newItems[index].minOrder || 500
-  if (newQty >= min) {
-    newItems[index].quantity = newQty
-    emit('update:modelValue', newItems)
-    emit('product-changed', newItems)
-  }
+  const item = newItems[index]
+  const min = item.minOrder || 500
+  const stock = getStockForItem(item)
+  const newQty = (item.quantity || 0) + delta
+
+  if (newQty < min) return
+  if (stock != null && stock > 0 && newQty > stock) return
+
+  newItems[index].quantity = newQty
+  emit('update:modelValue', newItems)
+  emit('product-changed', newItems)
 }
 
 function removeItem(index) {
@@ -294,6 +364,10 @@ function onSizeChange() {
   emit('product-changed', [updatedProduct])
 }
 function onQuantityChange() {
+  const min = selectedProductData.value?.minOrder || 500
+  const stock = getSelectedSizeStock.value
+  singleQuantity.value = clampQuantity(singleQuantity.value, min, stock || null)
+
   const updatedProduct = {
     productId: selectedProductData.value?.id,
     name: selectedProductData.value?.name,

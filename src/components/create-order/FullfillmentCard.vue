@@ -12,14 +12,14 @@
       <!-- Delivery / Pickup toggle -->
       <div class="grid md:grid-cols-2 gap-3">
         <div
-          @click="setMethod('delivery')"
-          class="p-4 rounded-lg border-2 cursor-pointer transition-all"
+  @click="!disabled && setMethod('delivery')"
+  class="p-4 rounded-lg border-2 transition-all"
           :class="[
             modelValue.method === 'delivery'
               ? 'border-blue-600 bg-blue-50'
               : 'border-gray-200 hover:border-gray-300',
             { 'border-red-400 ring-1 ring-red-300': showDeliveryError && modelValue.method === 'delivery' }
-          ]"
+          ] "
         >
           <div class="flex items-start gap-3">
             <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 shrink-0"
@@ -148,7 +148,8 @@
                 @blur="validateDeliveryField('province')"
                 type="text"
                 placeholder="e.g., Metro Manila"
-                class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                :disabled="disabled"
                 :class="{ 
                   'border-red-400 ring-1 ring-red-300': deliveryErrors.province,
                   'border-green-400 ring-1 ring-green-300': isValidDeliveryField('province') && deliveryAddress.province
@@ -165,7 +166,8 @@
                 @blur="validateDeliveryField('postalCode')"
                 type="text"
                 placeholder="e.g., 1100"
-                class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                :disabled="disabled"
                 :class="{ 
                   'border-red-400 ring-1 ring-red-300': deliveryErrors.postalCode,
                   'border-green-400 ring-1 ring-green-300': isValidDeliveryField('postalCode') && deliveryAddress.postalCode
@@ -187,7 +189,8 @@
                 @blur="validateDeliveryField('municipality')"
                 type="text"
                 placeholder="e.g., Quezon City"
-                class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                :disabled="disabled"
                 :class="{ 
                   'border-red-400 ring-1 ring-red-300': deliveryErrors.municipality,
                   'border-green-400 ring-1 ring-green-300': isValidDeliveryField('municipality') && deliveryAddress.municipality
@@ -205,7 +208,8 @@
                 @blur="validateDeliveryField('barangay')"
                 type="text"
                 placeholder="e.g., Barangay 123"
-                class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                :disabled="disabled"
                 :class="{ 
                   'border-red-400 ring-1 ring-red-300': deliveryErrors.barangay,
                   'border-green-400 ring-1 ring-green-300': isValidDeliveryField('barangay') && deliveryAddress.barangay
@@ -276,7 +280,8 @@
             :value="modelValue.ownCupsDeliveryDate"
             @input="updateField('ownCupsDeliveryDate', $event.target.value)"
             :min="todayDate"
-            class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+            :disabled="disabled"
           />
           <p class="text-xs text-gray-400 mt-1">
             Select the date you'll bring your items to our store.
@@ -309,7 +314,8 @@
               @input="updateField('preferredDate', $event.target.value)"
               :min="minDate"
               :max="maxDate"
-              class="field"
+                class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              :disabled="disabled"
               :class="{
                 'border-red-400 ring-1 ring-red-300': dateError && !isValidDate,
                 'border-green-400 ring-1 ring-green-300': isValidDate && modelValue.preferredDate
@@ -391,6 +397,8 @@ const props = defineProps({
     
       // ✅ NEW — full list of saved addresses
   savedAddresses: { type: Array, default: () => [] },
+    disabled: { type: Boolean, default: false },
+
 })
 
 const emit = defineEmits(['update:modelValue'])

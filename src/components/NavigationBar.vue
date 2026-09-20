@@ -422,7 +422,7 @@ function toggleUserMenu() {
 
 function logout() {
   authLogout()
-  router.push('/customer/login')
+  router.push('/')
   showUserMenu.value = false
   mobileMenuOpen.value = false
 }

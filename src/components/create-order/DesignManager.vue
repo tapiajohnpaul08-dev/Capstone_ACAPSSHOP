@@ -28,22 +28,43 @@
     <!-- Upload Panel -->
     <div v-if="designSource === 'upload' && !isNoDesignMode" class="space-y-4">
       <!-- File upload area -->
-      <div
-        @dragover.prevent="dragging = true"
-        @dragleave="dragging = false"
-        @drop.prevent="handleDrop"
-        class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
-        :class="dragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400 bg-gray-50'"
-      >
-        <UploadCloud class="w-8 h-8 mx-auto text-gray-400 mb-2" />
-        <p class="text-sm font-medium text-gray-700">Drag & drop your design file here</p>
-        <p class="text-xs text-gray-400 mt-1">PNG, JPG, PDF, AI, PSD · Max 20MB</p>
-        <label class="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
-          <FolderOpen class="w-4 h-4" />
-          Browse Files
-          <input type="file" accept=".png,.jpg,.jpeg,.pdf,.ai,.psd" class="hidden" @change="handleFileSelect" />
-        </label>
-      </div>
+<div
+  @dragover.prevent="!uploading && (dragging = true)"
+  @dragleave="dragging = false"
+  @drop.prevent="!uploading && handleDrop($event)"
+  class="border-2 border-dashed rounded-xl p-6 text-center transition-colors"
+  :class="[
+    uploading
+      ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+      : dragging
+        ? 'border-blue-500 bg-blue-50'
+        : 'border-gray-300 hover:border-blue-400 bg-gray-50',
+  ]"
+>
+  <UploadCloud class="w-8 h-8 mx-auto mb-2" :class="uploading ? 'text-gray-300' : 'text-gray-400'" />
+  <p class="text-sm font-medium" :class="uploading ? 'text-gray-400' : 'text-gray-700'">
+    {{ uploading ? 'Uploading...' : 'Drag & drop your design file here' }}
+  </p>
+  <p class="text-xs text-gray-400 mt-1">PNG, JPG, PDF, AI, PSD · Max 20MB</p>
+  <label
+    class="mt-3 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+    :class="uploading
+      ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+      : 'bg-white border border-gray-300 text-gray-700 cursor-pointer hover:bg-gray-50 hover:border-gray-400'"
+    :title="uploading ? 'Please wait for the current upload to finish' : 'Choose files to upload'"
+  >
+    <Loader2 v-if="uploading" class="w-4 h-4 animate-spin" />
+    <FolderOpen v-else class="w-4 h-4" />
+    {{ uploading ? 'Uploading...' : 'Browse Files' }}
+    <input
+      type="file"
+      accept=".png,.jpg,.jpeg,.pdf,.ai,.psd"
+      class="hidden"
+      :disabled="uploading"
+      @change="!uploading && handleFileSelect($event)"
+    />
+  </label>
+</div>
 
       <!-- Upload progress -->
       <div v-if="uploading" class="space-y-1">

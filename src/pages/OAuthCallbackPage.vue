@@ -40,7 +40,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-
+import { useAuth } from '@/composables/useAuth.js'
 const router = useRouter()
 const route = useRoute()
 
@@ -85,12 +85,26 @@ async function handleOAuthCallback() {
     localStorage.setItem('currentUser', JSON.stringify(userData))
     localStorage.setItem(
       'userName',
-      `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email || 'Customer'
+      `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
+        userData.email ||
+        'Customer',
     )
     localStorage.setItem('userEmail', userData.email || '')
+    localStorage.setItem('userProvider', userData.provider || 'google')
 
-    // Notify any open tabs / composables
-    window.dispatchEvent(new Event('authChanged'))
+    // ✅ CRITICAL: hydrate the in-memory useAuth ref BEFORE we navigate.
+    // Without this, currentUser.value stays null until a hard reload,
+    // and every page that reads customerId (like ChangePassword) breaks.
+    try {
+      const { useAuth } = await import('@/composables/useAuth.js')
+      const { setOAuthUser } = useAuth()
+      setOAuthUser(userData, token)
+      console.log('[OAuthCallback] useAuth hydrated. customerId:', userData.customerId)
+    } catch (err) {
+      console.error('[OAuthCallback] Failed to hydrate useAuth:', err)
+      // Fallback: still dispatch authChanged so other listeners pick it up
+      window.dispatchEvent(new Event('authChanged'))
+    }
 
     status.value = 'success'
 

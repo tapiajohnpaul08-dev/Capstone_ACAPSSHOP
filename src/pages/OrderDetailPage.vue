@@ -766,7 +766,9 @@ const XIcon = { render: () => h('svg', { xmlns: 'http://www.w3.org/2000/svg', wi
 
 const route = useRoute()
 const router = useRouter()
-const { fetchOrder, cancelOrder } = useOrders()
+// ✅ `orders` ref is used in handleCancel / handleToggleReceived;
+//    `loading` was never defined and threw ReferenceError on click.
+const { fetchOrder, cancelOrder, orders, loading } = useOrders()
 
 // ─── STATE ──────────────────────────────────────────────────────────────
 const order = ref(null)
@@ -1279,95 +1281,91 @@ function orderAgain() {
 }
 
 async function handleToggleReceived() {
-  if (!order.value || order.value.status !== 'out-for-delivery') {
+  if (!order.value) return
+
+  // ✅ Match both possible casings since statusValue is lowercase
+  const currentStatus = (order.value.statusValue || order.value.status || '').toLowerCase()
+  if (currentStatus !== 'out for delivery') {
     showToast('Only orders out for delivery can be marked as received')
     return
   }
-  
-  // Show confirmation
-  const confirmMessage = order.value.deliveryMethod === 'Pick-up' 
+
+  const confirmMessage = order.value.receivingMode === 'Pick-up'
     ? 'Have you picked up this order from the store?'
     : 'Have you received this delivery?'
-    
+
   if (!confirm(confirmMessage)) return
-  
+
   try {
-    loading.value = true
-    
-    // Get the user info from localStorage
     const user = JSON.parse(localStorage.getItem('currentUser') || '{}')
-    
+
     const response = await ordersApi.toggleReceivedStatus(
-      order.value.id, 
-      true, 
-      user
+      order.value.id,
+      true,
+      user,
     )
-    
+
     if (response.success) {
-      // Update local order status
-      order.value.status = 'completed'
+      order.value.status = 'Completed'
       order.value.statusValue = 'completed'
       order.value.received = true
-      
-      // Also update in orders list if available
-      const index = orders.value.findIndex(o => o.id === order.value.id)
+
+      const index = orders.value.findIndex(
+        (o) => o.id === order.value.id || o.orderId === order.value.orderId,
+      )
       if (index !== -1) {
-        orders.value[index].status = 'completed'
+        orders.value[index].status = 'Completed'
         orders.value[index].statusValue = 'completed'
         orders.value[index].received = true
       }
-      
+
       showToast('Order marked as received! Thank you for your business!')
-      
-      // Refresh order details
-      await fetchOrder(order.value.id)
+
+      const refreshed = await fetchOrder(order.value.id)
+      if (refreshed.success && refreshed.order) {
+        order.value = refreshed.order
+      }
     } else {
       showToast(response.message || 'Failed to mark order as received')
     }
   } catch (error) {
     console.error('Error marking order as received:', error)
     showToast(error.message || 'An error occurred')
-  } finally {
-    loading.value = false
   }
 }
 
 async function handleCancel() {
   if (!order.value) return
-  
-  // Check if order can be cancelled
-  const cancellableStatuses = ['pending', 'scheduled']
-  if (!cancellableStatuses.includes(order.value.statusValue)) {
-    showToast(`Cannot cancel order in ${order.value.status} status. Only pending or scheduled orders can be cancelled.`)
-    return
-  }
-  
-  // Show confirmation
-  if (!confirm(`Are you sure you want to cancel order ${order.value.orderId || order.value.id}? This action cannot be undone.`)) {
-    return
-  }
-  
+
+  isCancelling.value = true
+
   try {
-    loading.value = true
-    
     const response = await ordersApi.cancelMyOrder(order.value.id)
-    
+
     if (response.success) {
-      // Update local order status
-      order.value.status = 'cancelled'
+      // ✅ Update local state instantly (before refetch)
+      order.value.status = 'Cancelled'
       order.value.statusValue = 'cancelled'
-      
-      // Also update in orders list if available
-      const index = orders.value.findIndex(o => o.id === order.value.id)
+      order.value.paymentStatus = order.value.paymentStatus // unchanged
+
+      const index = orders.value.findIndex(
+        (o) => o.id === order.value.id || o.orderId === order.value.orderId,
+      )
       if (index !== -1) {
-        orders.value[index].status = 'cancelled'
+        orders.value[index].status = 'Cancelled'
         orders.value[index].statusValue = 'cancelled'
       }
-      
-      showToast(`Order ${order.value.orderId || order.value.id} has been cancelled successfully.`)
-      
-      // Refresh order details
-      await fetchOrder(order.value.id)
+
+      showToast(
+        `Order ${order.value.orderId || order.value.id} cancelled — stock restored.`,
+      )
+
+      // ✅ Refetch to get the canonical state (including statusHistory
+      //    with the "Cancelled by customer" entry).
+      const refreshed = await fetchOrder(order.value.id)
+      if (refreshed.success && refreshed.order) {
+        order.value = refreshed.order
+      }
     } else {
       showToast(response.message || 'Failed to cancel order')
     }
@@ -1375,7 +1373,8 @@ async function handleCancel() {
     console.error('Error cancelling order:', error)
     showToast(error.message || 'An error occurred')
   } finally {
-    loading.value = false
+    isCancelling.value = false
+    showCancelConfirm.value = false
   }
 }
 

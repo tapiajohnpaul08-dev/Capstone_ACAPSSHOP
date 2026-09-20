@@ -11,7 +11,8 @@
 <script>
 import { onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-
+const { useAuth } = require('@/composables/useAuth.js');
+useAuth().setOAuthUser(userData, token);
 export default {
   name: 'OAuthCallback',
   setup() {
@@ -40,28 +41,41 @@ export default {
       if (token) {
         try {
           console.log('✅ OAuth token found');
-          
+
           // Store token
           localStorage.setItem('customerToken', token);
           localStorage.setItem('token', token);
-          
+
           // Store user data if present
           if (userDataParam) {
             try {
               const userData = JSON.parse(decodeURIComponent(userDataParam));
               localStorage.setItem('currentUser', JSON.stringify(userData));
-              localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email);
+              localStorage.setItem(
+                'userName',
+                `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
+                  userData.email,
+              );
               localStorage.setItem('userEmail', userData.email);
+              localStorage.setItem('userProvider', userData.provider || 'google');
               console.log('✅ User data saved:', userData.firstName);
+
+              // ✅ Hydrate useAuth's in-memory ref BEFORE navigating.
+              // Otherwise currentUser.value stays null on the destination
+              // page until a hard reload.
+              const { useAuth } = require('@/composables/useAuth.js');
+              useAuth().setOAuthUser(userData, token);
+              console.log('✅ useAuth hydrated with customerId:', userData.customerId);
             } catch (parseError) {
               console.error('❌ Error parsing user data:', parseError);
+              window.dispatchEvent(new Event('authChanged'));
             }
           }
-          
+
           // Redirect to dashboard
           console.log('🚀 Redirecting to dashboard...');
           router.replace('/customer/dashboard');
-          
+
         } catch (error) {
           console.error('❌ OAuth processing error:', error);
           localStorage.removeItem('customerToken');

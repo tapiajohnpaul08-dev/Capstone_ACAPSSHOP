@@ -1,0 +1,9 @@
+Metric,Value
+Total Tests,=COUNTA(Sheet1!A2:A)
+Passed,=COUNTIF(Sheet1!G:G,"Passed")
+Failed,=COUNTIF(Sheet1!G:G,"Failed")
+Blocked,=COUNTIF(Sheet1!G:G,"Blocked")
+Not Run,=COUNTIF(Sheet1!G:G,"Not Run")
+Pass Rate,=IFERROR(B3/B2,0)
+Critical Passed,=COUNTIFS(Sheet1!D:D,"Critical",Sheet1!G:G,"Passed")
+Critical Failed,=COUNTIFS(Sheet1!D:D,"Critical",Sheet1!G:G,"Failed")

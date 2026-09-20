@@ -2,7 +2,8 @@
   <div class="container mx-auto px-4 py-6 max-w-6xl pb-32">
     <!-- Header -->
     <div class="mb-6">
-      <button @click="router.back()" class="text-sm text-gray-500 hover:text-gray-800 mb-4 inline-flex items-center gap-1">
+      <button @click="router.back()"
+        class="text-sm text-gray-500 hover:text-gray-800 mb-4 inline-flex items-center gap-1">
         <ArrowLeft class="w-4 h-4" />
         Back
       </button>
@@ -25,20 +26,15 @@
 
     <!-- Steps Progress (4 steps) -->
     <div class="flex items-center gap-2 mb-8 overflow-x-auto">
-      <div
-        v-for="(step, i) in activeSteps"
-        :key="step.key"
-        class="flex items-center gap-2 whitespace-nowrap"
-      >
-        <button
-          @click="goToStep(i)"
-          class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
-          :class="getStepClass(i)"
-          :disabled="!step.enabled"
-        >
-          <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-            :class="getStepBadgeClass(i)"
-          >
+      <div v-for="(step, i) in activeSteps" :key="step.key" class="flex items-center gap-2 whitespace-nowrap">
+<button
+  @click="goToStep(i)"
+  class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all
+         disabled:cursor-not-allowed"
+  :class="getStepClass(i)"
+  :disabled="!step.enabled || isSubmitting"
+>
+          <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" :class="getStepBadgeClass(i)">
             {{ getStepBadge(i) }}
           </span>
           {{ step.label }}
@@ -59,14 +55,15 @@
       <div class="flex-1 space-y-5">
         <!-- ==================== STEP 0: PRODUCTS ==================== -->
         <div v-if="getStepKey(currentStep) === 'product'">
-          <ProductSelector
-            v-model="orderProducts"
-            :order-type="orderType"
-            :is-cart-order="isCartOrder"
-            :selected-product="selectedProductData"
-            :is-own-cups="isOwnCups"
-            @product-changed="onProductChanged"
-          />
+<ProductSelector
+  v-model="orderProducts"
+  :order-type="orderType"
+  :is-cart-order="isCartOrder"
+  :selected-product="selectedProductData"
+  :is-own-cups="isOwnCups"
+  :disabled="isSubmitting"
+  @product-changed="onProductChanged"
+/>
 
           <div class="mt-4 flex items-center justify-between">
             <div>
@@ -79,11 +76,10 @@
                 All product details complete
               </span>
             </div>
-            <button
-              @click="nextStep"
-              :disabled="!isStepValid"
-              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
-            >
+            <button @click="nextStep" :disabled="!isStepValid || isSubmitting" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
+         hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              :title="!isStepValid ? 'Complete all fields to continue' : 'Go to design step'">
               {{ orderProducts.length > 1 ? 'Configure Designs' : 'Add Design' }}
               <ArrowRight class="w-4 h-4" />
             </button>
@@ -92,23 +88,15 @@
 
         <!-- ==================== STEP 1: DESIGN ==================== -->
         <div v-if="getStepKey(currentStep) === 'design'">
-          <DesignModeSelector
-            v-model="designMode"
-            :item-count="orderProducts.length"
-            :has-design-required="false"
-            :is-own-cups="isOwnCups"
-          />
+          <DesignModeSelector v-model="designMode" :item-count="orderProducts.length" :has-design-required="false"
+            :is-own-cups="isOwnCups" />
 
           <div v-if="designMode !== 'no-design'" class="mt-4">
             <!-- Shared design -->
             <div v-if="designMode === 'shared'" class="space-y-4">
-              <DesignManager
-                v-model="sharedDesign"
-                item-name="Shared Design"
-                :show-placement="orderProducts.length === 1"
-                :is-no-design-mode="false"
-                @design-changed="onSharedDesignChanged"
-              />
+              <DesignManager v-model="sharedDesign" item-name="Shared Design"
+                :show-placement="orderProducts.length === 1" :is-no-design-mode="false"
+                @design-changed="onSharedDesignChanged" />
 
               <!-- Inline placement (shared + multi-item only) -->
               <div v-if="orderProducts.length > 1" class="bg-white rounded-xl border">
@@ -119,11 +107,7 @@
                   </p>
                 </div>
                 <div class="px-6 py-5 space-y-4">
-                  <div
-                    v-for="(item, idx) in orderProducts"
-                    :key="idx"
-                    class="border-b last:border-0 pb-4 last:pb-0"
-                  >
+                  <div v-for="(item, idx) in orderProducts" :key="idx" class="border-b last:border-0 pb-4 last:pb-0">
                     <div class="flex items-center gap-3 mb-3">
                       <span class="text-sm font-medium text-gray-800">{{ item.name }}</span>
                       <span class="text-xs text-gray-400">{{ item.size }}</span>
@@ -131,12 +115,8 @@
                     <div class="grid md:grid-cols-2 gap-4">
                       <div>
                         <label class="text-sm font-medium text-gray-700">Print Size</label>
-                        <input
-                          v-model="placementSettings[idx].printSize"
-                          type="text"
-                          placeholder="e.g., 3x3 inches"
-                          class="field"
-                        />
+                        <input v-model="placementSettings[idx].printSize" type="text" placeholder="e.g., 3x3 inches"
+                          class="field" />
                       </div>
                       <div>
                         <label class="text-sm font-medium text-gray-700">Placement</label>
@@ -161,7 +141,8 @@
               <div v-for="(item, idx) in orderProducts" :key="idx" class="bg-white rounded-xl border overflow-hidden">
                 <div v-if="item.image" class="px-6 py-4 border-b bg-gray-50">
                   <div class="flex items-center gap-3">
-                    <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg" @error="handleImageError" />
+                    <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg"
+                      @error="handleImageError" />
                     <div>
                       <h4 class="font-semibold">{{ item.name }}</h4>
                       <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity }} pcs</p>
@@ -169,13 +150,9 @@
                   </div>
                 </div>
                 <div class="px-6 py-5">
-                  <DesignManager
-                    v-model="itemDesigns[idx]"
-                    :item-name="item.name"
-                    :show-placement="orderProducts.length === 1"
-                    :is-no-design-mode="false"
-                    @design-changed="(design) => updateItemDesign(idx, design)"
-                  />
+                  <DesignManager v-model="itemDesigns[idx]" :item-name="item.name"
+                    :show-placement="orderProducts.length === 1" :is-no-design-mode="false"
+                    @design-changed="(design) => updateItemDesign(idx, design)" />
                 </div>
               </div>
             </div>
@@ -206,14 +183,15 @@
               </span>
             </div>
             <div class="flex gap-3">
-              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+              <button @click="previousStep" :disabled="isSubmitting" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-all
+           hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                 ← Back
               </button>
-              <button
-                @click="nextStep"
-                :disabled="!isStepValid"
-                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
-              >
+              <button @click="nextStep" :disabled="!isStepValid || isSubmitting" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
+           hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                :title="!isStepValid ? 'Please complete design details' : 'Continue to customer info'">
                 Enter Info
                 <ArrowRight class="w-4 h-4" />
               </button>
@@ -223,21 +201,23 @@
 
         <!-- ==================== STEP 2: INFO ==================== -->
         <div v-if="getStepKey(currentStep) === 'info'" class="space-y-5">
-          <CustomerInfoCard
-            v-model="customerInfo"
-            :errors="errors.customer"
-            :saved-profile="savedProfile"
-            @use-saved="applySavedProfile"
-          />
-          <FulfillmentCard
-            v-model="fulfillment"
-            :customer-address="customerInfo.address"
-            :errors="errors.fulfillment"
-            :is-own-cups="isOwnCups"
-            :saved-address="savedAddress"
-            :saved-addresses="savedAddresses"
-            @use-saved-address="applySavedAddress"
-          />
+<CustomerInfoCard
+  v-model="customerInfo"
+  :errors="errors.customer"
+  :saved-profile="savedProfile"
+  :disabled="isSubmitting"
+  @use-saved="applySavedProfile"
+/>
+<FulfillmentCard
+  v-model="fulfillment"
+  :customer-address="customerInfo.address"
+  :errors="errors.fulfillment"
+  :is-own-cups="isOwnCups"
+  :saved-address="savedAddress"
+  :saved-addresses="savedAddresses"
+  :disabled="isSubmitting"
+  @use-saved-address="applySavedAddress"
+/>
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
@@ -250,14 +230,15 @@
               </span>
             </div>
             <div class="flex gap-3">
-              <button @click="previousStep" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <button @click="previousStep" :disabled="isSubmitting" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-all
+           hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                 ← Back
               </button>
-              <button
-                @click="nextStep"
-                :disabled="!isStepValid"
-                class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed inline-flex items-center gap-2"
-              >
+              <button @click="nextStep" :disabled="!isStepValid || isSubmitting" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
+           hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                :title="!isStepValid ? 'Please complete customer and delivery details' : 'Review your order'">
                 Review Order
                 <ArrowRight class="w-4 h-4" />
               </button>
@@ -283,11 +264,8 @@
                 <div>
                   <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Items</h5>
                   <div class="space-y-2">
-                    <div
-                      v-for="(item, idx) in orderProducts"
-                      :key="idx"
-                      class="flex justify-between items-start gap-3 py-2 border-b border-gray-50 last:border-0"
-                    >
+                    <div v-for="(item, idx) in orderProducts" :key="idx"
+                      class="flex justify-between items-start gap-3 py-2 border-b border-gray-50 last:border-0">
                       <div class="min-w-0 flex-1">
                         <p class="text-sm font-semibold text-gray-800 truncate">
                           {{ item.name || item.productType || 'Item' }}
@@ -334,7 +312,8 @@
                       <span class="text-gray-500">
                         {{ isOwnCups ? 'Printing Service' : 'Design Fee' }}
                       </span>
-                      <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString() }}</span>
+                      <span class="font-medium text-gray-800">₱{{ FEES.DESIGN_AND_PRINTING_SERVICE_FEE.toLocaleString()
+                        }}</span>
                     </div>
                     <div v-if="fulfillment.method === 'delivery'" class="flex justify-between">
                       <span class="text-gray-500">Shipping Fee</span>
@@ -385,13 +364,15 @@
                     </div>
                     <div v-if="isOwnCups && fulfillment.ownCupsDeliveryDate" class="flex justify-between gap-3">
                       <span class="text-gray-500 shrink-0">Drop-off</span>
-                      <span class="font-medium text-gray-800 text-right">{{ formatDate(fulfillment.ownCupsDeliveryDate) }}</span>
+                      <span class="font-medium text-gray-800 text-right">{{ formatDate(fulfillment.ownCupsDeliveryDate)
+                        }}</span>
                     </div>
                     <div v-if="fulfillment.preferredDate" class="flex justify-between gap-3">
                       <span class="text-gray-500 shrink-0">
                         {{ isOwnCups ? 'Completion' : 'Delivery' }} Date
                       </span>
-                      <span class="font-medium text-gray-800 text-right">{{ formatDate(fulfillment.preferredDate) }}</span>
+                      <span class="font-medium text-gray-800 text-right">{{ formatDate(fulfillment.preferredDate)
+                        }}</span>
                     </div>
                     <div v-if="fulfillment.method === 'delivery' && fullDeliveryAddress" class="flex flex-col gap-1">
                       <span class="text-gray-500">Deliver To</span>
@@ -425,56 +406,53 @@
 
       <!-- Right column — compact summary for steps 0–2 only -->
       <div v-if="getStepKey(currentStep) !== 'submit'" class="lg:w-80">
-        <OrderSummaryCard
-          variant="compact"
-          :order-type="orderType"
-          :item-count="orderProducts.length"
-          :total-quantity="totalQuantity"
-          :total-amount="totalAmount"
-          :fulfillment="fulfillment"
-          :has-design="hasDesign"
-          :show-next-button="false"
-        />
+        <OrderSummaryCard variant="compact" :order-type="orderType" :item-count="orderProducts.length"
+          :total-quantity="totalQuantity" :total-amount="totalAmount" :fulfillment="fulfillment" :has-design="hasDesign"
+          :show-next-button="false" />
       </div>
     </div>
 
     <!-- Sticky bottom bar — shown only on Submit step -->
-    <div
-      v-if="getStepKey(currentStep) === 'submit'"
-      class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-2xl"
-    >
+    <div v-if="getStepKey(currentStep) === 'submit'"
+      class="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-2xl">
       <div class="container mx-auto max-w-6xl px-4 py-4 flex items-center justify-between gap-4">
-        <button
-          @click="previousStep"
-          class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-        >
-          ← Back
-        </button>
+<button
+  @click="previousStep"
+  :disabled="isSubmitting"
+  class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-all
+         hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+>
+  ← Back
+</button>
 
         <div class="hidden md:flex items-center gap-3 text-sm">
           <span class="text-gray-500">Estimated Total:</span>
           <span class="text-lg font-bold text-blue-600">₱{{ totalAmount.toLocaleString() }}</span>
         </div>
 
-        <button
-          @click="handleSubmit"
-          :disabled="!isFormValid || isSubmitting"
-          class="px-8 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-all shadow-sm inline-flex items-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          <span v-if="isSubmitting" class="inline-flex items-center gap-2">
-            <span class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Submitting...
-          </span>
-          <span v-else class="inline-flex items-center gap-2">
+        <button @click="handleSubmit" :disabled="!isFormValid || isSubmitting" class="px-8 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold transition-all shadow-sm inline-flex items-center justify-center gap-2 min-w-[170px]
+         hover:bg-blue-700 hover:shadow-md disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-gray-200
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          :title="!isFormValid ? 'Please fix validation errors before submitting' : 'Submit your order'">
+          <template v-if="isSubmitting">
+            <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            Submitting…
+          </template>
+          <template v-else>
             <CheckCircle class="w-4 h-4" />
             Submit Order
-          </span>
+          </template>
         </button>
       </div>
     </div>
 
     <!-- Success Modal -->
-    <div v-if="showSuccess" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="router.push('/customer/orders')">
+    <div v-if="showSuccess" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      @click.self="router.push('/customer/orders')">
       <div class="bg-white rounded-2xl p-8 max-w-sm text-center mx-4">
         <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <CheckCircle class="w-8 h-8 text-green-600" />
@@ -483,10 +461,12 @@
         <p class="text-gray-500 text-sm mb-6">
           We'll reach out in Messages to finalize the details and send payment instructions.
         </p>
-        <button @click="router.push('/customer/orders')" class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        <button @click="router.push('/customer/orders')"
+          class="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           View My Orders
         </button>
-        <button @click="router.push('/customer/messages')" class="w-full py-3 mt-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+        <button @click="router.push('/customer/messages')"
+          class="w-full py-3 mt-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
           Go to Messages
         </button>
       </div>
@@ -495,7 +475,8 @@
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
-        <div v-if="toast.show" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2">
+        <div v-if="toast.show"
+          class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2">
           <AlertCircle v-if="toast.type === 'error'" class="w-4 h-4 text-red-400" />
           <CheckCircle v-else class="w-4 h-4 text-green-400" />
           {{ toast.message }}
@@ -630,7 +611,7 @@ const hasDesign = computed(() => {
   if (designMode.value === 'shared') {
     const design = sharedDesign.value
     return !!(design.designSource === 'upload' && design.files?.length > 0) ||
-           !!(design.designSource === 'saved' && design.selectedTemplateId)
+      !!(design.designSource === 'saved' && design.selectedTemplateId)
   }
 
   if (designMode.value === 'individual') {
@@ -736,6 +717,18 @@ const step0Errors = computed(() => {
       const minOrder = p.minOrder || 500
       if (!p.quantity || p.quantity < minOrder) {
         errorsList.push(`"${p.name}" quantity must be at least ${minOrder.toLocaleString()} pcs`)
+      }
+
+      // ✅ NEW — stock upper-bound check
+      if (p.sizes && p.size) {
+        const size = p.sizes.find(s => s.name === p.size)
+        if (size && size.stock === 0) {
+          errorsList.push(`"${p.name}" (${p.size}) is out of stock`)
+        } else if (size && size.stock != null && size.stock > 0 && p.quantity > size.stock) {
+          errorsList.push(
+            `"${p.name}" (${p.size}) only has ${size.stock.toLocaleString()} pcs in stock`
+          )
+        }
       }
     }
   }
@@ -1105,6 +1098,33 @@ async function handleSubmit() {
       }
     }
 
+    // ✅ Re-validate stock against live server data (race guard)
+    for (const item of itemsArray) {
+      if (!item.productId || !item.size) continue
+      try {
+        const fresh = await productsApi.getProductById(item.productId)
+        if (fresh.success && fresh.data?.sizes) {
+          const size = fresh.data.sizes.find(s => s.name === item.size)
+          if (!size || size.stock == null) continue
+          if (size.stock === 0) {
+            showToast(`"${item.name}" (${item.size}) just went out of stock`, 'error')
+            isSubmitting.value = false
+            return
+          }
+          if (item.quantity > size.stock) {
+            showToast(
+              `"${item.name}" (${item.size}) only has ${size.stock.toLocaleString()} pcs left. Please adjust your quantity.`,
+              'error'
+            )
+            isSubmitting.value = false
+            return
+          }
+        }
+      } catch (err) {
+        console.warn('Stock re-check failed for', item.name, err)
+      }
+    }
+
     let finalAmount = productTotal || itemsArray.reduce((sum, i) => sum + (i.estimatedTotal || 0), 0)
     if (isOwnCups.value || hasDesign.value) {
       finalAmount += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
@@ -1444,20 +1464,29 @@ onBeforeUnmount(() => {
 .field {
   @apply flex h-9 w-full rounded-md border border-gray-300 px-3 py-1 text-sm bg-white transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
 }
+
 textarea.field {
   @apply h-auto py-2;
 }
+
 .toast-enter-active,
 .toast-leave-active {
   transition: all 0.25s ease;
 }
+
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(12px);
 }
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-.animate-spin { animation: spin 1s linear infinite; }
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
 </style>

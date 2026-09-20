@@ -39,7 +39,9 @@
             @blur="validateField('name')"
             type="text"
             placeholder="Enter your full name"
-            class="field"
+              :disabled="disabled"
+
+  class="field disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
             :class="{ 
               'border-red-400 ring-1 ring-red-300': localErrors.name,
               'border-green-400 ring-1 ring-green-300': isValidField('name') && modelValue.name
@@ -125,6 +127,7 @@ const props = defineProps({
   modelValue: { type: Object, required: true },
   errors: { type: Object, default: () => ({}) },
   savedProfile: { type: Object, default: null },
+  disabled: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update:modelValue', 'use-saved'])

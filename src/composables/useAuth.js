@@ -7,21 +7,56 @@ import { authApi } from '@/api.js'
 const currentUser = ref(null)
 const token = ref(null)
 
-try {
-  const rawUser = localStorage.getItem('currentUser')
-  if (rawUser) {
-    currentUser.value = JSON.parse(rawUser)
-    token.value = localStorage.getItem('customerToken')
+// ─────────────────────────────────────────
+// Hydrate from localStorage
+// ─────────────────────────────────────────
+function hydrateFromStorage() {
+  try {
+    const rawUser = localStorage.getItem('currentUser')
+    const rawToken = localStorage.getItem('customerToken')
+
+    if (rawUser && rawUser !== 'undefined' && rawUser !== 'null') {
+      const parsed = JSON.parse(rawUser)
+      if (parsed && typeof parsed === 'object') {
+        currentUser.value = parsed
+      }
+    } else {
+      currentUser.value = null
+    }
+
+    token.value = rawToken || null
+  } catch (error) {
+    console.error('Error loading auth state:', error)
+    currentUser.value = null
+    token.value = null
   }
-} catch (error) {
-  console.error('Error loading auth state:', error)
 }
 
-// Broadcast an auth state change to any listeners (NavigationBar, CustomerHomePage, etc.)
+// Run once on module init
+hydrateFromStorage()
+
+// ─────────────────────────────────────────
+// Broadcast auth change
+// ─────────────────────────────────────────
 function broadcastAuthChange() {
   window.dispatchEvent(new Event('authChanged'))
 }
 
+// ─────────────────────────────────────────
+// ✅ Re-hydrate whenever the auth state changes
+// anywhere in the app (OAuth callback, another tab, manual login).
+// ─────────────────────────────────────────
+if (typeof window !== 'undefined') {
+  // Same-tab changes (dispatched by other composables)
+  window.addEventListener('authChanged', hydrateFromStorage)
+
+  // Cross-tab changes (browser storage event)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'currentUser' || e.key === 'customerToken') {
+      hydrateFromStorage()
+    }
+  })
+}
 export function useAuth() {
   const isAuthenticated = computed(() => !!token.value && !!currentUser.value)
 
@@ -90,17 +125,30 @@ export function useAuth() {
 
   // For OAuth login callback (user already has firstName, lastName from backend)
   function setOAuthUser(userData, authToken) {
+    console.log('[useAuth] setOAuthUser called with:', userData)
+
+    if (!userData || !userData.customerId) {
+      console.warn(
+        '[useAuth] setOAuthUser: userData is missing customerId — ' +
+          'this will break any API call that needs it. Payload:',
+        userData,
+      )
+    }
+
     currentUser.value = userData
     token.value = authToken
 
     localStorage.setItem('customerToken', authToken)
     localStorage.setItem('currentUser', JSON.stringify(userData))
-    localStorage.setItem('userName', `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.email)
+    localStorage.setItem(
+      'userName',
+      `${userData.firstName || ''} ${userData.lastName || ''}`.trim() ||
+        userData.email,
+    )
     localStorage.setItem('userEmail', userData.email)
     localStorage.setItem('userProvider', userData.provider || 'local')
     broadcastAuthChange()
   }
-
   async function register(userData) {
     const res = await authApi.register(userData)
     if (res.success && res.data) {
@@ -166,6 +214,8 @@ export function useAuth() {
     userProvider,
     isLocalAccount,
     customerId,
+    // ✅ New: allow callers to force a re-hydrate
+    refreshAuth: hydrateFromStorage,
     login,
     register,
     logout,

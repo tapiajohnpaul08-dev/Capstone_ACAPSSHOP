@@ -54,7 +54,6 @@ axiosInstance.interceptors.response.use(
       localStorage.removeItem('customerToken');
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
-      window.location.href = '/customer/login';
     }
     
     return Promise.reject(error);

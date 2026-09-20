@@ -48,18 +48,19 @@
           </p>
         </div>
 
-        <!-- Next button (optional, only shown if parent passes canProceed) -->
-        <button
-          v-if="showNextButton"
-          @click="$emit('next')"
-          :disabled="!canProceed"
-          class="w-full h-10 rounded-lg font-semibold text-sm transition-all"
-          :class="canProceed
-            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm'
-            : 'bg-gray-200 text-gray-400 cursor-not-allowed'"
-        >
-          Continue
-        </button>
+<button
+  v-if="showNextButton"
+  @click="$emit('next')"
+  :disabled="!canProceed || disabled"
+  class="w-full h-10 rounded-lg font-semibold text-sm transition-all
+         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+         disabled:cursor-not-allowed"
+  :class="canProceed && !disabled
+    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-md'
+    : 'bg-gray-200 text-gray-400'"
+>
+  Continue
+</button>
       </template>
 
       <!-- ========================= FULL ========================== -->
