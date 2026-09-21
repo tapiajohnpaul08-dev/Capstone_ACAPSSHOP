@@ -15,7 +15,7 @@
       <div class="bg-white rounded-xl border overflow-hidden mb-3">
         <div class="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-white flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-sm font-bold">{{ order.orderNumber || order.orderId || 'Order #' + order.id }}</h1>
+            <h1 class="text-sm font-bold">{{order.orderId}}</h1>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" :class="statusBadgeClass">
               {{ displayStatus }}
             </span>
@@ -304,10 +304,10 @@
                 <span class="font-medium">{{ formatPrice(designFee) }}</span>
               </div>
 
-              <div class="flex justify-between">
-                <span class="text-gray-500">Shipping Fee</span>
-                <span class="font-medium">{{ formatPrice(order.shippingFee) }}</span>
-              </div>
+<div v-if="shippingFee > 0" class="flex justify-between">
+  <span class="text-gray-500">Shipping Fee</span>
+  <span class="font-medium">{{ formatPrice(shippingFee) }}</span>
+</div>
 
               <!-- Subtotal Divider -->
               <div v-if="order.isProvided || hasDesignDetails" class="border-t border-gray-100 my-1"></div>
@@ -730,21 +730,18 @@ import {
   Image,   // ✅ NEW — for POD thumbnail label
 } from 'lucide-vue-next'
 
+// ✅ Local toast helper that drives the FeedbackModal
+function showToast(message, status = 'success', title = null) {
+  feedbackTitle.value = title || (status === 'success' ? 'Success' : status === 'error' ? 'Error' : 'Notice')
+  feedbackMessage.value = message
+  feedbackStatus.value = status
+  feedbackVisible.value = true
+}
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api/v1'
 const STATIC_BASE_URL = API_BASE_URL.replace(/\/api\/v1$/, '')
 
-// ✅ NEW — Estimated durations per status (business days)
-// Used in the timeline to tell the customer what to expect.
-const STATUS_DURATIONS = {
-  'Pending': 'Awaiting admin review',
-  'Confirmed': 'Usually ready to schedule within 1 business day',
-  'Scheduled': 'Production usually starts on the scheduled date',
-  'In Production': 'Usually takes a few hours depends on order quantity',
-  'Out for Delivery': 'Usually arrives same day',
-  'Ready to Pick-up': 'Ready for pickup — no delivery wait',
-  'Completed': 'Order delivered successfully',
-  'Cancelled': 'No further action needed',
-}
+
 
 // ✅ NEW — Status flow used for the horizontal stepper
 const STATUS_STEPPER = [
@@ -790,6 +787,20 @@ const existingFeedback = ref(null)
 const showDetails = ref(false)
 const showDesign = ref(false)
 
+
+// ✅ NEW — Estimated durations per status (business days)
+// Used in the timeline to tell the customer what to expect.
+const STATUS_DURATIONS = {
+  'Pending': 'Awaiting admin review',
+  'Confirmed': 'Usually ready to schedule within 1 business day',
+  'Scheduled': 'Production usually starts on the scheduled date',
+  'In Production': 'Usually takes a few hours depends on order quantity',
+  'Out for Delivery': order.value?.deliveryMethod === 'Pick-up' ? 'Ready to Pick-up' : 'Usually arrives same day',
+  'Ready to Pick-up': 'Ready for pickup — no delivery wait',
+  'Completed': 'Order delivered successfully',
+  'Cancelled': 'No further action needed',
+}
+
 // ─── COMPUTED ──────────────────────────────────────────────────────────
 const isDelivery = computed(() => {
   const method = order.value?.receivingMode || order.value?.deliveryMethod || ''
@@ -805,7 +816,7 @@ const isOutForDelivery = computed(() => {
 const displayStatus = computed(() => {
   if (!order.value) return 'Pending'
   const status = order.value.status || 'Pending'
-  if (status === 'Out for Delivery' && order.value.receivingMode === 'Pick-up') {
+  if (status === 'Out for Delivery' && order.value.deliveryMethod === 'Pick-up') {
     return 'Ready to Pick-up'
   }
   return status
@@ -917,56 +928,59 @@ const hasDesignDetails = computed(() => {
 })
 
 // ─── PAYMENT BREAKDOWN COMPUTED ──────────────────────────────────────
-const DESIGN_AND_PRINTING_FEE = 500
+// All values are read directly from the order document. The backend is
+// the single source of truth — it already bakes designFee + shippingFee
+// into order.amount during negotiation, so we must not re-derive them
+// from a constant here (that would go stale the moment an admin edits
+// the fees in chat).
 
 const productsTotal = computed(() => {
+  if (order.value?.isProvided) return 0
   if (!order.value?.items) return 0
-  let total = 0
-  for (const item of order.value.items) {
-    total += (item.estimatedTotal || item.totalPrice || 0)
-  }
-  if (order.value?.isProvided) {
-    return 0
-  }
-  return total
+  return order.value.items.reduce(
+    (sum, item) => sum + (Number(item.estimatedTotal) || Number(item.totalPrice) || 0),
+    0,
+  )
 })
 
+// Read the design fee the admin actually set on the order.
+// Falls back to 0 for orders with no design.
 const designFee = computed(() => {
-  if (!hasDesignDetails.value) return 0
-  return DESIGN_AND_PRINTING_FEE
+  const fee = Number(order.value?.designFee)
+  return Number.isFinite(fee) ? fee : 0
 })
 
-const printingServiceFee = computed(() => {
-  return order.value?.isProvided ? DESIGN_AND_PRINTING_FEE : 0
+const shippingFee = computed(() => {
+  const fee = Number(order.value?.shippingFee)
+  return Number.isFinite(fee) ? fee : 0
 })
 
-// ✅ Subtotal = Products Total + Fees (before any discounts or adjustments)
+// Subtotal = products + designFee + shippingFee.
+// This should ALWAYS equal order.amount once the backend is up to date;
+// we keep the computation as a safety net for edge cases where amount
+// is missing (e.g. legacy documents).
 const calculatedSubtotal = computed(() => {
-  let total = productsTotal.value
-  
-
-  if (order.value?.hasDesign === true) {
-    total += 500
-  }
-
-  total += order.value?.shippingFee
-  
-  return total
+  return productsTotal.value + designFee.value + shippingFee.value
 })
 
-// ✅ Total = Subtotal (all fees included)
+// Total — prefer the authoritative value from the backend. Fall back
+// to the computed subtotal only if amount/totalAmount is missing.
 const calculatedTotal = computed(() => {
+  const stored = Number(order.value?.amount ?? order.value?.totalAmount)
+  if (Number.isFinite(stored) && stored > 0) return stored
   return calculatedSubtotal.value
 })
 
 const getTotalPaid = computed(() => {
-  if (!order.value?.partialPayments) return 0
-  return order.value.partialPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+  if (!order.value?.partialPayments?.length) return 0
+  return order.value.partialPayments.reduce(
+    (sum, p) => sum + (Number(p.amount) || 0),
+    0,
+  )
 })
 
 const getRemainingBalance = computed(() => {
-  const total = order.value?.totalAmount || order.value?.amount || 0
-  return total - getTotalPaid.value
+  return Math.max(0, calculatedTotal.value - getTotalPaid.value)
 })
 
 // ─── HELPERS ──────────────────────────────────────────────────────────
@@ -1046,13 +1060,13 @@ function handleImageError(event) {
 }
 
 function formatStatus(status) {
+  console.log(status)
   const statusMap = {
     'pending': 'Pending Review',
     'confirmed': 'Confirmed', 
     'scheduled': 'Scheduled',
     'in production': 'In Production',
-    'out for delivery': order.value?.receivingMode === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
-    'ready to pick-up': 'Ready to Pick-up',
+    'out for delivery': order.value?.deliveryMethod === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
     'completed': 'Completed',
     'cancelled': 'Cancelled'
   }
@@ -1060,15 +1074,12 @@ function formatStatus(status) {
 }
 
 function formatStatusForDisplay(status) {
-  if (order.value?.receivingMode === 'Pick-up' && status === 'Out for Delivery') {
-    return 'Ready to Pick-up'
-  }
-  
+
   const statusMap = {
     'pending': 'Pending',
     'scheduled': 'Scheduled',
     'in production': 'In Production',
-    'out for delivery': order.value?.receivingMode === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
+    'out for delivery': order.value?.deliveryMethod === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
     'ready to pick-up': 'Ready to Pick-up',
     'completed': 'Completed',
     'cancelled': 'Cancelled'
@@ -1145,7 +1156,11 @@ function formatProductionDate(dateValue) {
 }
 
 function getStatusDescription(status) {
-  if (order.value?.receivingMode === 'Pick-up' && status === 'Out for Delivery') {
+ const isPickupReady =
+    order.value?.receivingMode === 'Pick-up' &&
+    (status === 'Out for Delivery' || status === 'Ready to Pick-up')
+
+  if (isPickupReady) {
     return 'Your order is ready for pickup at our store. Please visit us to collect your items.'
   }
   
@@ -1154,7 +1169,7 @@ function getStatusDescription(status) {
     'confirmed': 'Your order has been confirmed! We are preparing it for scheduling.',
     'scheduled': 'Your order has been reviewed and scheduled for production.',
     'in production': 'Your order is now in production. Our team is working on it.',
-    'out for delivery': order.value?.receivingMode === 'Pick-up' 
+    'out for delivery': order.value?.deliveryMethod === 'Pick-up' 
       ? 'Your order is ready for pickup at our store.' 
       : 'Your order is on its way! A driver has been assigned for delivery.',
     'ready to pick-up': 'Your order is ready for pickup at our store. Please visit us to collect your items.',
@@ -1284,13 +1299,14 @@ async function handleToggleReceived() {
   if (!order.value) return
 
   // ✅ Match both possible casings since statusValue is lowercase
-  const currentStatus = (order.value.statusValue || order.value.status || '').toLowerCase()
-  if (currentStatus !== 'out for delivery') {
-    showToast('Only orders out for delivery can be marked as received')
+  const currentStatus = (order.value.status)
+  console.log('sdasdasda',currentStatus)
+  if (currentStatus !== 'Out for Delivery') {
+    showToast('Only orders out for delivery can be marked as received', 'error')
     return
   }
 
-  const confirmMessage = order.value.receivingMode === 'Pick-up'
+  const confirmMessage = order.value.deliveryMethod === 'Pick-up'
     ? 'Have you picked up this order from the store?'
     : 'Have you received this delivery?'
 
@@ -1319,7 +1335,7 @@ async function handleToggleReceived() {
         orders.value[index].received = true
       }
 
-      showToast('Order marked as received! Thank you for your business!')
+      showToast('Order marked as received! Thank you', 'success')
 
       const refreshed = await fetchOrder(order.value.id)
       if (refreshed.success && refreshed.order) {
@@ -1357,7 +1373,7 @@ async function handleCancel() {
       }
 
       showToast(
-        `Order ${order.value.orderId || order.value.id} cancelled — stock restored.`,
+        `Order ${order.value.orderId || order.value.id} cancelled`, 'success',
       )
 
       // ✅ Refetch to get the canonical state (including statusHistory
@@ -1386,7 +1402,6 @@ onMounted(async () => {
     console.log('Order loaded:', order.value)
     console.log('Products total:', productsTotal.value)
     console.log('Design fee:', designFee.value)
-    console.log('Printing fee:', printingServiceFee.value)
     console.log('Subtotal:', calculatedSubtotal.value)
     console.log('Calculated total:', calculatedTotal.value)
     

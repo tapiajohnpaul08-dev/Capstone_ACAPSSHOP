@@ -95,6 +95,8 @@ const props = defineProps({
 defineEmits(['click'])
 
 function getImageUrl(imagePath) {
+    console.log(props.order)
+
   if (!imagePath) {
     return `${API_BASE_URL}/uploads/products/default-product.jpg`
   }
@@ -127,7 +129,7 @@ function formatStatus(status) {
     'Pending': 'Pending Review',
     'Scheduled': 'Scheduled for Production',
     'In Production': 'In Production',
-    'Out for Delivery': 'Out for Delivery',
+    'Out for Delivery': props.order.value?.deliveryMethod === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
     'Completed': 'Completed',
     'Cancelled': 'Cancelled',
     

@@ -239,7 +239,6 @@ export const ordersApi = {
   // Create a new order (customer)
   async createOrder(orderData) {
 
-    console.log('Creating order with data:', orderData);
     return handleResponse(
       axiosInstance.post('/order/customer/create', orderData)
     );
@@ -372,7 +371,6 @@ export const chatApi = {
   },
   
    sendMessage: async (conversationId, content, attachments = [], replyToMessageId = null) => {
-    console.log('📨 chatApi.sendMessage called:', { conversationId, content, replyToMessageId })
     return handleResponse(
       axiosInstance.post('/chat/customer/messages', { 
         conversationId, 

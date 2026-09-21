@@ -125,15 +125,6 @@
             </div>
             <div class="min-w-0">
               <h4 class="font-semibold text-gray-900 text-sm sm:text-base">ACAPSHOP</h4>
-              <div class="flex items-center gap-1.5 mt-0.5">
-                <span class="relative flex h-2 w-2 shrink-0">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                </span>
-                <span class="text-[11px] sm:text-xs text-gray-500 truncate">
-                  {{ isAdminOnline ? 'Online' : 'Offline' }}
-                </span>
-              </div>
             </div>
           </div>
 
@@ -497,7 +488,7 @@
               ref="fileInput"
               type="file"
               multiple
-              accept="image/*,.pdf,.doc,.docx,.txt,.xlsx"
+              accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
               class="hidden"
               @change="handleFileSelect"
             />
@@ -940,10 +931,13 @@ function clearReply() {
   replyToMessage.value = null
 }
 
-function canUnsendMessage(msg) {
+const canUnsendMessage = (msg) => {
   if (msg.isDeleted) return false
-  if (msg.senderType !== 'customer') return false
-  const ageInMinutes = (Date.now() - new Date(msg.createdAt).getTime()) / 60000
+  const isMine = (msg.senderType || msg.sender) === 'customer'
+  if (!isMine) return false
+
+  const msgTime = new Date(msg.createdAt || msg.timestamp).getTime()
+  const ageInMinutes = (Date.now() - msgTime) / 60000
   return ageInMinutes <= 5
 }
 

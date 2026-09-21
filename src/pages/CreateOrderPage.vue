@@ -547,6 +547,8 @@ const fulfillment = ref({
   method: 'delivery',
   deliveryAddress: '',
   sameAsCustomer: false,
+  // ✅ NEW — whether the customer wants this address saved to their profile
+  saveAddressAsDefault: false,
 })
 
 const errors = ref({ customer: {}, fulfillment: {} })
@@ -557,6 +559,23 @@ const savedAddress = ref(null)
 
 // ✅ NEW — full list of the customer's saved addresses
 const savedAddresses = ref([])
+
+// ✅ Cache the customer's customerId for saving new addresses
+const currentCustomerId = ref(null)
+
+// ✅ Helper to load saved addresses on demand
+async function refreshSavedAddresses() {
+  if (!currentCustomerId.value) return
+  try {
+    const { addressesApi } = await import('@/api.js')
+    const res = await addressesApi.getAll(currentCustomerId.value)
+    if (res.success && Array.isArray(res.data)) {
+      savedAddresses.value = res.data
+    }
+  } catch (e) {
+    console.warn('Failed to refresh addresses:', e)
+  }
+}
 // ─── PRICE CONSTANTS ────────────────────────────────────────────────────────
 const FEES = {
   DESIGN_AND_PRINTING_SERVICE_FEE: 500,
@@ -1023,6 +1042,37 @@ async function handleSubmit() {
 
   isSubmitting.value = true
   try {
+
+    // ✅ Persist address to DB (if customer opted in)
+    if (
+      fulfillment.value.saveAddressAsDefault &&
+      fulfillment.value.method === 'delivery' &&
+      currentCustomerId.value
+    ) {
+      try {
+        const { addressesApi } = await import('@/api.js')
+        const savedRes = await addressesApi.add(currentCustomerId.value, {
+          label: 'From order',
+          streetAddress: fulfillment.value.deliveryStreetAddress,
+          barangay: fulfillment.value.deliveryBarangay,
+          municipality: fulfillment.value.deliveryMunicipality,
+          province: fulfillment.value.deliveryProvince,
+          postalCode: fulfillment.value.deliveryPostalCode,
+          region: fulfillment.value.deliveryRegion,
+          country: 'Philippines',
+          isDefault: false,
+        })
+
+        if (savedRes.success) {
+          // ✅ Refresh the dropdown so the new address appears immediately
+          await refreshSavedAddresses()
+        } else {
+          console.warn('Address save failed:', savedRes.message)
+        }
+      } catch (err) {
+        console.warn('Failed to save address:', err)
+      }
+    }
     const itemsArray = []
     let productTotal = 0
 
@@ -1419,6 +1469,9 @@ onMounted(async () => {
         email: p.email || '',
         phone: p.phone || '',
       }
+
+      // ✅ Cache customerId for later use (address saving)
+      currentCustomerId.value = p.customerId || null
 
       // ✅ NEW — fetch saved addresses for the dropdown
       if (p.customerId) {

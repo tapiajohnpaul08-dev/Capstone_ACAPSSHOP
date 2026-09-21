@@ -246,6 +246,18 @@
             <p class="text-xs font-medium text-gray-600">Delivery Address Preview</p>
             <p class="text-sm text-gray-800 mt-1">{{ fullDeliveryAddress }}</p>
           </div>
+<label
+  v-if="modelValue.method === 'delivery' && hasDeliveryAddressFields"
+  class="flex items-center gap-2 mt-2 cursor-pointer select-none"
+>
+  <input
+    type="checkbox"
+    :checked="modelValue.saveAddressAsDefault"
+    @change="updateField('saveAddressAsDefault', $event.target.checked)"
+    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+  />
+  <span class="text-sm text-gray-600">Save this address for future orders</span>
+</label>
         </div>
       </div>
 
@@ -380,6 +392,8 @@ const props = defineProps({
       preferredDate: '',
       preferredTime: '',
       ownCupsDeliveryDate: '',
+      // ✅ NEW — whether to persist this address to the customer's profile
+      saveAddressAsDefault: false,
       // Delivery address fields
       deliveryCountry: 'Philippines',
       deliveryRegion: '',
@@ -421,7 +435,7 @@ const showSavedAddressBanner = computed(() => {
 // ✅ NEW — track which saved address is currently selected
 const selectedAddressId = ref('')
 
-// ✅ NEW — apply a saved address to the delivery fields
+// ✅ Apply a saved address to the delivery fields
 function selectSavedAddress(addressId) {
   selectedAddressId.value = addressId
   if (!addressId) return
@@ -429,7 +443,7 @@ function selectSavedAddress(addressId) {
   const addr = props.savedAddresses.find((a) => a._id === addressId)
   if (!addr) return
 
-  // Merge into modelValue
+  // Merge into modelValue and uncheck "save for future" (since it's already saved)
   emit('update:modelValue', {
     ...props.modelValue,
     deliveryStreetAddress: addr.streetAddress || '',
@@ -439,6 +453,23 @@ function selectSavedAddress(addressId) {
     deliveryPostalCode: addr.postalCode || '',
     deliveryRegion: addr.region || '',
     deliveryCountry: addr.country || 'Philippines',
+    // Already saved — don't save again
+    saveAddressAsDefault: false,
+  })
+
+  // Clear validation errors since the fields are now filled
+  deliveryErrors.value = {
+    region: '',
+    streetAddress: '',
+    barangay: '',
+    municipality: '',
+    province: '',
+    postalCode: '',
+  }
+
+  // Optionally re-validate so the green checks show
+  ;['region', 'streetAddress', 'barangay', 'municipality', 'province', 'postalCode'].forEach(f => {
+    validateDeliveryField(f)
   })
 }
 

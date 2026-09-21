@@ -169,6 +169,7 @@ export function useOrders() {
       hasDesign: backendOrder.hasDesign,
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
+      designFee: backendOrder.designFee,  
       shippingFee: backendOrder.shippingFee || 0,
       partialPayments: backendOrder.partialPayments || [],
       product: backendOrder.productName,
@@ -195,7 +196,8 @@ export function useOrders() {
       preferredTime: backendOrder.preferredTime || '',
       productionSchedule: backendOrder.productionSchedule || null,
       notes: backendOrder.notes || '',
-      statusHistory: backendOrder.statusHistory
+      statusHistory: backendOrder.statusHistory,
+      proofOfDelivery: backendOrder.proofOfDelivery
     }
   }
 

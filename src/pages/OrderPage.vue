@@ -46,7 +46,7 @@
               class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
               :class="getStatusBadgeClass(order.status)"
             >
-              {{ formatStatus(order.status) }}
+              {{ formatStatus(order.status, order.deliveryMethod) }}
             </span>
             <span 
               v-if="order.paymentStatus"
@@ -220,12 +220,12 @@ function handleImageError(event) {
 }
 
 // Status formatting
-function formatStatus(status) {
+function formatStatus(status, method) {
   const statusMap = {
     'pending': 'Pending Review',
     'scheduled': 'Scheduled',
     'in production': 'In Production',
-    'out for delivery': 'Out for Delivery',
+    'out for delivery': method === 'Pick-up' ? 'Ready to Pick-up' : 'Out for Delivery',
     'completed': 'Completed',
     'cancelled': 'Cancelled'
   }
