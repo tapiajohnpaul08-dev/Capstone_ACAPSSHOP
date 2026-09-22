@@ -28,10 +28,10 @@
                   <div v-if="loadingSizes[item.productId]" class="text-sm text-gray-400">Loading sizes...</div>
                   <select v-else v-model="item.size" @change="updateItem(idx, 'size', $event.target.value)" class="field text-sm">
                     <option value="" disabled>Select size...</option>
-                    <option v-for="size in getSizesForItem(item)" :key="size.name" :value="size.name">
+                    <option  :disabled="size.stock < item.minOrder" v-for="size in getSizesForItem(item)" :key="size.name" :value="size.name">
                       {{ size.name }} — ₱{{ size.price.toLocaleString() }}/pc
-                      <span v-if="size.stock > 0"> ({{ size.stock.toLocaleString() }} in stock)</span>
-                      <span v-else class="text-red-500"> (Out of stock)</span>
+                      <span v-if="size.stock < item.minOrder"
+                      > (Out of stock)</span>
                     </option>
                   </select>
                 </div>
@@ -85,10 +85,10 @@
               <label class="text-xs font-medium text-gray-700">Size <span class="text-red-500">*</span></label>
               <select v-model="selectedSize" @change="onSizeChange" class="field text-sm">
                 <option value="" disabled>Select size...</option>
-                <option v-for="size in selectedProductData.sizes" :key="size.name" :value="size.name">
+                <option :disabled="size.stock < selectedProductData.minOrder" v-for="size in selectedProductData.sizes" :key="size.name" :value="size.name">
                   {{ size.name }} — ₱{{ size.price.toLocaleString() }}/pc
-                  <span v-if="size.stock > 0"> ({{ size.stock.toLocaleString() }} in stock)</span>
-                  <span v-else class="text-red-500"> (Out of stock)</span>
+                  <span v-if="size.stock < selectedProductData.minOrder"
+                  > (Out of stock)</span>
                 </option>
               </select>
             </div>

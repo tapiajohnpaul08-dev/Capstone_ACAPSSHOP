@@ -75,6 +75,112 @@
               </div>
             </div>
 
+            <!-- ✅ Flow 3 (inline) — compatible lid picker -->
+            <div
+              v-if="showCompatibleLids"
+              class="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50/60 to-white overflow-hidden"
+            >
+              <!-- Header -->
+              <div class="px-4 py-3 border-b border-blue-100 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M8 12h8"/>
+                    </svg>
+                  </div>
+                  <div class="min-w-0">
+                    <p class="text-sm font-semibold text-gray-900 leading-tight">
+                      Add compatible lids?
+                    </p>
+                    <p class="text-[11px] text-gray-500 leading-tight">
+                      Optional — fits your {{ selectedSize.name }} {{ product.name }}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  v-if="anyLidSelected"
+                  type="button"
+                  @click="clearLidSelections"
+                  class="text-[11px] font-semibold text-blue-600 hover:text-blue-700 flex-shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+
+              <!-- Lid rows -->
+              <div class="divide-y divide-blue-50">
+                <div
+                  v-for="lid in compatibleLids"
+                  :key="lid.id"
+                  class="px-4 py-3 transition-colors"
+                  :class="lidSelections[lid.id]?.selected ? 'bg-blue-50/40' : ''"
+                >
+                  <label class="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      :checked="lidSelections[lid.id]?.selected"
+                      @change="toggleLidSelection(lid)"
+                      class="mt-0.5 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                    />
+                    <div class="flex-1 min-w-0 flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <p class="text-sm font-semibold text-gray-800 leading-tight">
+                          {{ lid.name }}
+                        </p>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                          {{ lid.matchingSizes[0].name }}
+                          · ₱{{ Number(lid.matchingSizes[0].price).toFixed(2) }}/pc
+                        </p>
+                      </div>
+                    </div>
+                  </label>
+
+                  <!-- Quantity controls when selected -->
+                  <div
+                    v-if="lidSelections[lid.id]?.selected"
+                    class="mt-2.5 flex items-center gap-2 pl-7"
+                  >
+                    <button
+                      type="button"
+                      @click="adjustLidQuantity(lid, -100)"
+                      :disabled="lidSelections[lid.id].quantity <= (lid.minOrder || 500)"
+                      class="w-7 h-7 border border-gray-300 rounded-lg text-gray-500 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-sm leading-none"
+                    >−</button>
+                    <input
+                      v-model.number="lidSelections[lid.id].quantity"
+                      type="number"
+                      :min="lid.minOrder || 500"
+                      :step="100"
+                      class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    />
+                    <button
+                      type="button"
+                      @click="adjustLidQuantity(lid, 100)"
+                      class="w-7 h-7 border border-gray-300 rounded-lg text-gray-500 hover:bg-white shrink-0 text-sm leading-none"
+                    >+</button>
+                    <span class="text-xs font-bold text-blue-700 ml-auto">
+                      ₱{{ (lidSelections[lid.id].quantity * lid.matchingSizes[0].price).toLocaleString() }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subtotal row -->
+              <div
+                v-if="anyLidSelected"
+                class="px-4 py-3 bg-blue-50/60 border-t border-blue-100 flex items-center justify-between"
+              >
+                <span class="text-xs font-medium text-gray-600">
+                  + {{ selectedLidCount }} lid{{ selectedLidCount !== 1 ? 's' : '' }} selected
+                </span>
+                <span class="text-sm font-bold text-blue-700">
+                  + ₱{{ lidSubtotal.toLocaleString() }}
+                </span>
+              </div>
+            </div>
+
             <!-- ✅ NEW — Fits these cups (lids only) -->
             <div
               v-if="isLid && selectedSize?.rimDiameter"
@@ -384,18 +490,6 @@
         <button @click="router.push('/customer/dashboard')" class="mt-4 text-blue-600 hover:underline">Return to Shop</button>
       </div>
     </div>
-
-    <!-- ✅ Flow 3 — Compatible lids offer -->
-    <CompatibleLidsModal
-      :show="showLidsModal"
-      :cup-name="product?.name || ''"
-      :cup-size="selectedSize || {}"
-      :cup-quantity="quantity"
-      :compatible-lids="compatibleLids"
-      @confirm="handleLidsModalConfirm"
-      @skip="handleLidsModalSkip"
-    />
-
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
@@ -412,7 +506,6 @@
 <script setup>
 import { ref, computed, onMounted, watch} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import CompatibleLidsModal from '@/modals/CompatibleLidsModal.vue'
 import { productsApi, feedBackApi } from '@/api'
 import { 
   ArrowLeft, 
@@ -546,11 +639,133 @@ watch(
   { immediate: true },
 )
 
-// ── Flow 3 modal state ──
-const showLidsModal = ref(false)
-// 'add'   → cup was added to cart, modal offers lids to add too
-// 'order' → user clicked Order Now, modal offers lids before routing
-const pendingLidsAction = ref(null)
+// ═══════════════════════════════════════════════════════════════
+// ✅ Flow 3 (inline) — compatible lid picker state
+//
+// Instead of a modal interrupt, the customer picks lids inline below
+// the size buttons. Selections live in `lidSelections`, keyed by lid id.
+// They reset whenever the rim (and therefore the compatible set) changes.
+// ═══════════════════════════════════════════════════════════════
+
+// { [lidId]: { selected: boolean, quantity: number } }
+const lidSelections = ref({})
+
+// When is the inline picker shown at all?
+const showCompatibleLids = computed(() => {
+  return (
+    !isLid.value &&
+    !!selectedSize.value?.rimDiameter &&
+    compatibleLids.value.length > 0
+  )
+})
+
+// Initialise / re-initialise selections whenever the compatible set changes
+function rebuildLidSelections() {
+  const next = {}
+  const defaultQty = Math.max(
+    product.value?.minOrder || 500,
+    quantity.value || 500,
+  )
+  for (const lid of compatibleLids.value) {
+    next[lid.id] = {
+      selected: false,
+      quantity: Math.max(lid.minOrder || 500, defaultQty),
+    }
+  }
+  lidSelections.value = next
+}
+
+// Reset when the customer changes size (rim → different lids)
+watch(
+  () => selectedSize.value?.name,
+  () => { rebuildLidSelections() },
+)
+
+// Initialize once the compatible lids list is ready
+watch(
+  compatibleLids,
+  () => { rebuildLidSelections() },
+  { immediate: true },
+)
+
+// Keep default lid quantities in sync with the cup quantity — only for
+// UNTOUCHED selections (ones that still match the old default). This way
+// if the customer bumps cup qty to 2000, unselected lids jump to 2000 too,
+// but any lid the customer already configured keeps its own value.
+watch(quantity, (newQty) => {
+  for (const lid of compatibleLids.value) {
+    const s = lidSelections.value[lid.id]
+    if (!s || s.selected) continue
+    const lidMin = lid.minOrder || 500
+    s.quantity = Math.max(lidMin, newQty || lidMin)
+  }
+})
+
+const anyLidSelected = computed(() =>
+  Object.values(lidSelections.value).some((s) => s.selected),
+)
+
+const selectedLidCount = computed(() =>
+  Object.values(lidSelections.value).filter((s) => s.selected).length,
+)
+
+const lidSubtotal = computed(() => {
+  let total = 0
+  for (const lid of compatibleLids.value) {
+    const s = lidSelections.value[lid.id]
+    if (s?.selected) {
+      total += (s.quantity || 0) * (lid.matchingSizes[0]?.price || 0)
+    }
+  }
+  return total
+})
+
+// Toggle a lid's checkbox
+function toggleLidSelection(lid) {
+  const s = lidSelections.value[lid.id]
+  if (!s) return
+  s.selected = !s.selected
+}
+
+// Adjust a lid's quantity
+function adjustLidQuantity(lid, delta) {
+  const s = lidSelections.value[lid.id]
+  if (!s) return
+  const min = lid.minOrder || 500
+  s.quantity = Math.max(min, (s.quantity || 0) + delta)
+}
+
+// Uncheck everything
+function clearLidSelections() {
+  for (const id of Object.keys(lidSelections.value)) {
+    lidSelections.value[id].selected = false
+  }
+}
+
+// Format a single lid selection into a cart line
+function collectSelectedLids() {
+  const result = []
+  for (const lid of compatibleLids.value) {
+    const s = lidSelections.value[lid.id]
+    if (!s?.selected) continue
+    const sizeObj = lid.matchingSizes[0]
+    if (!sizeObj) continue
+    const qty = Math.max(lid.minOrder || 500, s.quantity || 0)
+    result.push({
+      productId: lid.id,
+      productName: lid.name,
+      productImage: lid.image,
+      category: lid.category,
+      sizeName: sizeObj.name,
+      rimDiameter: sizeObj.rimDiameter,
+      quantity: qty,
+      unitPrice: sizeObj.price,
+      lineTotal: qty * sizeObj.price,
+      itemType: 'lid',
+    })
+  }
+  return result
+}
 
 // ─── Feedback State ──────────────────────────────────────────────────────
 const feedbacks = ref([])
@@ -671,7 +886,7 @@ function addToCart() {
     return
   }
 
-  // ── Build the cup line (same math as before) ──
+  // ── Build the cup line ──
   const cart = JSON.parse(localStorage.getItem('customerCart') || '[]')
 
   let unitPrice = selectedSize.value.price
@@ -719,20 +934,50 @@ function addToCart() {
     cart.push(cartItem)
   }
 
-  localStorage.setItem('customerCart', JSON.stringify(cart))
-
-  // ── ✅ Flow 3: offer compatible lids before confirming ──
-  if (
-    !isLid.value &&
-    selectedSize.value.rimDiameter &&
-    compatibleLids.value.length > 0
-  ) {
-    pendingLidsAction.value = 'add'
-    showLidsModal.value = true
-    return
+  // ── ✅ Flow 3 (inline): append any checked lids directly ──
+  const selectedLids = collectSelectedLids()
+  for (const lid of selectedLids) {
+    cart.push({
+      productId: lid.productId,
+      name: lid.productName,
+      image: lid.productImage,
+      category: lid.category,
+      size: lid.sizeName,
+      quantity: lid.quantity,
+      printPlacement: '',
+      printSize: '',
+      designNotes: '',
+      designSource: 'upload',
+      files: [],
+      estimatedTotal: lid.lineTotal,
+      sizes: [],
+      minOrder: 500,
+      unitPrice: lid.unitPrice,
+      rimDiameter: lid.rimDiameter,
+      itemType: 'lid',
+      pairedWith: product.value.name,
+      createdAt: new Date().toISOString(),
+    })
   }
 
-  showToast(`${product.value.name} (${selectedSize.value.name}) added to cart!`, 'success')
+  localStorage.setItem('customerCart', JSON.stringify(cart))
+
+  // Reset lid checkboxes so the same lids don't get re-added by accident
+  clearLidSelections()
+
+  // Confirmation toast
+  const n = selectedLids.length
+  if (n > 0) {
+    showToast(
+      `${product.value.name} + ${n} lid${n !== 1 ? 's' : ''} added to cart!`,
+      'success',
+    )
+  } else {
+    showToast(
+      `${product.value.name} (${selectedSize.value.name}) added to cart!`,
+      'success',
+    )
+  }
 }
 
 function orderNow() {
@@ -748,19 +993,9 @@ function orderNow() {
     return
   }
 
-  // ── ✅ Flow 3: offer compatible lids first ──
-  if (
-    !isLid.value &&
-    selectedSize.value.rimDiameter &&
-    compatibleLids.value.length > 0
-  ) {
-    pendingLidsAction.value = 'order'
-    showLidsModal.value = true
-    return
-  }
-
-  // No compatible lids → go straight to the wizard (original path)
-  navigateToWizardDirect([])
+  // ✅ Flow 3 (inline): forward any checked lids to the wizard
+  const selectedLids = collectSelectedLids()
+  navigateToWizardDirect(selectedLids)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -846,77 +1081,6 @@ function navigateToWizardDirect(extraItems = []) {
   })
 }
 
-// ─────────────────────────────────────────────────────────────
-// Flow 3 — modal handlers
-// ─────────────────────────────────────────────────────────────
-
-// Called when the user confirms and selected 1+ lids
-function handleLidsModalConfirm(selectedLids) {
-  showLidsModal.value = false
-  const action = pendingLidsAction.value
-  pendingLidsAction.value = null
-
-  if (action === 'add') {
-    // Append the selected lids to the cart
-    const cart = JSON.parse(localStorage.getItem('customerCart') || '[]')
-    for (const lid of selectedLids) {
-      cart.push({
-        productId: lid.productId,
-        name: lid.productName,
-        image: lid.productImage,
-        category: lid.category,
-        size: lid.sizeName,
-        quantity: lid.quantity,
-        printPlacement: '',
-        printSize: '',
-        designNotes: '',
-        designSource: 'upload',
-        files: [],
-        estimatedTotal: lid.lineTotal,
-        sizes: [],
-        minOrder: 500,
-        unitPrice: lid.unitPrice,
-        rimDiameter: lid.rimDiameter,
-        itemType: 'lid',
-        pairedWith: product.value.name,
-        createdAt: new Date().toISOString(),
-      })
-    }
-    localStorage.setItem('customerCart', JSON.stringify(cart))
-
-    const n = selectedLids.length
-    showToast(
-      `${product.value.name} + ${n} lid${n !== 1 ? 's' : ''} added to cart!`,
-      'success',
-    )
-    return
-  }
-
-  if (action === 'order') {
-    navigateToWizardDirect(selectedLids)
-  }
-}
-
-// Called when the user clicks "No thanks" or the X
-function handleLidsModalSkip() {
-  showLidsModal.value = false
-  const action = pendingLidsAction.value
-  pendingLidsAction.value = null
-
-  if (action === 'add') {
-    // Cup is already in the cart — just confirm
-    showToast(
-      `${product.value.name} (${selectedSize.value.name}) added to cart!`,
-      'success',
-    )
-    return
-  }
-
-  if (action === 'order') {
-    // Skip the lids and continue to the wizard with cup only
-    navigateToWizardDirect([])
-  }
-}
 
 // ─── FEEDBACK FUNCTIONS ──────────────────────────────────────────────
 
