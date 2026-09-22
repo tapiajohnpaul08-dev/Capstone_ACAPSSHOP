@@ -37,9 +37,18 @@
       >
         <!-- Order Header -->
         <div class="px-4 py-3 bg-gray-50 border-b flex flex-wrap justify-between items-center gap-2">
-          <div>
+          <div class="flex items-center gap-2 flex-wrap">
             <span class="font-semibold">Order #{{ order.orderNumber || order.orderId || order.id }}</span>
-            <span class="text-gray-500 text-sm ml-3">{{ formatDate(order.createdAt || order.date) }}</span>
+            <span class="text-gray-500 text-sm">{{ formatDate(order.createdAt || order.date) }}</span>
+
+            <!-- ✅ NEW — Delayed badge -->
+            <span
+              v-if="order.isCurrentlyDelayed"
+              class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+              :title="order.currentDelay?.reason || 'Order delayed'"
+            >
+              ⚠ Delayed
+            </span>
           </div>
           <div class="flex gap-2">
             <span 
@@ -55,6 +64,38 @@
             >
               {{ order.paymentStatus }}
             </span>
+          </div>
+        </div>
+
+        <!-- ✅ NEW — Delay info strip (only when delayed) -->
+        <div
+          v-if="order.isCurrentlyDelayed && order.currentDelay"
+          class="px-4 py-2.5 bg-amber-50 border-b border-amber-200 flex items-start gap-2.5"
+        >
+          <div class="w-6 h-6 rounded-md bg-amber-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-700">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-semibold text-amber-900 leading-tight">
+              {{ order.currentDelay.reason }}
+            </p>
+            <div
+              v-if="order.currentDelay.originalExpectedDelivery || order.currentDelay.newExpectedDelivery"
+              class="flex items-center gap-2 mt-1 text-[11px] text-amber-700"
+            >
+              <span v-if="order.currentDelay.originalExpectedDelivery" class="line-through opacity-70">
+                {{ formatDate(order.currentDelay.originalExpectedDelivery) }}
+              </span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-400">
+                <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+              </svg>
+              <span v-if="order.currentDelay.newExpectedDelivery" class="font-bold">
+                {{ formatDate(order.currentDelay.newExpectedDelivery) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -191,6 +232,11 @@ const getOrderCount = (status) => {
     return orderStatus === status
   }).length
 }
+
+// ✅ NEW — Count of delayed orders (used by a "Delayed" tab if you add one)
+const delayedCount = computed(() =>
+  orders.value.filter((o) => o.isCurrentlyDelayed).length
+)
 
 // Filter orders by selected status
 const filteredOrders = computed(() => {

@@ -19,8 +19,14 @@
             <span class="px-2 py-0.5 rounded-full text-[10px] font-medium" :class="statusBadgeClass">
               {{ displayStatus }}
             </span>
+            <!-- ✅ NEW — Delayed badge -->
+            <span
+              v-if="order.isCurrentlyDelayed"
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 inline-flex items-center gap-0.5"
+            >
+              ⚠ Delayed
+            </span>
             <span class="text-[10px] text-gray-400">{{ formatDate(order.createdAt || order.date) }}</span>
-
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right">
@@ -59,7 +65,71 @@
       </div>
 
       <div>
-                  <!-- ✅ Only show for own-cups orders waiting on the customer's drop-off -->
+        <!-- ═══════════════════════════════════════════════════════════
+             ✅ NEW — DELAY BANNER (the transparency centerpiece)
+             ═══════════════════════════════════════════════════════════ -->
+        <div
+          v-if="order.isCurrentlyDelayed && order.currentDelay"
+          class="rounded-md border-2 border-amber-300 bg-amber-50 overflow-hidden mb-3"
+        >
+          <div class="px-3.5 py-2 bg-amber-100 border-b border-amber-200 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-700 flex-shrink-0">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-bold text-amber-800 leading-tight">Your order is delayed</p>
+              <p class="text-[10px] text-amber-600">We're sorry for the inconvenience</p>
+            </div>
+          </div>
+
+          <div class="px-3.5 py-3 space-y-2.5">
+            <!-- Reason -->
+            <div>
+              <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wide mb-0.5">Reason</p>
+              <p class="text-xs text-amber-900 font-medium">{{ order.currentDelay.reason }}</p>
+            </div>
+
+            <!-- ETA comparison -->
+            <div
+              v-if="order.currentDelay.originalExpectedDelivery || order.currentDelay.newExpectedDelivery"
+              class="flex items-stretch gap-3 pt-2 border-t border-amber-200"
+            >
+              <div v-if="order.currentDelay.originalExpectedDelivery" class="flex-1">
+                <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wide">Original ETA</p>
+                <p class="text-xs text-amber-700 line-through mt-0.5">
+                  {{ formatDateShort(order.currentDelay.originalExpectedDelivery) }}
+                </p>
+              </div>
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-400">
+                  <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                </svg>
+              </div>
+              <div v-if="order.currentDelay.newExpectedDelivery" class="flex-1 text-right">
+                <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wide">New ETA</p>
+                <p class="text-sm font-black text-amber-800 mt-0.5">
+                  {{ formatDateShort(order.currentDelay.newExpectedDelivery) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Reported at + Support link -->
+            <div class="flex items-center justify-between pt-2 border-t border-amber-200">
+              <p class="text-[10px] text-amber-600">
+                Reported {{ formatRelativeTime(order.currentDelay.reportedAt) }}
+              </p>
+              <button
+                @click="contactSupport"
+                class="text-[10px] font-bold text-amber-800 underline underline-offset-2 hover:text-amber-900"
+              >
+                Contact Support →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ Only show for own-cups orders waiting on the customer's drop-off -->
     <div v-if="order.isProvided && order.dropOffStatus === 'Pending' && order.status !== 'Cancelled' "
       class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-md mb-3"
     >
@@ -113,18 +183,27 @@
                 <template v-for="(step, idx) in STATUS_STEPPER" :key="step.key">
                   <div class="flex flex-col items-center flex-shrink-0">
                     <!-- Step dot -->
-                    <div
-                      class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
-                      :class="[
-                        isStepReached(idx)
-                          ? (isStepCurrent(idx)
-                            ? 'bg-blue-600 text-white ring-4 ring-blue-200 scale-110'
-                            : 'bg-blue-500 text-white')
-                          : 'bg-gray-200 text-gray-400',
-                      ]"
-                    >
-                      <span v-if="isStepReached(idx) && !isStepCurrent(idx)" class="text-white">✓</span>
-                      <span v-else>{{ idx + 1 }}</span>
+                    <div class="relative">
+                      <div
+                        class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all"
+                        :class="[
+                          isStepReached(idx)
+                            ? (isStepCurrent(idx)
+                              ? (order.isCurrentlyDelayed
+                                  ? 'bg-amber-500 text-white ring-4 ring-amber-200 scale-110'
+                                  : 'bg-blue-600 text-white ring-4 ring-blue-200 scale-110')
+                              : 'bg-blue-500 text-white')
+                            : 'bg-gray-200 text-gray-400',
+                        ]"
+                      >
+                        <span v-if="isStepReached(idx) && !isStepCurrent(idx)" class="text-white">✓</span>
+                        <span v-else>{{ idx + 1 }}</span>
+                      </div>
+                      <!-- ✅ NEW — Delay indicator dot on current step -->
+                      <span
+                        v-if="order.isCurrentlyDelayed && isStepCurrent(idx)"
+                        class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-white animate-pulse"
+                      ></span>
                     </div>
                     <!-- Step label -->
                     <span
@@ -165,10 +244,35 @@
                     class="absolute left-0 top-0 rounded-full flex items-center justify-center z-10 border-2 border-white transition-all"
                     :class="[
                       event.isCurrent ? 'w-5 h-5 -left-0.5 ring-2 ring-offset-1' : 'w-4 h-4',
-                      getTimelineIconColor(event.displayStatus || event.status, index, event.isCurrent),
+                      getTimelineIconColor(
+                        event.displayStatus || event.status,
+                        index,
+                        event.isCurrent,
+                        event.type
+                      ),
                     ]"
                   >
+                    <!-- ✅ Delay event icons -->
+                    <svg
+                      v-if="event.type === 'delay'"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      :class="event.isCurrent ? 'w-2.5 h-2.5' : 'w-2 h-2'"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    <svg
+                      v-else-if="event.type === 'delay-resolved'"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                      :class="event.isCurrent ? 'w-2.5 h-2.5' : 'w-2 h-2'"
+                    >
+                      <path d="M20 6L9 17l-5-5" />
+                    </svg>
+                    <!-- Normal status icon -->
                     <component
+                      v-else
                       :is="getTimelineIcon(event.displayStatus || event.status)"
                       :class="event.isCurrent ? 'w-2.5 h-2.5' : 'w-2 h-2'"
                     />
@@ -180,9 +284,21 @@
                       <div class="flex items-center gap-1.5 flex-wrap">
                         <span
                           class="font-semibold text-xs"
-                          :class="event.isCurrent ? 'text-blue-700' : 'text-gray-900'"
+                          :class="
+                            event.type === 'delay'
+                              ? 'text-amber-800'
+                              : event.type === 'delay-resolved'
+                                ? 'text-green-700'
+                                : event.isCurrent
+                                  ? 'text-blue-700'
+                                  : 'text-gray-900'
+                          "
                         >
-                          {{ formatStatusForDisplay(event.displayStatus || event.status) }}
+                          {{ event.type === 'delay'
+                            ? 'Order Delayed'
+                            : event.type === 'delay-resolved'
+                              ? 'Delay Resolved'
+                              : formatStatusForDisplay(event.displayStatus || event.status) }}
                         </span>
                         <span v-if="event.isCurrent" class="text-[9px] font-bold uppercase tracking-wide text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
                           Current
@@ -190,18 +306,53 @@
                         <span class="text-[10px] text-gray-400">{{ formatDateShort(event.timestamp) }}</span>
                       </div>
 
-                      <!-- Description -->
-                      <p class="text-[11px] text-gray-500 mt-0.5">
-                        {{ getStatusDescription(event.displayStatus || event.status) }}
-                      </p>
+                      <!-- ✅ Delay reason (with ETA change for the delay event) -->
+                      <template v-if="event.type === 'delay'">
+                        <p class="text-[11px] text-amber-700 mt-0.5 font-medium">
+                          {{ event.delayData.reason }}
+                        </p>
+                        <div
+                          v-if="event.delayData.originalExpectedDelivery || event.delayData.newExpectedDelivery"
+                          class="mt-1 inline-flex items-center gap-1.5 text-[10px] bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5"
+                        >
+                          <span v-if="event.delayData.originalExpectedDelivery" class="text-amber-600 line-through">
+                            {{ formatDateShort(event.delayData.originalExpectedDelivery) }}
+                          </span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-400">
+                            <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                          </svg>
+                          <span v-if="event.delayData.newExpectedDelivery" class="font-bold text-amber-800">
+                            {{ formatDateShort(event.delayData.newExpectedDelivery) }}
+                          </span>
+                        </div>
+                        <p class="text-[10px] text-amber-500 mt-1 italic">
+                          We're working to get your order back on track.
+                        </p>
+                      </template>
 
-                      <!-- Notes -->
-                      <p
-                        v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'"
-                        class="text-[11px] text-gray-400 mt-0.5 italic"
-                      >
-                        "{{ event.notes }}"
-                      </p>
+                      <template v-else-if="event.type === 'delay-resolved'">
+                        <p class="text-[11px] text-green-700 mt-0.5">
+                          Your order is back on schedule. Thank you for your patience.
+                        </p>
+                        <p v-if="event.notes" class="text-[10px] text-gray-400 mt-0.5 italic">
+                          Resolved: "{{ event.notes }}"
+                        </p>
+                      </template>
+
+                      <!-- Regular status description -->
+                      <template v-else>
+                        <p class="text-[11px] text-gray-500 mt-0.5">
+                          {{ getStatusDescription(event.displayStatus || event.status) }}
+                        </p>
+
+                        <!-- Notes -->
+                        <p
+                          v-if="event.notes && event.notes !== 'null' && event.notes !== 'Order created'"
+                          class="text-[11px] text-gray-400 mt-0.5 italic"
+                        >
+                          "{{ event.notes }}"
+                        </p>
+                      </template>
 
                       <!-- Production schedule inline -->
                       <div
@@ -842,39 +993,87 @@ const displayStatus = computed(() => {
   return status
 })
 
-// ✅ UPDATED — Reverse order (newest first), enrich each event with
-// duration hint and POD info, and mark the "isCurrent" event.
+// ✅ UPDATED — Merge statusHistory + delayHistory into one chronological
+// timeline (newest first). Delay events carry `type: 'delay'` or
+// `type: 'delay-resolved'` so the template can render them specially.
 const filteredStatusHistory = computed(() => {
-  if (!order.value?.statusHistory) return []
+  if (!order.value) return []
 
   const isPickup = order.value.receivingMode === 'Pick-up'
+  const events = []
 
-  // 1. Map each event to its display shape
-  const mapped = order.value.statusHistory.map(event => {
-    const isPickupAlias = isPickup && event.status === 'Out for Delivery'
-    const displayStatus = isPickupAlias ? 'Ready to Pick-up' : event.status
+  // ── 1. Status events ─────────────────────────────────────────────
+  if (Array.isArray(order.value.statusHistory)) {
+    order.value.statusHistory.forEach((event) => {
+      const isPickupAlias = isPickup && event.status === 'Out for Delivery'
+      const displayStatus = isPickupAlias ? 'Ready to Pick-up' : event.status
+      const ts = event.timestamp ? new Date(event.timestamp).getTime() : 0
 
-    return {
-      ...event,
-      displayStatus,
-      durationHint: STATUS_DURATIONS[displayStatus] || '',
-      // POD image only applies to the Completed event for delivery orders
-      podImage: (event.status === 'Completed' && order.value.proofOfDelivery)
-        ? order.value.proofOfDelivery
-        : null,
-    }
-  })
-
-  // 2. Reverse so newest is first
-  const reversed = [...mapped].reverse()
-
-  // 3. Mark the first (latest) event as current
-  if (reversed.length > 0) {
-    reversed[0] = { ...reversed[0], isCurrent: true }
+      events.push({
+        type: 'status',
+        ...event,
+        displayStatus,
+        durationHint: STATUS_DURATIONS[displayStatus] || '',
+        podImage:
+          event.status === 'Completed' && order.value.proofOfDelivery
+            ? order.value.proofOfDelivery
+            : null,
+        _sortTs: ts,
+      })
+    })
   }
 
-  return reversed
+  // ── 2. Delay events (reported + resolved) ────────────────────────
+  if (Array.isArray(order.value.delayHistory)) {
+    order.value.delayHistory.forEach((delay) => {
+      if (delay.reportedAt) {
+        events.push({
+          type: 'delay',
+          displayStatus: 'Delayed',
+          timestamp: delay.reportedAt,
+          notes: delay.reason,
+          delayData: delay,
+          _sortTs: new Date(delay.reportedAt).getTime(),
+        })
+      }
+      if (!delay.isDelayed && delay.resolvedAt) {
+        events.push({
+          type: 'delay-resolved',
+          displayStatus: 'Delay Resolved',
+          timestamp: delay.resolvedAt,
+          notes: delay.reason,
+          delayData: delay,
+          _sortTs: new Date(delay.resolvedAt).getTime(),
+        })
+      }
+    })
+  }
+
+  // ── 3. Sort newest first ─────────────────────────────────────────
+  events.sort((a, b) => b._sortTs - a._sortTs)
+
+  // ── 4. Mark the first (latest) event as current ──────────────────
+  if (events.length > 0) {
+    events[0] = { ...events[0], isCurrent: true }
+  }
+
+  return events
 })
+
+// ✅ NEW — Relative time helper for the delay banner
+function formatRelativeTime(dateValue) {
+  if (!dateValue) return ''
+  const diff = Date.now() - new Date(dateValue).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return formatDateShort(dateValue)
+}
+
 
 // ✅ NEW — Figure out the next status after the current one
 const nextStatusHint = computed(() => {
@@ -1033,7 +1232,17 @@ function getTimelineIcon(status) {
   return icons[statusLower] || ClockIcon
 }
 
-function getTimelineIconColor(status, index, isCurrent = false) {
+function getTimelineIconColor(status, index, isCurrent = false, type = 'status') {
+  // ✅ Delay events have their own colors
+  if (type === 'delay') {
+    return isCurrent
+      ? 'bg-amber-500 text-white ring-amber-200'
+      : 'bg-amber-100 text-amber-700'
+  }
+  if (type === 'delay-resolved') {
+    return 'bg-green-100 text-green-600'
+  }
+
   const statusLower = status?.toLowerCase() || ''
 
   // ✅ Current step gets a bolder, ring-highlighted treatment

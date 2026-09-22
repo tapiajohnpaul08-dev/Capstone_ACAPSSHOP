@@ -157,11 +157,29 @@ export function useOrders() {
       }]
     }
 
+    // ✅ NEW — normalize delay state once so all consumers can trust it
+    const delayHistory = Array.isArray(backendOrder.delayHistory)
+      ? backendOrder.delayHistory
+      : []
+    const lastDelay = delayHistory[delayHistory.length - 1]
+    const isCurrentlyDelayed = !!(lastDelay && lastDelay.isDelayed)
+    const currentDelay = isCurrentlyDelayed ? lastDelay : null
+    const originalExpectedDelivery =
+      delayHistory.find((d) => d.originalExpectedDelivery)?.originalExpectedDelivery ||
+      backendOrder.expectedDelivery ||
+      null
+
     return {
       id: backendOrder.orderId || backendOrder.orderNumber,
       orderId: backendOrder.orderId || backendOrder.orderNumber,
       orderNumber: backendOrder.orderNumber || backendOrder.orderId,
       status: backendOrder.status,
+
+      // ✅ NEW — Delay transparency
+      delayHistory,
+      isCurrentlyDelayed,
+      currentDelay,
+      originalExpectedDelivery,
       statusValue: statusMap[backendOrder.status?.toLowerCase()] || 'pending',
       paymentStatus: backendOrder.paymentStatus,
       isProvided: backendOrder.isProvided, // ← ADD THIS LINE

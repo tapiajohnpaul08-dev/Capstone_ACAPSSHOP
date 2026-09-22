@@ -22,13 +22,41 @@
               <div class="font-semibold">{{ order.orderNumber || order.orderId || 'Order #' + order.id }}</div>
               <div class="text-sm text-gray-600">{{ order.date || formatDate(order.createdAt) }}</div>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 flex-wrap justify-end">
+              <!-- ✅ NEW — Delayed badge -->
+              <span
+                v-if="order.isCurrentlyDelayed"
+                class="inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                :title="order.currentDelay?.reason || 'Order delayed'"
+              >
+                ⚠ Delayed
+              </span>
               <span 
                 class="inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium"
                 :class="statusBadgeClass"
               >
                 {{ formatStatus(order.status) }}
               </span>
+            </div>
+          </div>
+
+          <!-- ✅ NEW — Delay reason strip -->
+          <div
+            v-if="order.isCurrentlyDelayed && order.currentDelay"
+            class="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-600 flex-shrink-0 mt-0.5">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-semibold text-amber-800 leading-tight">{{ order.currentDelay.reason }}</p>
+              <p
+                v-if="order.currentDelay.newExpectedDelivery"
+                class="text-[11px] text-amber-600 mt-0.5"
+              >
+                New ETA: <strong class="text-amber-800">{{ formatDate(order.currentDelay.newExpectedDelivery) }}</strong>
+              </p>
             </div>
           </div>
 
