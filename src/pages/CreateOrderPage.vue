@@ -12,6 +12,9 @@
           <h1 class="text-2xl font-bold text-gray-900">Create New Order</h1>
           <p class="text-gray-500 mt-1 text-sm">
             <span v-if="isOwnCups">You'll provide your own cups for printing.</span>
+            <span v-else-if="onlyLids">
+              You're ordering {{ lidItems.length }} lid{{ lidItems.length !== 1 ? 's' : '' }} — no design needed.
+            </span>
             <span v-else-if="isCartOrder">You're ordering {{ orderProducts.length }} product(s).</span>
             <span v-else>Order from our catalog — we supply & print.</span>
           </p>
@@ -79,8 +82,8 @@
             <button @click="nextStep" :disabled="!isStepValid || isSubmitting" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
          hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              :title="!isStepValid ? 'Complete all fields to continue' : 'Go to design step'">
-              {{ orderProducts.length > 1 ? 'Configure Designs' : 'Add Design' }}
+              :title="!isStepValid ? 'Complete all fields to continue' : 'Continue'">
+              {{ onlyLids ? 'Continue' : designableItems.length > 1 ? 'Configure Designs' : 'Add Design' }}
               <ArrowRight class="w-4 h-4" />
             </button>
           </div>
@@ -88,94 +91,150 @@
 
         <!-- ==================== STEP 1: DESIGN ==================== -->
         <div v-if="getStepKey(currentStep) === 'design'">
-          <DesignModeSelector v-model="designMode" :item-count="orderProducts.length" :has-design-required="false"
-            :is-own-cups="isOwnCups" />
 
-          <div v-if="designMode !== 'no-design'" class="mt-4">
-            <!-- Shared design -->
-            <div v-if="designMode === 'shared'" class="space-y-4">
-              <DesignManager v-model="sharedDesign" item-name="Shared Design"
-                :show-placement="orderProducts.length === 1" :is-no-design-mode="false"
-                @design-changed="onSharedDesignChanged" />
-
-              <!-- Inline placement (shared + multi-item only) -->
-              <div v-if="orderProducts.length > 1" class="bg-white rounded-xl border">
-                <div class="px-6 pt-6 pb-4 border-b">
-                  <h4 class="font-semibold text-gray-900">Print Placement</h4>
-                  <p class="text-xs text-gray-500 mt-0.5">
-                    Set where the shared design appears on each item.
-                  </p>
-                </div>
-                <div class="px-6 py-5 space-y-4">
-                  <div v-for="(item, idx) in orderProducts" :key="idx" class="border-b last:border-0 pb-4 last:pb-0">
-                    <div class="flex items-center gap-3 mb-3">
-                      <span class="text-sm font-medium text-gray-800">{{ item.name }}</span>
-                      <span class="text-xs text-gray-400">{{ item.size }}</span>
-                    </div>
-                    <div class="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label class="text-sm font-medium text-gray-700">Print Size</label>
-                        <input v-model="placementSettings[idx].printSize" type="text" placeholder="e.g., 3x3 inches"
-                          class="field" />
-                      </div>
-                      <div>
-                        <label class="text-sm font-medium text-gray-700">Placement</label>
-                        <select v-model="placementSettings[idx].printPlacement" class="field">
-                          <option value="">Select placement...</option>
-                          <option value="Full-Wrap">Full Wrap</option>
-                          <option value="Front-Only">Front Only</option>
-                          <option value="Back-Only">Back Only</option>
-                          <option value="Front-Back">Front & Back</option>
-                          <option value="Wrap-Around">Wrap Around</option>
-                          <option value="Top-Bottom">Top & Bottom</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Individual designs -->
-            <div v-else class="space-y-4">
-              <div v-for="(item, idx) in orderProducts" :key="idx" class="bg-white rounded-xl border overflow-hidden">
-                <div v-if="item.image" class="px-6 py-4 border-b bg-gray-50">
-                  <div class="flex items-center gap-3">
-                    <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg"
-                      @error="handleImageError" />
-                    <div>
-                      <h4 class="font-semibold">{{ item.name }}</h4>
-                      <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity }} pcs</p>
-                    </div>
-                  </div>
-                </div>
-                <div class="px-6 py-5">
-                  <DesignManager v-model="itemDesigns[idx]" :item-name="item.name"
-                    :show-placement="orderProducts.length === 1" :is-no-design-mode="false"
-                    @design-changed="(design) => updateItemDesign(idx, design)" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- No design -->
-          <div v-else class="bg-white rounded-xl border p-6">
+          <!-- ✅ Only-lids banner — no design UI shown at all -->
+          <div v-if="onlyLids" class="bg-amber-50 border border-amber-200 rounded-xl p-6">
             <div class="flex items-start gap-3">
-              <FileText class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+              <div class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2" class="text-amber-600">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 12h8"/>
+                </svg>
+              </div>
               <div>
-                <h4 class="font-semibold text-gray-900">No Design</h4>
-                <p class="text-sm text-gray-500">
-                  The product will be produced plain, as is, with no print or design applied.
+                <h4 class="font-semibold text-amber-900">No design needed</h4>
+                <p class="text-sm text-amber-800 mt-1">
+                  Your order contains only lids. Lids are produced plain, as-is —
+                  there's nothing to print or configure here.
+                </p>
+                <p class="text-xs text-amber-700 mt-2">
+                  {{ lidItems.length }} lid{{ lidItems.length !== 1 ? 's' : '' }}
+                  · {{ totalQuantity.toLocaleString() }} pcs total
                 </p>
               </div>
             </div>
           </div>
 
+          <!-- Mixed order: cups + lids -->
+          <template v-else>
+
+
+            <DesignModeSelector
+              v-model="designMode"
+              :item-count="designableItems.length"
+              :has-design-required="false"
+              :is-own-cups="isOwnCups"
+            />
+
+            <div v-if="designMode !== 'no-design'" class="mt-4">
+              <!-- Shared design -->
+              <div v-if="designMode === 'shared'" class="space-y-4">
+                <DesignManager
+                  v-model="sharedDesign"
+                  item-name="Shared Design"
+                  :show-placement="designableItems.length === 1"
+                  :is-no-design-mode="false"
+                  @design-changed="onSharedDesignChanged"
+                />
+
+                <!-- Inline placement (shared + multi-designable only) -->
+                <div v-if="designableItems.length > 1" class="bg-white rounded-xl border">
+                  <div class="px-6 pt-6 pb-4 border-b">
+                    <h4 class="font-semibold text-gray-900">Print Placement</h4>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Set where the shared design appears on each item.
+                    </p>
+                  </div>
+                  <div class="px-6 py-5 space-y-4">
+                    <div
+                      v-for="{ item, index } in designableItemsWithIndex"
+                      :key="index"
+                      class="border-b last:border-0 pb-4 last:pb-0"
+                    >
+                      <div class="flex items-center gap-3 mb-3">
+                        <span class="text-sm font-medium text-gray-800">{{ item.name }}</span>
+                        <span class="text-xs text-gray-400">{{ item.size }}</span>
+                      </div>
+                      <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <label class="text-sm font-medium text-gray-700">Print Size</label>
+                          <input v-model="placementSettings[index].printSize" type="text"
+                            placeholder="e.g., 3x3 inches" class="field" />
+                        </div>
+                        <div>
+                          <label class="text-sm font-medium text-gray-700">Placement</label>
+                          <select v-model="placementSettings[index].printPlacement" class="field">
+                            <option value="">Select placement...</option>
+                            <option value="Full-Wrap">Full Wrap</option>
+                            <option value="Front-Only">Front Only</option>
+                            <option value="Back-Only">Back Only</option>
+                            <option value="Front-Back">Front & Back</option>
+                            <option value="Wrap-Around">Wrap Around</option>
+                            <option value="Top-Bottom">Top & Bottom</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Individual designs (only for designable items) -->
+              <div v-else class="space-y-4">
+                <div
+                  v-for="{ item, index } in designableItemsWithIndex"
+                  :key="index"
+                  class="bg-white rounded-xl border overflow-hidden"
+                >
+                  <div v-if="item.image" class="px-6 py-4 border-b bg-gray-50">
+                    <div class="flex items-center gap-3">
+                      <img :src="getImageUrl(item.image)" class="w-10 h-10 object-cover rounded-lg"
+                        @error="handleImageError" />
+                      <div>
+                        <h4 class="font-semibold">{{ item.name }}</h4>
+                        <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity }} pcs</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="px-6 py-5">
+                    <DesignManager
+                      v-model="itemDesigns[index]"
+                      :item-name="item.name"
+                      :show-placement="designableItems.length === 1"
+                      :is-no-design-mode="false"
+                      @design-changed="(design) => updateItemDesign(index, design)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- No design — explicit user choice -->
+            <div v-else class="bg-white rounded-xl border p-6">
+              <div class="flex items-start gap-3">
+                <FileText class="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                <div>
+                  <h4 class="font-semibold text-gray-900">No Design</h4>
+                  <p class="text-sm text-gray-500">
+                    All designable items will be produced plain, as is, with no print or design applied.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </template>
+
+          <!-- Navigation footer -->
           <div class="mt-4 flex items-center justify-between">
             <div>
               <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
                 <AlertCircle class="w-3 h-3" />
                 {{ step1Errors[0] || 'Please complete design details' }}
+              </span>
+              <span v-else-if="onlyLids" class="text-xs text-amber-600 flex items-center gap-1">
+                <CheckCircle class="w-3 h-3" />
+                No design required for this order
               </span>
               <span v-else class="text-xs text-green-500 flex items-center gap-1">
                 <CheckCircle class="w-3 h-3" />
@@ -613,18 +672,78 @@ const orderType = computed(() => (route.query.type === 'company-product' ? 'comp
 const isCartOrder = computed(() => route.query.source === 'cart')
 const isOwnCups = computed(() => orderType.value === 'own-cups')
 
+// ═══════════════════════════════════════════════════════════════════
+// ✅ NEW — Lid detection & design-scope helpers
+//
+// Lids are never designable. We surface that everywhere:
+//   • Design step only shows cups & other designable items
+//   • Lids always get `designSource: 'no-design'` in the payload
+//   • Only-lids orders skip the design fee and auto-set no-design mode
+// ═══════════════════════════════════════════════════════════════════
+
+// A product is a lid when either:
+//   • itemType === 'lid'  (set when adding via cart / Flow 3)
+//   • category === 'Lids' (set at the product level)
+function isLidItem(product) {
+  if (!product) return false
+  return (
+    product.itemType === 'lid' ||
+    product.category === 'Lids'
+  )
+}
+
+// Designable items = everything except lids (cups, containers, etc.)
+const designableItems = computed(() =>
+  orderProducts.value.filter((p) => !isLidItem(p)),
+)
+
+// Lids in the order
+const lidItems = computed(() =>
+  orderProducts.value.filter((p) => isLidItem(p)),
+)
+
+const hasLids = computed(() => lidItems.value.length > 0)
+const hasDesignableItems = computed(() => designableItems.value.length > 0)
+const onlyLids = computed(() => hasLids.value && !hasDesignableItems.value)
+
+// Designable items with their ORIGINAL index into orderProducts[].
+// We keep the original index so itemDesigns[i] and placementSettings[i]
+// stay aligned with the array they were initialised against.
+const designableItemsWithIndex = computed(() =>
+  orderProducts.value
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => !isLidItem(item)),
+)
+
+// Pluralised label for the "X lids will be produced as-is" banner
+const lidSummaryText = computed(() => {
+  const n = lidItems.value.length
+  if (n === 0) return ''
+  return `${n} lid${n > 1 ? 's' : ''} will be produced as-is (no design).`
+})
+
 const orderBadgeClass = computed(() =>
-  isOwnCups.value ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+  isOwnCups.value
+    ? 'bg-purple-100 text-purple-700'
+    : onlyLids.value
+      ? 'bg-amber-100 text-amber-700'
+      : 'bg-blue-100 text-blue-700',
 )
-const orderBadgeText = computed(() =>
-  isOwnCups.value ? 'Own Items' : isCartOrder.value ? 'Multi-Item' : 'Single Product'
-)
+const orderBadgeText = computed(() => {
+  if (isOwnCups.value) return 'Own Items'
+  if (onlyLids.value) return 'Lids Only'
+  if (hasLids.value) return 'Cups + Lids'
+  return isCartOrder.value ? 'Multi-Item' : 'Single Product'
+})
 
 const totalQuantity = computed(() =>
   orderProducts.value.reduce((sum, p) => sum + (p.quantity || 0), 0)
 )
 
 const hasDesign = computed(() => {
+  // ✅ Lids-only orders never carry a design fee
+  if (!hasDesignableItems.value) return false
+
   if (designMode.value === 'no-design') return false
 
   if (designMode.value === 'shared') {
@@ -634,13 +753,29 @@ const hasDesign = computed(() => {
   }
 
   if (designMode.value === 'individual') {
-    for (const design of itemDesigns.value) {
+    // ✅ Only count designs on designable items — a "design" on a lid
+    //    (which we force to no-design anyway) must not trigger the fee.
+    for (const { index } of designableItemsWithIndex.value) {
+      const design = itemDesigns.value[index]
+      if (!design) continue
       if (design.designSource === 'upload' && design.files?.length > 0) return true
       if (design.designSource === 'saved' && design.selectedTemplateId) return true
     }
   }
   return false
 })
+
+// ✅ Auto-flip the mode to 'no-design' whenever designable items drop to zero.
+//    Fires on mount AND whenever the user removes the last cup from the order.
+watch(
+  hasDesignableItems,
+  (hasDesignable) => {
+    if (!hasDesignable && designMode.value !== 'no-design') {
+      designMode.value = 'no-design'
+    }
+  },
+  { immediate: true },
+)
 
 const designNotesSummary = computed(() => {
   if (designMode.value === 'shared') {
@@ -756,6 +891,10 @@ const step0Errors = computed(() => {
 
 const step1Errors = computed(() => {
   const errorsList = []
+
+  // ✅ Lids never require design — if there's nothing designable, we're done.
+  if (!hasDesignableItems.value) return errorsList
+
   if (designMode.value === 'no-design') return errorsList
 
   if (designMode.value === 'shared') {
@@ -769,19 +908,19 @@ const step1Errors = computed(() => {
         errorsList.push('Please select a saved template')
       }
     }
-    // Shared multi-item placement check
-    if (orderProducts.value.length > 1) {
-      for (let i = 0; i < orderProducts.value.length; i++) {
-        const s = placementSettings.value[i]
+    // Shared multi-item placement check — only for designable items
+    if (designableItemsWithIndex.value.length > 1) {
+      for (const { item, index } of designableItemsWithIndex.value) {
+        const s = placementSettings.value[index]
         if (!s?.printPlacement) {
-          errorsList.push(`Please select placement for "${orderProducts.value[i].name}"`)
+          errorsList.push(`Please select placement for "${item.name}"`)
         }
       }
     }
   } else {
-    for (let i = 0; i < orderProducts.value.length; i++) {
-      const design = itemDesigns.value[i]
-      const productName = orderProducts.value[i]?.name
+    for (const { item, index } of designableItemsWithIndex.value) {
+      const design = itemDesigns.value[index]
+      const productName = item.name
       if (!design) {
         errorsList.push(`Design details required for "${productName}"`)
         continue
@@ -1076,31 +1215,33 @@ async function handleSubmit() {
     const itemsArray = []
     let productTotal = 0
 
-    if (designMode.value === 'no-design') {
-      for (let i = 0; i < orderProducts.value.length; i++) {
-        const product = orderProducts.value[i]
-        const item = buildItemPayload(product, {
-          designImage: '',
-          designSource: 'no-design',
-          selectedTemplateId: null,
-          selectedTemplate: null,
-          printSize: '',
-          printPlacement: '',
-          designNotes: NO_DESIGN_FIXED_NOTE,
-          files: [],
-        })
-        itemsArray.push(item)
-        productTotal += calculateItemTotal(product)
-      }
-    } else if (designMode.value === 'shared') {
-      const designImage = getDesignImage(sharedDesign.value)
-      for (let i = 0; i < orderProducts.value.length; i++) {
-        const product = orderProducts.value[i]
-        const settings = orderProducts.value.length > 1
-          ? placementSettings.value[i] || {}
-          : sharedDesign.value
+    // ✅ Single helper that decides what design (if any) applies to a given
+    //    product index. Lids ALWAYS return the no-design payload — the
+    //    user's mode choice has zero effect on them.
+    const NO_DESIGN_PAYLOAD = {
+      designImage: '',
+      designSource: 'no-design',
+      selectedTemplateId: null,
+      selectedTemplate: null,
+      printSize: '',
+      printPlacement: '',
+      designNotes: NO_DESIGN_FIXED_NOTE,
+      files: [],
+    }
 
-        const item = buildItemPayload(product, {
+    function designPayloadForProduct(product, index) {
+      // Lids → always no-design, period.
+      if (isLidItem(product)) return NO_DESIGN_PAYLOAD
+
+      // Everything else → respect the user's mode selection
+      if (designMode.value === 'no-design') return NO_DESIGN_PAYLOAD
+
+      if (designMode.value === 'shared') {
+        const designImage = getDesignImage(sharedDesign.value)
+        const settings = designableItems.value.length > 1
+          ? placementSettings.value[index] || {}
+          : sharedDesign.value
+        return {
           designImage,
           designSource: sharedDesign.value.designSource,
           selectedTemplateId: sharedDesign.value.selectedTemplateId,
@@ -1109,29 +1250,28 @@ async function handleSubmit() {
           printPlacement: settings.printPlacement || sharedDesign.value.printPlacement || '',
           designNotes: settings.designNotes || sharedDesign.value.designNotes || '',
           files: sharedDesign.value.files || [],
-        })
-        itemsArray.push(item)
-        productTotal += calculateItemTotal(product)
+        }
       }
-    } else {
-      for (let i = 0; i < orderProducts.value.length; i++) {
-        const product = orderProducts.value[i]
-        const design = itemDesigns.value[i] || {}
-        const designImage = getDesignImage(design)
 
-        const item = buildItemPayload(product, {
-          designImage,
-          designSource: design.designSource || 'upload',
-          selectedTemplateId: design.selectedTemplateId || null,
-          selectedTemplate: design.selectedTemplate || null,
-          printSize: design.printSize || '',
-          printPlacement: design.printPlacement || '',
-          designNotes: design.designNotes || '',
-          files: design.files || [],
-        })
-        itemsArray.push(item)
-        productTotal += calculateItemTotal(product)
+      // individual
+      const design = itemDesigns.value[index] || {}
+      return {
+        designImage: getDesignImage(design),
+        designSource: design.designSource || 'upload',
+        selectedTemplateId: design.selectedTemplateId || null,
+        selectedTemplate: design.selectedTemplate || null,
+        printSize: design.printSize || '',
+        printPlacement: design.printPlacement || '',
+        designNotes: design.designNotes || '',
+        files: design.files || [],
       }
+    }
+
+    for (let i = 0; i < orderProducts.value.length; i++) {
+      const product = orderProducts.value[i]
+      const item = buildItemPayload(product, designPayloadForProduct(product, i))
+      itemsArray.push(item)
+      productTotal += calculateItemTotal(product)
     }
 
     // Refresh estimatedTotal from backend for accuracy
@@ -1267,7 +1407,43 @@ function buildItemPayload(product, design) {
       selectedTemplateId: design.selectedTemplateId || null,
       selectedTemplate: design.selectedTemplate || null,
       estimatedTotal: 0,
+      // ✅ Own-cups have no product rim
+      rimDiameter: null,
+      itemType: 'cup',
     }
+  }
+
+  // ✅ NEW — resolve rim diameter from the product's size.
+  // Priority: explicit value on the product → looked up from sizes[]
+  let rimDiameter = product.rimDiameter ?? null
+  if (!rimDiameter && product.sizes?.length && product.size) {
+    const sizeObj = product.sizes.find((s) => s.name === product.size)
+    if (sizeObj?.rimDiameter) rimDiameter = sizeObj.rimDiameter
+  }
+
+  // ✅ Belt-and-suspenders: even if the caller passes a design payload,
+  //    force lids to no-design here. This is the last line of defense.
+  const isLidProduct =
+    product.itemType === 'lid' || product.category === 'Lids'
+
+  const effectiveDesign = isLidProduct
+    ? {
+        designSource: 'no-design',
+        designImage: '',
+        printSize: '',
+        printPlacement: '',
+        designNotes: NO_DESIGN_FIXED_NOTE,
+        files: [],
+        selectedTemplateId: null,
+        selectedTemplate: null,
+      }
+    : design
+
+  let effectiveDesignImage = designImage
+  let effectiveDesignFiles = designFiles
+  if (isLidProduct) {
+    effectiveDesignImage = ''
+    effectiveDesignFiles = []
   }
 
   return {
@@ -1276,14 +1452,17 @@ function buildItemPayload(product, design) {
     category: product.category,
     size: product.size,
     quantity: product.quantity,
-    designSource: design.designSource || 'upload',
-    designImage,
-    printSize: design.printSize || '',
-    printPlacement: design.printPlacement || '',
-    designNotes: design.designNotes || '',
-    files: designFiles,
-    selectedTemplateId: design.selectedTemplateId || null,
-    selectedTemplate: design.selectedTemplate || null,
+    designSource: effectiveDesign.designSource || 'no-design',
+    designImage: effectiveDesignImage,
+    printSize: effectiveDesign.printSize || '',
+    printPlacement: effectiveDesign.printPlacement || '',
+    designNotes: effectiveDesign.designNotes || '',
+    files: effectiveDesignFiles,
+    selectedTemplateId: effectiveDesign.selectedTemplateId || null,
+    selectedTemplate: effectiveDesign.selectedTemplate || null,
+    // ✅ Rim-aware fields — prefer explicit value, fall back to category-based
+    rimDiameter,
+    itemType: isLidProduct ? 'lid' : 'cup',
   }
 }
 
@@ -1325,6 +1504,8 @@ function parseProductDataFromQuery() {
   const minOrder = parseInt(route.query.minOrder) || 500
   const size = route.query.size
   const quantity = parseInt(route.query.quantity) || minOrder
+  // ✅ NEW — read itemType from the query (defaults to 'cup')
+  const itemType = route.query.itemType || 'cup'
 
   let productData = null
   if (route.query.productData) {
@@ -1334,7 +1515,7 @@ function parseProductDataFromQuery() {
       console.error('Error parsing product data:', e)
     }
   }
-  return { productId, productName, productImage, productCategory, minOrder, size, quantity, productData }
+  return { productId, productName, productImage, productCategory, minOrder, size, quantity, productData, itemType }
 }
 
 // ─── LIFECYCLE ────────────────────────────────────────────────────────────
@@ -1356,6 +1537,8 @@ onMounted(async () => {
     showToast('Restored your previous draft', 'success')
   } else {
     // Fresh start — init based on order type
+    const { itemType: queryItemType } = parseProductDataFromQuery()
+
     if (isCartOrder.value) {
       const pendingCart = sessionStorage.getItem('pendingCart')
       if (pendingCart) {
@@ -1379,6 +1562,9 @@ onMounted(async () => {
             sizes: item.sizes || [],
             minOrder: item.minOrder || 500,
             unitPrice: item.unitPrice || 0,
+                        // ✅ NEW — preserve rim-aware fields from the cart line
+            rimDiameter: item.rimDiameter ?? null,
+            itemType: item.itemType || 'cup',
           }))
         }
       }
@@ -1400,11 +1586,16 @@ onMounted(async () => {
           name: productName || productData.name,
           image: productImage || productData.image,
           category: productCategory || productData.category,
+          // ✅ NEW — carry subcategory (helps identify lid type)
+          subcategory: productData.subcategory || '',
           size: defaultSize,
           quantity: defaultQuantity,
           minOrder: minOrder || productData.minOrder || 500,
           sizes: productData.sizes || [],
           unitPrice: selectedSizeObj?.price || 0,
+          // ✅ NEW — rim + item type from query
+          rimDiameter: selectedSizeObj?.rimDiameter ?? null,
+          itemType: queryItemType,
         }]
         designMode.value = 'individual'
         onProductChanged(orderProducts.value)
@@ -1417,16 +1608,21 @@ onMounted(async () => {
             defaultSize = response.data.sizes?.[0]?.name || ''
           }
           const defaultQuantity = quantity || response.data.minOrder || 500
+          const sizeObj = response.data.sizes?.find(s => s.name === defaultSize)
           orderProducts.value = [{
             productId: response.data.id,
             name: response.data.name,
             image: response.data.image,
             category: response.data.category,
+            // ✅ NEW — carry subcategory + rim + item type
+            subcategory: response.data.subcategory || '',
             size: defaultSize,
             quantity: defaultQuantity,
             minOrder: response.data.minOrder,
             sizes: response.data.sizes,
-            unitPrice: response.data.sizes?.find(s => s.name === defaultSize)?.price || 0,
+            unitPrice: sizeObj?.price || 0,
+            rimDiameter: sizeObj?.rimDiameter ?? null,
+            itemType: queryItemType,
           }]
           designMode.value = 'individual'
           onProductChanged(orderProducts.value)

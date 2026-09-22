@@ -75,8 +75,10 @@ export function useCart() {
 
   const selectedCount = computed(() => selectedIndexes.value.size)
 
-  // ─── Existing methods (unchanged) ────────────────────────────────
-  const addToCart = (product, size, quantity, estimatedTotal) => {
+  // ✅ Backward-compatible: old callers pass (product, size, qty, total).
+  // New callers can pass a 5th optional `extras` object with
+  // { rimDiameter, itemType, bulkPrices, bulkTierApplied }.
+  const addToCart = (product, size, quantity, estimatedTotal, extras = {}) => {
     cartItems.value.push({
       productId: product.id,
       name: product.name,
@@ -92,9 +94,15 @@ export function useCart() {
       selectedTemplateId: null,
       selectedTemplate: null,
       estimatedTotal: estimatedTotal,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+
+      // ✅ NEW — optional fields (default to null so old lines stay valid)
+      rimDiameter: extras.rimDiameter ?? null,
+      itemType: extras.itemType ?? 'cup',
+      bulkPrices: extras.bulkPrices ?? null,
+      bulkTierApplied: extras.bulkTierApplied ?? null,
     })
-    // ✅ Auto-select the newly added item
+    // Auto-select the newly added item
     const s = new Set(selectedIndexes.value)
     s.add(cartItems.value.length - 1)
     selectedIndexes.value = s

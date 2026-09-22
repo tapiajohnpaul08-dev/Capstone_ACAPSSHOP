@@ -23,7 +23,7 @@
               Cart
               <span v-if="cartCount > 0"
                 class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">{{
-                cartCount }}</span>
+                  cartCount }}</span>
             </button>
 
             <!-- Logged in → CTA -->
@@ -110,7 +110,7 @@
           <p class="text-sm text-gray-500 mt-0.5">Browse and order — we supply the product and print your design.</p>
         </div>
 
-        <div class="flex items-center gap-2 flex-wrap">
+        <div class="flex w-full items-center justify-between flex-wrap">
           <!-- Category tabs -->
           <div class="flex gap-1 bg-white border rounded-lg p-1">
             <button v-for="cat in categories" :key="cat.value" @click="selectedCategory = cat.value"
@@ -129,7 +129,7 @@
               <path d="m21 21-4.3-4.3" />
             </svg>
             <input v-model="searchQuery" type="text" placeholder="Search..."
-              class="pl-8 pr-3 py-1.5 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-36" />
+              class="pl-8 pr-3 py-1.5 w-full text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
           </div>
         </div>
       </div>
@@ -174,7 +174,8 @@
         </svg>
         <p class="text-gray-400 text-sm">No products found.</p>
         <button @click="searchQuery = ''; selectedCategory = 'all'"
-          class="mt-2 text-xs text-blue-600 hover:underline">Clear filters</button>
+          class="mt-2 text-xs text-blue-600 hover:underline">Clear
+          filters</button>
       </div>
     </div>
 
@@ -214,13 +215,9 @@
               <div v-if="cart.length > 0"
                 class="flex items-center justify-between px-3 py-2 bg-blue-50 rounded-lg border border-blue-100">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    :checked="selectedCount === cart.length"
-                    :indeterminate.prop="selectedCount > 0 && selectedCount < cart.length"
-                    @change="toggleSelectAll"
-                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
+                  <input type="checkbox" :checked="selectedCount === cart.length"
+                    :indeterminate.prop="selectedCount > 0 && selectedCount < cart.length" @change="toggleSelectAll"
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   <span class="text-xs font-semibold text-gray-700">
                     Select all
                   </span>
@@ -230,17 +227,12 @@
                 </span>
               </div>
 
-              <div v-for="(item, idx) in cart" :key="idx"
-                class="flex gap-3 rounded-xl p-3 transition-colors"
+              <div v-for="(item, idx) in cart" :key="idx" class="flex gap-3 rounded-xl p-3 transition-colors"
                 :class="isItemSelected(idx) ? 'bg-blue-50/50 border border-blue-200' : 'bg-gray-50 border border-transparent'">
                 <!-- ✅ Checkbox -->
                 <label class="flex items-start pt-1 cursor-pointer select-none shrink-0">
-                  <input
-                    type="checkbox"
-                    :checked="isItemSelected(idx)"
-                    @change="toggleItemSelection(idx)"
-                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
+                  <input type="checkbox" :checked="isItemSelected(idx)" @change="toggleItemSelection(idx)"
+                    class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 </label>
 
                 <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white border border-gray-100">
@@ -248,7 +240,22 @@
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-semibold text-gray-900 truncate">{{ item.name }}</p>
-                  <p class="text-xs text-gray-500">{{ item.size }} · {{ item.quantity.toLocaleString() }} pcs</p>
+                  <p class="text-xs text-gray-500">
+                    {{ item.size }}
+                    <span v-if="item.rimDiameter" class="text-blue-600">· {{ item.rimDiameter }}mm</span>
+                    · {{ item.quantity.toLocaleString() }} pcs
+                  </p>
+                  <!-- ✅ Flow 3 — show what this lid pairs with -->
+                  <p
+                    v-if="item.pairedWith"
+                    class="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                      fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M9 12l2 2 4-4"/>
+                    </svg>
+                    Pairs with {{ item.pairedWith }}
+                  </p>
                   <p v-if="item.printSize" class="text-xs text-gray-400">Print: {{ item.printSize }}</p>
                   <p v-if="item.printPlacement" class="text-xs text-gray-400 capitalize">{{
                     item.printPlacement.replace('-', ' ') }}</p>
@@ -266,7 +273,9 @@
               </div>
             </div>
 
-            <div v-if="cart.length > 0" class="px-5 py-4 border-t border-gray-100 space-y-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">              <!-- ✅ Selected summary -->
+            <div v-if="cart.length > 0"
+              class="px-5 py-4 border-t border-gray-100 space-y-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <!-- ✅ Selected summary -->
               <div class="flex items-center justify-between text-sm">
                 <span class="text-gray-500">
                   {{ selectedCount }} item{{ selectedCount === 1 ? '' : 's' }} selected
@@ -276,11 +285,8 @@
                 </span>
               </div>
 
-              <button
-                @click="proceedToOrder"
-                :disabled="selectedCount === 0"
-                class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
+              <button @click="proceedToOrder" :disabled="selectedCount === 0"
+                class="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed">
                 Order {{ selectedCount }} Selected Item{{ selectedCount === 1 ? '' : 's' }}
               </button>
               <button @click="clearCart"
@@ -345,10 +351,13 @@ const user = ref(null)
 const tokenVersion = ref(0)
 
 const categories = [
-  { label: 'All', value: 'all' },
-  { label: 'Plastic Cups', value: 'Plastic Cups' },
-  { label: 'Paper Cups', value: 'Paper Cups' },
-  { label: 'Meal Boxes', value: 'lighters' }
+  { value: 'all', label: 'All Products' },
+  { value: 'Plastic Cups', label: 'Plastic Cups' },
+  { value: 'Paper Cups', label: 'Paper Cups' },
+  { value: 'Containers', label: 'Containers' },
+  { value: 'Utensils', label: 'Utensils' },
+  { value: 'Straws', label: 'Straws' },
+  { value: 'Lids', label: 'Lids' },
 ]
 
 // --- Carousel state – local images only ---
@@ -475,38 +484,6 @@ function formatPriceAmount(amount) {
   return `₱${amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}`
 }
 
-async function addToCart(product) {
-  const availableSize = product.sizes?.find(s => s.stock > 0);
-  if (!availableSize) {
-    showToast(`${product.name} is out of stock!`);
-    return;
-  }
-  const defaultSize = availableSize.name;
-  let estimatedTotal = null;
-  if (defaultSize && product.minOrder) {
-    const priceResult = await productsApi.calculatePrice(product.id, defaultSize, product.minOrder);
-    if (priceResult.success && priceResult.data) {
-      estimatedTotal = priceResult.data.total;
-    }
-  }
-  // ✅ Use the composable's addToCart
-  addToCartState({
-    productId: product.id,
-    name: product.name,
-    image: product.image,
-    category: product.category,
-    size: defaultSize,
-    quantity: product.minOrder || 500,
-    printPlacement: '',
-    printSize: '',
-    designNotes: '',
-    estimatedTotal: estimatedTotal,
-    sizes: product.sizes || [],
-    minOrder: product.minOrder || 500,
-  });
-  showToast(`${product.name} (${defaultSize}) added to cart!`);
-}
-
 function goToProductDetail(product) {
   router.push(`/product/${product.id}`)
 }
@@ -565,7 +542,10 @@ async function proceedToOrder() {
     files: item.files || [],
     selectedTemplateId: item.selectedTemplateId || null,
     selectedTemplate: item.selectedTemplate || null,
-    estimatedTotal: item.estimatedTotal
+    estimatedTotal: item.estimatedTotal,
+    // ✅ NEW — preserve rim-aware fields into pendingCart
+    rimDiameter: item.rimDiameter ?? null,
+    itemType: item.itemType || 'cup',
   }))
 
   if (selected.length === 0) {

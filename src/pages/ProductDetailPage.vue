@@ -39,9 +39,22 @@
               <p class="text-gray-500 text-sm mt-1">Minimum Order: {{ product.minOrder?.toLocaleString() }} pcs</p>
             </div>
 
+            <!-- Lid type badge (lids only) -->
+            <div v-if="isLid && lidTypeLabel" class="mb-4">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-xs font-semibold">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M8 12h8"/>
+                </svg>
+                {{ lidTypeLabel }}
+              </span>
+            </div>
+
             <!-- Size Selection -->
             <div class="mb-6">
-              <label class="text-sm font-medium text-gray-700 block mb-2">Select Size</label>
+              <label class="text-sm font-medium text-gray-700 block mb-2">
+                {{ isLid ? 'Select Rim Size' : 'Select Size' }}
+              </label>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
                 <button
                   v-for="size in product.sizes"
@@ -60,6 +73,53 @@
                   </div>
                 </button>
               </div>
+            </div>
+
+            <!-- ✅ NEW — Fits these cups (lids only) -->
+            <div
+              v-if="isLid && selectedSize?.rimDiameter"
+              class="mb-6 p-4 rounded-xl border border-blue-100 bg-blue-50/50"
+            >
+              <!-- Loading state -->
+              <div v-if="loadingCups" class="flex items-center gap-2 text-xs text-blue-700">
+                <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Checking compatible cups…
+              </div>
+
+              <!-- Compatible list -->
+              <template v-else-if="compatibleCups.length > 0">
+                <p class="text-xs font-semibold text-blue-800 mb-2 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Fits these {{ compatibleCups.length }} cup{{ compatibleCups.length !== 1 ? 's' : '' }}:
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                  <span
+                    v-for="cup in compatibleCups"
+                    :key="cup.id"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 bg-white border border-blue-200 text-blue-700 rounded-full text-xs font-medium"
+                    :title="`Cup sizes: ${cup.matchingSizes.join(', ')}`"
+                  >
+                    {{ cup.name }}
+                    <span class="text-blue-400 text-[10px]">· {{ cup.matchingSizes.length }} size{{ cup.matchingSizes.length !== 1 ? 's' : '' }}</span>
+                  </span>
+                </div>
+              </template>
+
+              <!-- No compatible cups -->
+              <template v-else>
+                <p class="text-xs text-blue-700 flex items-center gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4M12 16h.01"/>
+                  </svg>
+                  No catalog cups match a <strong>{{ selectedSize.rimDiameter }}mm</strong> rim — but this lid still works for any {{ selectedSize.rimDiameter }}mm cup you already own.
+                </p>
+              </template>
             </div>
 
             <!-- Quantity Selection -->
@@ -325,6 +385,17 @@
       </div>
     </div>
 
+    <!-- ✅ Flow 3 — Compatible lids offer -->
+    <CompatibleLidsModal
+      :show="showLidsModal"
+      :cup-name="product?.name || ''"
+      :cup-size="selectedSize || {}"
+      :cup-quantity="quantity"
+      :compatible-lids="compatibleLids"
+      @confirm="handleLidsModalConfirm"
+      @skip="handleLidsModalSkip"
+    />
+
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
@@ -339,8 +410,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch} from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import CompatibleLidsModal from '@/modals/CompatibleLidsModal.vue'
 import { productsApi, feedBackApi } from '@/api'
 import { 
   ArrowLeft, 
@@ -368,6 +440,117 @@ const selectedSize = ref(null)
 const quantity = ref(500)
 const loading = ref(true)
 const toast = ref({ show: false, message: '', type: 'success' })
+
+// ═══════════════════════════════════════════════════════════════
+// ✅ NEW — Flow 2: lid compatibility
+//
+// When the current product is a lid, we fetch the full cup catalog
+// once and compute which cup products fit the selected rim size.
+// Matching is by rimDiameter — pure data, no stored relationships.
+// ═══════════════════════════════════════════════════════════════
+
+const isLid = computed(() => product.value?.category === 'Lids')
+
+// Human-friendly lid type labels
+const LID_TYPE_LABELS = {
+  'flat-straw-slot': { label: 'Flat Lid with Straw Slot', short: 'Flat Lid' },
+  'dome-hole':       { label: 'Dome Lid with Hole',       short: 'Dome Lid' },
+  'sip-raised':      { label: 'Sip Lid (Raised Sip-Through)', short: 'Sip Lid' },
+  'conjoined-hard':  { label: 'Conjoined Hard Lid',       short: 'Conjoined Lid' },
+  'pp-injection':    { label: 'PP Injection Lid',         short: 'Injection Lid' },
+  'traveler':        { label: 'Traveler Sip-Through Lid', short: 'Traveler Lid' },
+}
+
+const lidTypeLabel = computed(() => {
+  const key = product.value?.subcategory
+  if (!key) return ''
+  return LID_TYPE_LABELS[key]?.label || key
+})
+
+const lidTypeShort = computed(() => {
+  const key = product.value?.subcategory
+  if (!key) return ''
+  return LID_TYPE_LABELS[key]?.short || key
+})
+
+// ═══════════════════════════════════════════════════════════════
+// Flow 2 + Flow 3 compatibility
+//
+// We fetch the FULL catalog once, then derive:
+//   • compatibleCups   (when viewing a LID  → show which cups fit)
+//   • compatibleLids   (when viewing a CUP  → show which lids fit)
+// Matching is by rimDiameter — pure data, no stored relationships.
+// ═══════════════════════════════════════════════════════════════
+
+const allProducts = ref([])
+const loadingCatalog = ref(false)
+
+async function loadCatalogForCompatibility() {
+  if (allProducts.value.length > 0) return
+  if (loadingCatalog.value) return
+
+  loadingCatalog.value = true
+  try {
+    const res = await productsApi.getAllProducts()
+    if (res.success && res.data) {
+      allProducts.value = res.data
+    }
+  } catch (err) {
+    console.error('Failed to load product catalog:', err)
+  } finally {
+    loadingCatalog.value = false
+  }
+}
+
+// ── When viewing a LID: which cups fit? ──
+const compatibleCups = computed(() => {
+  if (!isLid.value) return []
+  const rim = selectedSize.value?.rimDiameter
+  if (!rim) return []
+
+  return allProducts.value
+    .filter((p) => ['Plastic Cups', 'Paper Cups'].includes(p.category))
+    .map((cup) => {
+      const matchingSizes = (cup.sizes || [])
+        .filter((s) => s.rimDiameter === rim)
+        .map((s) => s.name)
+      return matchingSizes.length ? { ...cup, matchingSizes } : null
+    })
+    .filter(Boolean)
+})
+
+// ── When viewing a CUP: which lids fit? ──
+// Each returned lid includes a `matchingSizes` array with only the
+// specific sizes whose rimDiameter equals the cup's rim.
+const compatibleLids = computed(() => {
+  if (!product.value || isLid.value) return []
+  const rim = selectedSize.value?.rimDiameter
+  if (!rim) return []
+
+  return allProducts.value
+    .filter((p) => p.category === 'Lids')
+    .map((lid) => {
+      const matchingSizes = (lid.sizes || [])
+        .filter((s) => s.rimDiameter === rim)
+      return matchingSizes.length ? { ...lid, matchingSizes } : null
+    })
+    .filter(Boolean)
+})
+
+// Trigger the catalog load once the product is known
+watch(
+  () => product.value,
+  (val) => {
+    if (val) loadCatalogForCompatibility()
+  },
+  { immediate: true },
+)
+
+// ── Flow 3 modal state ──
+const showLidsModal = ref(false)
+// 'add'   → cup was added to cart, modal offers lids to add too
+// 'order' → user clicked Order Now, modal offers lids before routing
+const pendingLidsAction = ref(null)
 
 // ─── Feedback State ──────────────────────────────────────────────────────
 const feedbacks = ref([])
@@ -478,22 +661,22 @@ function validateQuantity() {
 }
 
 function addToCart() {
-  // ... existing addToCart logic ...
   if (!selectedSize.value) {
     showToast('Please select a size', 'error')
     return
   }
-  
+
   if (selectedSize.value.stock === 0) {
     showToast('This size is out of stock', 'error')
     return
   }
-  
+
+  // ── Build the cup line (same math as before) ──
   const cart = JSON.parse(localStorage.getItem('customerCart') || '[]')
-  
+
   let unitPrice = selectedSize.value.price
   const qty = quantity.value
-  
+
   if (qty >= 5000 && selectedSize.value.bulkPrices?.[5000]) {
     unitPrice = selectedSize.value.bulkPrices[5000] / 5000
   } else if (qty >= 2000 && selectedSize.value.bulkPrices?.[2000]) {
@@ -503,13 +686,15 @@ function addToCart() {
   } else if (qty >= 500 && selectedSize.value.bulkPrices?.[500]) {
     unitPrice = selectedSize.value.bulkPrices[500] / 500
   }
-  
+
   const estimatedTotal = unitPrice * quantity.value
-  
+
   const existingItemIndex = cart.findIndex(
-    item => item.productId === product.value.id && item.size === selectedSize.value.name
+    (item) =>
+      item.productId === product.value.id &&
+      item.size === selectedSize.value.name,
   )
-  
+
   const cartItem = {
     productId: product.value.id,
     name: product.value.name,
@@ -520,61 +705,217 @@ function addToCart() {
     printPlacement: '',
     printSize: '',
     designNotes: '',
-    estimatedTotal: estimatedTotal,
+    estimatedTotal,
     sizes: product.value.sizes,
     minOrder: product.value.minOrder,
-    unitPrice: unitPrice
+    unitPrice,
+    rimDiameter: selectedSize.value.rimDiameter ?? null,
+    itemType: isLid.value ? 'lid' : 'cup',
   }
-  
+
   if (existingItemIndex !== -1) {
     cart[existingItemIndex] = cartItem
   } else {
     cart.push(cartItem)
   }
-  
+
   localStorage.setItem('customerCart', JSON.stringify(cart))
+
+  // ── ✅ Flow 3: offer compatible lids before confirming ──
+  if (
+    !isLid.value &&
+    selectedSize.value.rimDiameter &&
+    compatibleLids.value.length > 0
+  ) {
+    pendingLidsAction.value = 'add'
+    showLidsModal.value = true
+    return
+  }
+
   showToast(`${product.value.name} (${selectedSize.value.name}) added to cart!`, 'success')
 }
 
 function orderNow() {
-  // ... existing orderNow logic ...
   const token = localStorage.getItem('customerToken')
   if (!token) {
     showToast('Please login to place an order', 'error')
     setTimeout(() => router.push('/customer/login'), 1500)
     return
   }
-  
+
   if (!selectedSize.value) {
     showToast('Please select a size', 'error')
     return
   }
-  
+
+  // ── ✅ Flow 3: offer compatible lids first ──
+  if (
+    !isLid.value &&
+    selectedSize.value.rimDiameter &&
+    compatibleLids.value.length > 0
+  ) {
+    pendingLidsAction.value = 'order'
+    showLidsModal.value = true
+    return
+  }
+
+  // No compatible lids → go straight to the wizard (original path)
+  navigateToWizardDirect([])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Flow 3 — route to the wizard with the cup + optional extra lids.
+//
+//   • extraItems is EMPTY   → identical to the original orderNow path
+//                             (product-detail query params).
+//   • extraItems has lids   → switch to cart mode so the wizard reads
+//                             everything from sessionStorage's
+//                             pendingCart (which already supports
+//                             multiple lines).
+// ─────────────────────────────────────────────────────────────
+function navigateToWizardDirect(extraItems = []) {
+  // ── Mode A: cup only (original single-product flow) ──
+  if (extraItems.length === 0) {
+    router.push({
+      path: '/customer/orders/create',
+      query: {
+        type: 'company-product',
+        source: 'product-detail',
+        productId: product.value.id,
+        productName: product.value.name,
+        productImage: product.value.image || '',
+        productCategory: product.value.category || '',
+        minOrder: product.value.minOrder || 500,
+        size: selectedSize.value.name || selectedSize.value,
+        sizePrice: selectedSize.value.price || '',
+        sizeStock: selectedSize.value.stock || '',
+        quantity: quantity.value,
+        itemType: isLid.value ? 'lid' : 'cup',
+        productData: JSON.stringify({
+          id: product.value.id,
+          name: product.value.name,
+          image: product.value.image,
+          category: product.value.category,
+          subcategory: product.value.subcategory || '',
+          minOrder: product.value.minOrder,
+          sizes: product.value.sizes,
+          description: product.value.description || '',
+        }),
+      },
+    })
+    return
+  }
+
+  // ── Mode B: cup + selected lids → multi-item via sessionStorage ──
+  const cupItem = {
+    productId: product.value.id,
+    name: product.value.name,
+    image: product.value.image,
+    category: product.value.category,
+    size: selectedSize.value.name,
+    quantity: quantity.value,
+    estimatedTotal: getTotalPrice(),
+    sizes: product.value.sizes,
+    minOrder: product.value.minOrder,
+    unitPrice: getUnitPrice(),
+    rimDiameter: selectedSize.value.rimDiameter ?? null,
+    itemType: isLid.value ? 'lid' : 'cup',
+  }
+
+  const lidItems = extraItems.map((l) => ({
+    productId: l.productId,
+    name: l.productName,
+    image: l.productImage,
+    category: l.category,
+    size: l.sizeName,
+    quantity: l.quantity,
+    estimatedTotal: l.lineTotal,
+    sizes: [],
+    minOrder: 500,
+    unitPrice: l.unitPrice,
+    rimDiameter: l.rimDiameter,
+    itemType: 'lid',
+    pairedWith: product.value.name,
+  }))
+
+  sessionStorage.setItem('pendingCart', JSON.stringify([cupItem, ...lidItems]))
+
   router.push({
     path: '/customer/orders/create',
-    query: {
-      type: 'company-product',
-      source: 'product-detail',
-      productId: product.value.id,
-      productName: product.value.name,
-      productImage: product.value.image || '',
-      productCategory: product.value.category || '',
-      minOrder: product.value.minOrder || 500,
-      size: selectedSize.value.name || selectedSize.value,
-      sizePrice: selectedSize.value.price || '',
-      sizeStock: selectedSize.value.stock || '',
-      quantity: quantity.value,
-      productData: JSON.stringify({
-        id: product.value.id,
-        name: product.value.name,
-        image: product.value.image,
-        category: product.value.category,
-        minOrder: product.value.minOrder,
-        sizes: product.value.sizes,
-        description: product.value.description || ''
+    query: { type: 'company-product', source: 'cart' },
+  })
+}
+
+// ─────────────────────────────────────────────────────────────
+// Flow 3 — modal handlers
+// ─────────────────────────────────────────────────────────────
+
+// Called when the user confirms and selected 1+ lids
+function handleLidsModalConfirm(selectedLids) {
+  showLidsModal.value = false
+  const action = pendingLidsAction.value
+  pendingLidsAction.value = null
+
+  if (action === 'add') {
+    // Append the selected lids to the cart
+    const cart = JSON.parse(localStorage.getItem('customerCart') || '[]')
+    for (const lid of selectedLids) {
+      cart.push({
+        productId: lid.productId,
+        name: lid.productName,
+        image: lid.productImage,
+        category: lid.category,
+        size: lid.sizeName,
+        quantity: lid.quantity,
+        printPlacement: '',
+        printSize: '',
+        designNotes: '',
+        designSource: 'upload',
+        files: [],
+        estimatedTotal: lid.lineTotal,
+        sizes: [],
+        minOrder: 500,
+        unitPrice: lid.unitPrice,
+        rimDiameter: lid.rimDiameter,
+        itemType: 'lid',
+        pairedWith: product.value.name,
+        createdAt: new Date().toISOString(),
       })
     }
-  })
+    localStorage.setItem('customerCart', JSON.stringify(cart))
+
+    const n = selectedLids.length
+    showToast(
+      `${product.value.name} + ${n} lid${n !== 1 ? 's' : ''} added to cart!`,
+      'success',
+    )
+    return
+  }
+
+  if (action === 'order') {
+    navigateToWizardDirect(selectedLids)
+  }
+}
+
+// Called when the user clicks "No thanks" or the X
+function handleLidsModalSkip() {
+  showLidsModal.value = false
+  const action = pendingLidsAction.value
+  pendingLidsAction.value = null
+
+  if (action === 'add') {
+    // Cup is already in the cart — just confirm
+    showToast(
+      `${product.value.name} (${selectedSize.value.name}) added to cart!`,
+      'success',
+    )
+    return
+  }
+
+  if (action === 'order') {
+    // Skip the lids and continue to the wizard with cup only
+    navigateToWizardDirect([])
+  }
 }
 
 // ─── FEEDBACK FUNCTIONS ──────────────────────────────────────────────

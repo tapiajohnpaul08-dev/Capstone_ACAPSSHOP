@@ -121,18 +121,6 @@
       </div>
     </div>
 
-    <!-- ── Footer ── -->
-    <div
-      class="shrink-0 px-4 sm:px-5 py-3 border-t bg-gray-50"
-      style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));"
-    >
-      <button
-        @click="$emit('clear')"
-        class="w-full py-2 rounded-lg text-xs font-semibold text-gray-600 border border-gray-200 bg-white hover:bg-gray-100 transition-colors"
-      >
-        Close Panel
-      </button>
-    </div>
   </div>
 </template>
 
