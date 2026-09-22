@@ -47,15 +47,16 @@
                   v-for="size in product.sizes"
                   :key="size.name"
                   @click="selectedSize = size"
-                  class="p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all"
+                  :disabled="size.stock < product.minOrder"
+                  class="p-2.5 sm:p-3 rounded-xl border-2 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   :class="selectedSize?.name === size.name
                     ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'"
+                    : 'border-gray-300 hover:border-gray-400'"
                 >
                   <div class="font-semibold">{{ size.name }}</div>
                   <div class="text-sm text-gray-600">₱{{ size.price.toLocaleString() }}/pc</div>
-                  <div class="text-xs" :class="size.stock > 500 ? 'text-green-600' : 'text-red-500'">
-                    {{ size.stock > 0 ? `${size.stock.toLocaleString()} in stock` : 'Out of stock' }}
+                  <div class="text-xs" :class="size.stock > product.minOrder ? 'text-green-600' : 'text-red-500'">
+                    {{ size.stock >= product.minOrder ? `` : 'Sold out' }}
                   </div>
                 </button>
               </div>
