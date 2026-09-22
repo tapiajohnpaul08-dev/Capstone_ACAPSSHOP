@@ -8,14 +8,9 @@
         Back to Products
       </button>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="text-center py-16">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
-        <p class="text-gray-500 mt-2">Loading product details...</p>
-      </div>
-
-      <!-- Product Detail -->
-      <div v-else-if="product" class="flex flex-col lg:flex-row gap-8">
+      <div v-if="product && !loading">
+              <!-- Product Detail -->
+      <div  class="flex flex-col lg:flex-row gap-8">
         <!-- Product Image -->
         <div class="lg:w-1/2">
           <div class="bg-white rounded-2xl border p-3 sm:p-6 lg:sticky lg:top-24">
@@ -323,9 +318,8 @@
           </div>
         </div>
       </div>
-
       <!-- ✅ FEEDBACK SECTION - Displayed below product -->
-      <div v-if="product && !loading" class="mt-8">
+      <div  class="mt-8">
         <div class="bg-white rounded-2xl border overflow-hidden">
           <!-- Feedback Header -->
           <div class="px-6 py-4 border-b bg-gray-50 flex items-center justify-between">
@@ -482,14 +476,30 @@
           </div>
         </div>
       </div>
+      </div>
 
-      <!-- Not Found -->
-      <div v-else class="text-center py-16">
+            <!-- Loading State -->
+      <div v-if="loading" class="text-center py-16">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+        <p class="text-gray-500 mt-2">Loading product details...</p>
+      </div>
+
+      <!-- Not Found — only when loading is DONE and there's no product -->
+      <div
+        v-if="!loading && !product"
+        class="text-center py-16"
+      >
         <Package class="w-16 h-16 mx-auto text-gray-300 mb-4" />
         <p class="text-gray-500">Product not found</p>
-        <button @click="router.push('/customer/dashboard')" class="mt-4 text-blue-600 hover:underline">Return to Shop</button>
+        <button
+          @click="router.push('/customer/dashboard')"
+          class="mt-4 text-blue-600 hover:underline"
+        >
+          Return to Shop
+        </button>
       </div>
     </div>
+    
     <!-- Toast -->
     <Teleport to="body">
       <transition name="toast">
