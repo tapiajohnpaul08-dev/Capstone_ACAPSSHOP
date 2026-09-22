@@ -7,9 +7,8 @@
       @bell-click="handleBell"
     />
     <main class="flex-1 min-h-0">
-      <router-view />
+        <router-view :key="$route.fullPath" />
     </main>
-    <!-- Hide footer on chat / immersive pages -->
     <Footer v-if="!hideFooter" />
   </div>
 </template>

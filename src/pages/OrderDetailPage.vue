@@ -21,9 +21,6 @@
             </span>
             <span class="text-[10px] text-gray-400">{{ formatDate(order.createdAt || order.date) }}</span>
 
-            <span v-if="order.isProvided" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-600">
-              Please bring your Item at {{ formatDateShort(order.fromCustomerToCompanyDeliveryDate) }}
-            </span>
           </div>
           <div class="flex items-center gap-3">
             <div class="text-right">
@@ -59,6 +56,28 @@
             <span class="text-gray-600 truncate">{{ order.driverDetails.driverName }}</span>
           </div>
         </div>
+      </div>
+
+      <div>
+                  <!-- ✅ Only show for own-cups orders waiting on the customer's drop-off -->
+    <div v-if="order.isProvided && order.dropOffStatus === 'Pending' && order.status !== 'Cancelled' "
+      class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-md mb-3"
+    >
+      <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600">
+          <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+          <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-amber-800 text-sm">Please bring your item on or before {{ formatDateShort(order.fromCustomerToCompanyDeliveryDate) }} </p>
+        <p class="text-xs text-amber-700 mt-0.5">
+          Your Order <strong>cannot</strong> be proceed to <strong>Scheduled</strong> without your item.
+        </p>
+      </div>
+    </div>
+
+         
       </div>
 
       <!-- Two Column Layout - Compact -->
@@ -728,6 +747,7 @@ import {
   ThumbsDown,
   Loader2,
   Image,   // ✅ NEW — for POD thumbnail label
+  HeartIcon
 } from 'lucide-vue-next'
 
 // ✅ Local toast helper that drives the FeedbackModal

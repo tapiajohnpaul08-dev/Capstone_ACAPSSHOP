@@ -192,6 +192,7 @@ export function useOrders() {
       designDetails: backendOrder.designDetails,
       expectedDelivery: backendOrder.expectedDelivery ? new Date(backendOrder.expectedDelivery).toLocaleDateString() : null,
       fromCustomerToCompanyDeliveryDate: backendOrder.fromCustomerToCompanyDeliveryDate || null,
+      dropOffStatus: backendOrder.dropOffStatus,
       preferredDate: backendOrder.preferredDate,
       preferredTime: backendOrder.preferredTime || '',
       productionSchedule: backendOrder.productionSchedule || null,

@@ -1,127 +1,104 @@
 {
-    "orderType": "company-product",
-    "selectedProduct": {
-        "id": "PRD-2026-560",
-        "name": "HARD CUPS",
-        "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916703/beverage/products/product-1785916701775-687209326.jpg",
-        "category": "Plastic Cups",
-        "minOrder": 500,
-        "sizes": [
-            {
-                "bulkPrices": {
-                    "500": 3425,
-                    "1000": 6850,
-                    "2000": 13700,
-                    "5000": 34250
-                },
-                "name": "16oz",
-                "price": 6.85,
-                "stock": 47000,
-                "_id": "6a72ed20854339361ebaefed"
-            },
-            {
-                "bulkPrices": {
-                    "500": 3675,
-                    "1000": 7350,
-                    "2000": 14700,
-                    "5000": 36750
-                },
-                "name": "22oz",
-                "price": 7.35,
-                "stock": 50000,
-                "_id": "6a72ed20854339361ebaefee"
-            },
-            {
-                "bulkPrices": {
-                    "500": 5000,
-                    "1000": 10000,
-                    "2000": 20000,
-                    "5000": 50000
-                },
-                "name": "1L",
-                "price": 10,
-                "stock": 50000,
-                "_id": "6a72ed20854339361ebaefef"
-            }
-        ],
-        "description": ""
-    },
-    "productType": "",
-    "quantity": 500,
-    "sizes": "1L",
-    "designSource": "",
-    "filesCount": 0,
-    "fulfillment": {
-        "method": "pickup",
-        "deliveryAddress": "",
-        "sameAsCustomer": false,
-        "preferredDate": "2026-09-17"
-    },
-    "paymentMethod": "cod",
-    "totalAmount": 5000,
-    "canSubmit": false,
-    "isSubmitting": false,
-    "validationHints": [],
-    "cartItems": [
+    "id": "ORD-2026-062-PROV",
+    "orderId": "ORD-2026-062-PROV",
+    "orderNumber": "ORD-2026-062-PROV",
+    "status": "Confirmed",
+    "statusValue": "confirmed",
+    "paymentStatus": "Partial",
+    "isProvided": true,
+    "supplyType": "Own Cups",
+    "hasDesign": true,
+    "deliveryMethod": "Delivery",
+    "totalAmount": 1000,
+    "designFee": 500,
+    "shippingFee": 500,
+    "partialPayments": [
         {
-            "productId": "PRD-2026-560",
-            "name": "HARD CUPS",
-            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916703/beverage/products/product-1785916701775-687209326.jpg",
-            "category": "Plastic Cups",
-            "size": "1L",
-            "quantity": 500,
-            "minOrder": 500,
-            "sizes": [
-                {
-                    "bulkPrices": {
-                        "500": 3425,
-                        "1000": 6850,
-                        "2000": 13700,
-                        "5000": 34250
-                    },
-                    "name": "16oz",
-                    "price": 6.85,
-                    "stock": 47000,
-                    "_id": "6a72ed20854339361ebaefed"
-                },
-                {
-                    "bulkPrices": {
-                        "500": 3675,
-                        "1000": 7350,
-                        "2000": 14700,
-                        "5000": 36750
-                    },
-                    "name": "22oz",
-                    "price": 7.35,
-                    "stock": 50000,
-                    "_id": "6a72ed20854339361ebaefee"
-                },
-                {
-                    "bulkPrices": {
-                        "500": 5000,
-                        "1000": 10000,
-                        "2000": 20000,
-                        "5000": 50000
-                    },
-                    "name": "1L",
-                    "price": 10,
-                    "stock": 50000,
-                    "_id": "6a72ed20854339361ebaefef"
-                }
-            ],
-            "unitPrice": 10
+            "amount": 500,
+            "referenceNumber": "1231231313132",
+            "date": "2026-09-22T10:43:32.815Z",
+            "updatedBy": "John Paul Tapia"
         }
     ],
-    "isCartOrder": false,
-    "hasDesign": false,
-    "customerInfo": {},
-    "deliveryAddress": "",
-    "preferredDate": "",
+    "quantity": 500,
+    "image": null,
+    "date": "9/22/2026",
+    "createdAt": "2026-09-22T10:41:31.948Z",
+    "items": [
+        {
+            "productId": null,
+            "name": "Tumbler",
+            "category": "Customer Provided",
+            "size": "1L",
+            "quantity": 500,
+            "estimatedTotal": 0,
+            "design": {
+                "source": "upload",
+                "printSize": "3x3",
+                "printPlacement": "Full-Wrap",
+                "designNotes": "",
+                "files": [
+                    {
+                        "name": "GEC-DC Q1.jpg",
+                        "size": 133899,
+                        "type": "image/jpeg",
+                        "path": "https://res.cloudinary.com/vwrxijez/image/upload/v1790073635/beverage/designs/design-1790073632528-918559390.jpg",
+                        "_id": "6ab25b5b06c4888425a93e02"
+                    }
+                ]
+            }
+        }
+    ],
+    "customerName": "Jear Hachero",
+    "customerEmail": "jearlangito@gmail.com",
+    "customerPhone": "+639709406573",
+    "address": "Purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Luzon, Philippines",
+    "postalCode": "3007",
+    "company": "ACAPS Trading",
+    "fulfillment": {
+        "deliveryAddress": "",
+        "sameAsCustomer": false
+    },
+    "designDetails": [
+        {
+            "designSource": "upload",
+            "printSize": "3x3",
+            "printPlacement": "Full-Wrap",
+            "designNotes": "",
+            "files": [
+                {
+                    "name": "GEC-DC Q1.jpg",
+                    "size": 133899,
+                    "type": "image/jpeg",
+                    "path": "https://res.cloudinary.com/vwrxijez/image/upload/v1790073635/beverage/designs/design-1790073632528-918559390.jpg",
+                    "_id": "6ab25b5b06c4888425a93e00"
+                }
+            ],
+            "imagePaths": [],
+            "_id": "6ab25b5b06c4888425a93dff"
+        }
+    ],
+    "expectedDelivery": "9/29/2026",
+    "fromCustomerToCompanyDeliveryDate": "2026-09-24T00:00:00.000Z",
+    "preferredDate": "2026-09-29T00:00:00.000Z",
     "preferredTime": "",
-    "ownCupsDeliveryDate": "",
-    "printSize": "",
-    "printPlacement": "",
-    "specifications": "",
-    "paymentDetails": {},
-    "shippingFee": 0
+    "productionSchedule": null,
+    "notes": "Individual Designs | Items: Tumbler",
+    "statusHistory": [
+        {
+            "status": "Pending",
+            "timestamp": "2026-09-22T10:41:31.939Z",
+            "notes": "Order created (customer provided items)",
+            "productionSchedule": "",
+            "updatedBy": "Customer"
+        },
+        {
+            "status": "Confirmed",
+            "timestamp": "2026-09-22T10:43:32.816Z",
+            "notes": "Downpayment verified — ₱500 via gcash (ref: 1231231313132)",
+            "productionSchedule": "",
+            "updatedBy": "John Paul Tapia"
+        }
+    ],
+    "proofOfDelivery": null
 }

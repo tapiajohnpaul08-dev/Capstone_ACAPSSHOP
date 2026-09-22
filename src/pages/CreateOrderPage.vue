@@ -855,11 +855,20 @@ const totalAmount = computed(() => {
 })
 
 // ─── VALIDATION ────────────────────────────────────────────────────────────
+// ✅ Safe trim helper — handles strings, arrays, objects, null without
+//    throwing. Anything that isn't a string is treated as "empty" so
+//    the validator prompts the user to re-enter the value rather than
+//    crashing the render.
+function safeTrim(value) {
+  if (typeof value === 'string') return value.trim()
+  return ''
+}
+
 const step0Errors = computed(() => {
   const errorsList = []
   if (isOwnCups.value) {
-    if (!orderProducts.value[0]?.productType?.trim()) errorsList.push('Product type is required')
-    if (!orderProducts.value[0]?.sizes?.trim()) errorsList.push('Cup size is required')
+    if (!safeTrim(orderProducts.value[0]?.productType)) errorsList.push('Product type is required')
+    if (!safeTrim(orderProducts.value[0]?.sizes)) errorsList.push('Cup size is required')
     if (!orderProducts.value[0]?.quantity || orderProducts.value[0]?.quantity < 500) {
       errorsList.push('Quantity must be at least 500 pcs')
     }
