@@ -62,6 +62,37 @@
           <p class="text-xs font-bold text-gray-400 uppercase tracking-wide">Order Details</p>
         </div>
 
+        <!-- ── Per-item breakdown (cart orders only) ─────────────── -->
+        <div v-if="hasMultipleItems" class="space-y-2">
+          <div
+            v-for="(item, idx) in order.items"
+            :key="idx"
+            class="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-sm font-semibold text-gray-900 truncate">
+                  {{ item.name || 'Item' }}
+                </p>
+                <p class="text-[11px] text-gray-500 truncate mt-0.5">
+                  {{ item.size || '—' }}
+                  <span v-if="item.rimDiameter"> · {{ item.rimDiameter }}mm</span>
+                </p>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <p class="text-sm font-bold text-gray-900">
+                  ₱{{ formatNumber(item.estimatedTotal || 0) }}
+                </p>
+                <p class="text-[10px] text-gray-400">
+                  {{ formatNumber(item.quantity || 0) }} pcs
+                  × ₱{{ formatUnitPrice(item) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Summary rows ──────────────────────────────────────── -->
         <div class="space-y-2 text-sm">
           <div class="flex items-center justify-between py-1.5 border-b border-gray-50">
             <span class="text-gray-500">Product Subtotal</span>
@@ -79,7 +110,7 @@
             <span class="text-gray-500">Delivery Method</span>
             <span class="font-semibold text-gray-900">{{ order.receivingMode || 'Pick-up' }}</span>
           </div>
-          <div v-if="order.quantity" class="flex items-center justify-between py-1.5">
+          <div v-if="!hasMultipleItems && order.quantity" class="flex items-center justify-between py-1.5">
             <span class="text-gray-500">Quantity</span>
             <span class="font-semibold text-gray-900">{{ formatNumber(order.quantity) }} pcs</span>
           </div>
@@ -124,12 +155,20 @@ import { computed } from 'vue'
 const props = defineProps({ order: { type: Object, required: true } })
 defineEmits(['clear'])
 
+// Cart orders (2+ items) get the per-item breakdown so the customer can
+// verify each line's price before accepting. Single-item orders keep the
+// old flat layout.
+const hasMultipleItems = computed(() => {
+  const items = props.order?.items
+  return Array.isArray(items) && items.length > 1
+})
+
 const productSubtotal = computed(() => {
   const o = props.order
   if (!o) return 0
   if (o.isProvided) return 0
   if (Array.isArray(o.items) && o.items.length > 0) {
-    return o.items.reduce((sum, it) => sum + (it.estimatedTotal || 0), 0)
+    return o.items.reduce((sum, it) => sum + (Number(it.estimatedTotal) || 0), 0)
   }
   return 0
 })
@@ -137,6 +176,18 @@ const productSubtotal = computed(() => {
 function formatNumber(n) {
   if (!n && n !== 0) return '0'
   return Number(n).toLocaleString()
+}
+
+// Effective unit price for a single line item. Derives from the total if
+// the backend didn't store an explicit unitPrice.
+function formatUnitPrice(item) {
+  const qty = Number(item?.quantity) || 0
+  const total = Number(item?.estimatedTotal) || 0
+  if (qty <= 0) return '0'
+  return (total / qty).toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 function statusBadgeClass(status) {

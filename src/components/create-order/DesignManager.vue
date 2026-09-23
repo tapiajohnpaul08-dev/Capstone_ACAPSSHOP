@@ -340,22 +340,22 @@ function showFeedback(title, message, status = 'success') {
 
 async function uploadFilesToCloudinary(files) {
   if (!files || files.length === 0) return null
-  
+
   uploading.value = true
   uploadProgress.value = 0
-  
+
   try {
     const formData = new FormData()
     files.forEach(file => {
       formData.append('files', file)
     })
-    
+
     const response = await ordersApi.uploadDesignFiles(formData)
     console.log('📤 Cloudinary upload response:', response)
-    
+
     if (response.success && response.files) {
       uploadProgress.value = 100
-      
+
       // Map the response to our file format
       const uploadedFiles = response.files.map(file => ({
         name: file.name,
@@ -365,12 +365,17 @@ async function uploadFilesToCloudinary(files) {
         url: file.url || file.path,  // Cloudinary URL
         public_id: file.public_id
       }))
-      
-      uploadedFilesData.value = uploadedFiles
-      
-      // Emit the update with Cloudinary URLs
-      emitDesignUpdate()
-      
+
+      // ✅ APPEND instead of overwrite — keeps previously-uploaded files
+      // intact so the customer can add design files incrementally.
+      uploadedFilesData.value = [...uploadedFilesData.value, ...uploadedFiles]
+
+      // NOTE: we do NOT call emitDesignUpdate() here — the deep watcher
+      // below already fires when uploadedFilesData changes, and calling
+      // both produces duplicate emissions that make the parent render
+      // stale + fresh data in the same frame (visible as "duplicated
+      // image" in the preview list).
+
       return uploadedFiles
     } else {
       showFeedback('Upload Failed', response.message || 'Failed to upload files', 'error')
@@ -386,39 +391,6 @@ async function uploadFilesToCloudinary(files) {
   }
 }
 
-// Helper to emit design update with Cloudinary data
-function emitDesignUpdate() {
-  const files = uploadedFilesData.value.length > 0 ? uploadedFilesData.value : rawFiles.value
-  
-  const selectedTemp = selectedTemplateId.value ? templates.value.find(t => t.id === selectedTemplateId.value) : null
-  
-  const designData = {
-    designSource: designSource.value,
-    files: files.map(f => ({
-      name: f.name || '',
-      size: f.size || 0,
-      type: f.type || '',
-      path: f.path || f.url || '',
-      url: f.url || f.path || '',
-      public_id: f.public_id || ''
-    })),
-    designNotes: localDesignNotes.value,
-    printSize: localPrintSize.value,
-    printPlacement: localPrintPlacement.value,
-    selectedTemplateId: selectedTemplateId.value,
-    selectedTemplate: selectedTemp ? {
-      id: selectedTemp.id,
-      name: selectedTemp.name,
-      thumbnail: selectedTemp.thumbnail,
-      imagePath: selectedTemp.imagePath,
-      printSize: selectedTemp.printSize,
-      placement: selectedTemp.placement,
-      notes: selectedTemp.notes
-    } : null
-  }
-  emit('update:modelValue', designData)
-  emit('design-changed', designData)
-}
 
 // Watch for changes and emit with proper file data
 watch([designSource, rawFiles, uploadedFilesData, localDesignNotes, localPrintSize, localPrintPlacement, selectedTemplateId], () => {
@@ -454,10 +426,15 @@ function setDesignSource(source) {
   // ✅ When switching to upload, clear selected template
   if (source === 'upload') {
     selectedTemplateId.value = null
-    // Clear any template data
+    // Prefer the Cloudinary-uploaded array when it has entries — falls
+    // back to raw files while an upload is still in flight.
+    const files = uploadedFilesData.value.length > 0
+      ? uploadedFilesData.value
+      : rawFiles.value
+
     const designData = {
       designSource: 'upload',
-      files: rawFiles.value.length > 0 ? rawFiles.value : uploadedFilesData.value,
+      files,
       designNotes: localDesignNotes.value,
       printSize: localPrintSize.value,
       printPlacement: localPrintPlacement.value,
@@ -509,25 +486,24 @@ async function handleFileSelect(e) {
     e.target.value = ''
     return
   }
-  
-  // Store raw files
-  rawFiles.value = newFiles
-  
-  // Upload to Cloudinary
-  const uploaded = await uploadFilesToCloudinary(newFiles)
-  
-  
-  
+
+  // ✅ APPEND to rawFiles so previously-picked files stay listed while
+  // the new batch uploads.
+  rawFiles.value = [...rawFiles.value, ...newFiles]
+
+  // Upload only the NEW files
+  await uploadFilesToCloudinary(newFiles)
+
   e.target.value = ''
 }
-
 async function handleDrop(e) {
   dragging.value = false
   const newFiles = [...e.dataTransfer.files]
   if (!validateFiles(newFiles)) return
-  
-  rawFiles.value = newFiles
-  
+
+  // ✅ APPEND instead of replace
+  rawFiles.value = [...rawFiles.value, ...newFiles]
+
   const uploaded = await uploadFilesToCloudinary(newFiles)
   if (uploaded && uploaded.length > 0) {
     showFeedback('Upload Complete', `${uploaded.length} file(s) uploaded successfully`, 'success')
@@ -535,9 +511,16 @@ async function handleDrop(e) {
 }
 
 function removeFile(index) {
-  // Remove from both arrays
-  rawFiles.value.splice(index, 1)
-  uploadedFilesData.value.splice(index, 1)
+  // Both arrays stay aligned because every successful upload appends to
+  // rawFiles AND uploadedFilesData at the same index. But if the file
+  // is still pending (upload hasn't finished), only rawFiles has an
+  // entry — so guard each removal by length.
+  if (index < rawFiles.value.length) {
+    rawFiles.value.splice(index, 1)
+  }
+  if (index < uploadedFilesData.value.length) {
+    uploadedFilesData.value.splice(index, 1)
+  }
 }
 
 function handleImageError(e) {

@@ -98,7 +98,6 @@ export function useOrders() {
     try {
       const response = await ordersApi.toggleReceivedStatus(orderId, received, user)
       if (response.success) {
-        // Update local orders list
         const index = orders.value.findIndex(o => o.id === orderId || o.orderId === orderId)
         if (index !== -1) {
           orders.value[index].received = received
@@ -110,6 +109,30 @@ export function useOrders() {
     }
     catch(err) {
       return { success: false, message: err.message }
+    }
+  }
+
+  // ✅ NEW — update an existing order (status-aware on the backend).
+  // Only sends the fields the caller put in `updates`; the backend
+  // rejects anything not allowed for the current status.
+  const updateOrder = async (orderId, updates) => {
+    loading.value = true
+    try {
+      const response = await ordersApi.updateMyOrder(orderId, updates)
+      if (response.success && response.data) {
+        // Patch the local copy so any list view stays in sync
+        const transformed = transformOrderToFrontend(response.data)
+        const index = orders.value.findIndex(
+          (o) => o.id === orderId || o.orderId === orderId,
+        )
+        if (index !== -1) orders.value[index] = transformed
+        return { success: true, order: transformed }
+      }
+      return { success: false, message: response.message || 'Update failed' }
+    } catch (err) {
+      return { success: false, message: err.message }
+    } finally {
+      loading.value = false
     }
   }
 
@@ -182,12 +205,18 @@ export function useOrders() {
       originalExpectedDelivery,
       statusValue: statusMap[backendOrder.status?.toLowerCase()] || 'pending',
       paymentStatus: backendOrder.paymentStatus,
-      isProvided: backendOrder.isProvided, // ← ADD THIS LINE
+      isProvided: backendOrder.isProvided,
       supplyType: backendOrder.isProvided ? 'Own Cups' : 'Company Cups',
       hasDesign: backendOrder.hasDesign,
+
+      // ✅ NEW — keep the raw receiving mode, separate from the display-
+      // level deliveryMethod so editability checks (address only for
+      // Delivery) match what the backend actually stores.
+      receivingMode: backendOrder.receivingMode || 'Pick-up',
       deliveryMethod: backendOrder.receivingMode || 'Delivery',
+
       totalAmount: backendOrder.amount || backendOrder.totalAmount || 0,
-      designFee: backendOrder.designFee,  
+      designFee: backendOrder.designFee,
       shippingFee: backendOrder.shippingFee || 0,
       partialPayments: backendOrder.partialPayments || [],
       product: backendOrder.productName,
@@ -208,15 +237,28 @@ export function useOrders() {
         deliveryAddress: backendOrder.address
       },
       designDetails: backendOrder.designDetails,
+
+      // Formatted (for display)
       expectedDelivery: backendOrder.expectedDelivery ? new Date(backendOrder.expectedDelivery).toLocaleDateString() : null,
+      // ✅ NEW — raw ISO YYYY-MM-DD value for <input type="date">
+      expectedDeliveryRaw: backendOrder.expectedDelivery
+        ? new Date(backendOrder.expectedDelivery).toISOString().slice(0, 10)
+        : '',
+
       fromCustomerToCompanyDeliveryDate: backendOrder.fromCustomerToCompanyDeliveryDate || null,
       dropOffStatus: backendOrder.dropOffStatus,
+
+      // ✅ NEW — raw ISO for <input type="date">
       preferredDate: backendOrder.preferredDate,
+      preferredDateRaw: backendOrder.preferredDate
+        ? new Date(backendOrder.preferredDate).toISOString().slice(0, 10)
+        : '',
+
       preferredTime: backendOrder.preferredTime || '',
       productionSchedule: backendOrder.productionSchedule || null,
       notes: backendOrder.notes || '',
       statusHistory: backendOrder.statusHistory,
-      proofOfDelivery: backendOrder.proofOfDelivery
+      proofOfDelivery: backendOrder.proofOfDelivery,
     }
   }
 
@@ -228,6 +270,8 @@ export function useOrders() {
     fetchOrder,
     cancelOrder,
     submitOrder,
-    toggleReceivedStatus
+    toggleReceivedStatus,
+        updateOrder,          // ✅ NEW
+
   }
 }

@@ -420,7 +420,7 @@ export const chatApi = {
     
     return handleResponse(
       axiosInstance.post('/chat/customer/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        // headers: { 'Content-Type': 'multipart/form-data' }
       })
     )
   },
@@ -484,7 +484,7 @@ export const templatesApi = {
     
     return handleResponse(
       axiosInstance.post('/customer/templates', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        // headers: { 'Content-Type': 'multipart/form-data' }
       })
     );
   },
@@ -502,7 +502,7 @@ export const templatesApi = {
     
     return handleResponse(
       axiosInstance.put(`/customer/templates/${templateId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        // headers: { 'Content-Type': 'multipart/form-data' }
       })
     );
   },
@@ -526,7 +526,7 @@ export const templatesApi = {
     
     return handleResponse(
       axiosInstance.post('/customer/templates/save-from-order', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        // headers: { 'Content-Type': 'multipart/form-data' }
       })
     );
   }

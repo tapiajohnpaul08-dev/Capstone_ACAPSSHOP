@@ -518,6 +518,30 @@
     </div>
   </div>
 
+  <!-- ────── Full-page drop overlay (only while dragging a file) ────── -->
+  <Teleport to="body">
+    <Transition name="fade">
+      <div
+        v-if="isDraggingFile"
+        class="fixed inset-0 z-[150] flex items-center justify-center pointer-events-none"
+        style="background: rgba(37, 99, 235, 0.08); backdrop-filter: blur(2px);"
+      >
+        <div class="border-4 border-dashed border-blue-500 rounded-3xl px-10 py-8 bg-white/95 shadow-2xl">
+          <div class="flex flex-col items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="1.5" class="text-blue-600">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p class="text-lg font-bold text-blue-700">Drop to attach</p>
+            <p class="text-xs text-gray-500">Files will be added to your reply</p>
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
+
   <!-- ────── Payment Proof Upload Modal ────── -->
   <Teleport to="body">
     <div v-if="showProofModal"
@@ -540,12 +564,46 @@
             </p>
           </div>
 
-          <!-- Reference number -->
+          <!-- Reference number — validated per payment method -->
           <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1">Reference Number</label>
-            <input v-model="proofReference" type="number"
-              class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. 1234567890" />
+            <label class="block text-xs font-semibold text-gray-600 mb-1">
+              Reference Number <span class="text-red-500">*</span>
+            </label>
+            <input
+              :value="proofReference"
+              type="text"
+              :inputmode="referenceInputMode"
+              :maxlength="referenceMaxLength"
+              :placeholder="referencePlaceholder"
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full px-3 py-2 border rounded-lg text-sm font-mono tracking-wide focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+              :class="{
+                'border-red-400 ring-1 ring-red-300': referenceTouched && !isReferenceValid,
+                'border-green-400 ring-1 ring-green-300': referenceTouched && isReferenceValid,
+                'border-gray-300': !referenceTouched,
+              }"
+              @input="handleReferenceInput"
+              @blur="referenceTouched = true"
+            />
+            <p
+              v-if="!referenceTouched || !proofReference"
+              class="text-[10px] text-gray-500 mt-1"
+            >
+              {{ referenceHint }}
+            </p>
+            <p
+              v-else-if="isReferenceValid"
+              class="text-[10px] text-green-600 mt-1 flex items-center gap-1"
+            >
+              ✓ Valid reference number
+            </p>
+            <p
+              v-else
+              class="text-[10px] text-red-500 mt-1 flex items-center gap-1"
+            >
+              {{ referenceError }}
+            </p>
           </div>
 
           <!-- Image picker -->
@@ -577,7 +635,7 @@
             class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
             Cancel
           </button>
-          <button type="button" @click="submitPaymentProof" :disabled="!proofFile || isSubmittingProof"
+          <button type="button" @click="submitPaymentProof" :disabled="!proofFile || isSubmittingProof || !isReferenceValid"
             class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
             <svg v-if="isSubmittingProof" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
               fill="none" viewBox="0 0 24 24">
@@ -624,6 +682,19 @@ const messagesContainer = ref(null)
 const fileInput = ref(null)
 const newMessage = ref('')
 
+// Whole-page drag-to-attach state. The window listeners are registered
+// in onMounted and torn down in onUnmounted, so this only activates
+// while the user is actually on the Messages page.
+const isDraggingFile = ref(false)
+let pageDragDepth = 0
+
+// Drag-to-attach state — scoped to the composer only.
+// No window listeners: dragging anywhere else on the page is a no-op.
+const isComposerDragOver = ref(false)
+// Track nested dragenter/dragleave so child elements don't flicker
+// the overlay on/off as the cursor crosses them.
+let composerDragDepth = 0
+
 // ✅ Mobile view switcher: 'list' | 'chat'
 // Desktop ignores this and shows both side by side
 const mobileView = ref('list')
@@ -660,6 +731,9 @@ const proofPreview = ref('')
 const proofNote = ref('')
 const isSubmittingProof = ref(false)
 const proofFileInput = ref(null)
+
+// ✅ Reference-number validation state
+const referenceTouched = ref(false)
 
 // ── Persistence across navigation ───────────────────
 const ORDER_STORAGE_KEY = 'selectedNegotiationOrderId'
@@ -773,9 +847,14 @@ function openFileSelector() {
   fileInput.value?.click()
 }
 
-function handleFileSelect(event) {
-  const files = Array.from(event.target.files)
+// ── Shared file collector ──────────────────────────
+// Both the file picker and the whole-page drop handler funnel through
+// here so they enforce the same size limit and produce the same shape.
+function addFiles(fileList) {
   const MAX_SIZE = 10 * 1024 * 1024
+  const files = Array.from(fileList || [])
+  let added = 0
+
   for (const file of files) {
     if (file.size > MAX_SIZE) {
       showToast('error', `${file.name} exceeds 10MB limit`)
@@ -792,10 +871,93 @@ function handleFileSelect(event) {
       fileData.previewUrl = URL.createObjectURL(file)
     }
     pendingAttachments.value.push(fileData)
+    added++
   }
+
+  return added
+}
+
+function handleFileSelect(event) {
+  addFiles(event.target.files)
   event.target.value = ''
 }
 
+// ── Whole-page drag-to-attach ─────────────────────
+// Only respond when the drag carries actual files. This prevents
+// hijacking text drag-and-drop (selecting text and dragging it around
+// stays native).
+
+function _dragHasFiles(e) {
+  const types = e.dataTransfer?.types
+  if (!types) return false
+  // DataTransfer.types is a DOMStringList in older browsers and an
+  // array in modern ones. `.includes` works on both, `.indexOf` too.
+  return typeof types.includes === 'function'
+    ? types.includes('Files')
+    : Array.from(types).includes('Files')
+}
+
+// Guard: don't hijack drags when a modal is open (the payment proof
+// upload modal has its own image picker; a page-wide drop would be
+// confusing there).
+function _shouldHandleDrop() {
+  if (showProofModal.value) return false
+  // Only relevant when there's an active conversation to attach to
+  if (!conversationId.value) return false
+  return true
+}
+
+function onPageDragEnter(e) {
+  if (!_dragHasFiles(e)) return
+  if (!_shouldHandleDrop()) return
+  e.preventDefault()
+  pageDragDepth++
+  if (pageDragDepth === 1) isDraggingFile.value = true
+}
+
+function onPageDragOver(e) {
+  if (!_dragHasFiles(e)) return
+  if (!_shouldHandleDrop()) return
+  e.preventDefault()
+  // Tell the OS we're accepting the drop
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
+}
+
+function onPageDragLeave(e) {
+  if (!_dragHasFiles(e)) return
+  if (!_shouldHandleDrop()) return
+  e.preventDefault()
+  // Dragging over a child element fires dragleave for the parent, so
+  // count up/down instead of toggling the flag directly.
+  pageDragDepth = Math.max(0, pageDragDepth - 1)
+  if (pageDragDepth === 0) {
+    isDraggingFile.value = false
+  }
+}
+
+function onPageDrop(e) {
+  if (!_dragHasFiles(e)) return
+  if (!_shouldHandleDrop()) return
+  e.preventDefault()
+  pageDragDepth = 0
+  isDraggingFile.value = false
+
+  const files = e.dataTransfer?.files
+  if (!files || files.length === 0) return
+
+  const added = addFiles(files)
+  if (added > 0) {
+    showToast(
+      'success',
+      added === 1 ? 'File attached' : `${added} files attached`,
+    )
+    // Bring the composer into view in case the user is scrolled up
+    nextTick(() => {
+      const composer = fileInput.value?.closest('.border-t')
+      if (composer) composer.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    })
+  }
+}
 function removeAttachment(index) {
   if (pendingAttachments.value[index]?.previewUrl) {
     URL.revokeObjectURL(pendingAttachments.value[index].previewUrl)
@@ -979,6 +1141,132 @@ const reopenNegotiationPanel = () => {
   saveSelectedOrderId(order.orderId)
 }
 
+// ── Reference-number validation (method-aware) ──────
+// The admin sets the method (gcash | bank_transfer) on the payment
+// request message. We read it from the currently-selected request and
+// apply the matching rule:
+//   • gcash         → exactly 13 digits
+//   • bank_transfer → exactly 18 alphanumeric characters
+const paymentMethod = computed(() => {
+  return selectedPaymentRequest.value?.paymentRequestData?.method || 'gcash'
+})
+
+const isBankTransfer = computed(() => paymentMethod.value === 'bank_transfer')
+
+// Hard cap on raw input length. GCash is exactly 13 digits. Bank
+// references can contain up to ~6 separators on top of the 18-char
+// core, so 26 gives plenty of headroom — the sanitizer does the real
+// truncation against the 18-char core.
+const referenceMaxLength = computed(() => (isBankTransfer.value ? 26 : 13))
+const referenceInputMode = computed(() =>
+  isBankTransfer.value ? 'text' : 'numeric',
+)
+
+const referencePlaceholder = computed(() =>
+  isBankTransfer.value
+    ? 'e.g. 1234-5678-9012-3456-78'
+    : 'e.g. 1234567890123',
+)
+
+const referenceHint = computed(() =>
+  isBankTransfer.value
+    ? 'Exactly 18 alphanumeric characters — hyphens and spaces are allowed'
+    : 'Exactly 13 digits',
+)
+
+// Strip separators (hyphen, space, dot) and uppercase before validation.
+// Bank references are commonly written as "1234-5678-9012-3456-78" or
+// "1234 5678 9012 3456 78" — we want to accept both, so the length
+// check runs against the sanitized 18-character core.
+function normalizeReference(raw) {
+  return String(raw || '').replace(/[\s\-\.]/g, '').toUpperCase()
+}
+
+// Full-string validator. Anchored so nothing sneaks in at the edges.
+const isReferenceValid = computed(() => {
+  const val = proofReference.value || ''
+  if (isBankTransfer.value) {
+    return /^[A-Za-z0-9]{18}$/.test(normalizeReference(val))
+  }
+  return /^\d{13}$/.test(val)
+})
+
+// Human-readable error that explains what's still missing.
+const referenceError = computed(() => {
+  const val = proofReference.value || ''
+
+  if (!val) return 'Reference number is required'
+
+  if (isBankTransfer.value) {
+    const core = normalizeReference(val)
+    if (core.length < 18) {
+      const remaining = 18 - core.length
+      return `Needs ${remaining} more character${remaining === 1 ? '' : 's'} (${core.length}/18)`
+    }
+    if (core.length > 18) {
+      return 'Must be exactly 18 alphanumeric characters (separators not counted)'
+    }
+    if (!/^[A-Za-z0-9]+$/.test(core)) {
+      return 'Letters and numbers only — hyphens and spaces are allowed'
+    }
+    return ''
+  }
+
+  // GCash
+  if (val.length < 13) {
+    const remaining = 13 - val.length
+    return `Needs ${remaining} more digit${remaining === 1 ? '' : 's'} (${val.length}/13)`
+  }
+  if (val.length > 13) {
+    return 'Must be exactly 13 digits'
+  }
+  if (!/^\d+$/.test(val)) {
+    return 'Numbers only — no letters or symbols'
+  }
+  return ''
+})
+
+// Sanitize on every keystroke so the customer can't type an invalid
+// character, but ALLOW hyphens / spaces / dots for bank references
+// since real BDO receipts include them.
+//   • GCash         → strip anything that isn't a digit (13 max)
+//   • Bank transfer → allow letters, digits, and the three separators.
+//                     Length is measured AFTER stripping separators,
+//                     so "1234-5678-9012-3456-78" (18 digits + 4
+//                     hyphens) is accepted exactly like the plain
+//                     18-character form.
+function handleReferenceInput(e) {
+  let val = e.target.value || ''
+
+  if (isBankTransfer.value) {
+    // 1. Keep only letters, digits, and our three allowed separators
+    val = val.replace(/[^A-Za-z0-9\s\-\.]/g, '').toUpperCase()
+    // 2. Collapse runs of the same separator to a single char so
+    //    "12--34" doesn't look sloppy
+    val = val.replace(/([\s\-\.])\1+/g, '$1')
+    // 3. Truncate: max 18 core characters, plus up to ~6 separators
+    //    for readability (18 + 4 = 22 is realistic; 24 gives slack)
+    const coreChars = val.replace(/[\s\-\.]/g, '')
+    if (coreChars.length > 18) {
+      // Trim from the end until the core is back at 18
+      while (val.replace(/[\s\-\.]/g, '').length > 18) {
+        val = val.slice(0, -1)
+      }
+    }
+    if (val.length > 26) val = val.slice(0, 26)
+  } else {
+    val = val.replace(/\D/g, '').slice(0, 13)
+  }
+
+  proofReference.value = val
+  // Sync the DOM element too in case the sanitizer removed characters
+  // (e.g. user pasted "1234/5678" → we want the field to show the
+  // sanitized value, not the original).
+  if (e.target.value !== val) {
+    e.target.value = val
+  }
+}
+
 // ── Payment proof upload ────────────────────────────
 function openPaymentProofModal(msg) {
   selectedPaymentRequest.value = msg
@@ -986,6 +1274,7 @@ function openPaymentProofModal(msg) {
   proofFile.value = null
   proofPreview.value = ''
   proofNote.value = ''
+  referenceTouched.value = false
   showProofModal.value = true
 }
 
@@ -1009,6 +1298,18 @@ async function submitPaymentProof() {
     return
   }
 
+  // ✅ Mark the reference field as touched so any pending error renders
+  //    even if the customer never blurred the input.
+  referenceTouched.value = true
+
+  // ✅ Reject submission if the reference doesn't match the method's rule.
+  //    The submit button is already disabled in that case, but this
+  //    guard also covers Enter-key submits and programmatic calls.
+  if (!isReferenceValid.value) {
+    showToast('error', referenceError.value || 'Invalid reference number')
+    return
+  }
+
   isSubmittingProof.value = true
   try {
     // 1. Upload image to Cloudinary via existing chat upload endpoint
@@ -1020,9 +1321,16 @@ async function submitPaymentProof() {
     const proofImageUrl = uploadResult.files[0].path || uploadResult.files[0].url
 
     // 2. Send payment proof
+    // Bank references often carry separators for readability. We
+    // normalize to the raw 18-character core before sending so the
+    // backend, admin panel, and receipts always see a consistent value.
+    const normalizedReference = isBankTransfer.value
+      ? normalizeReference(proofReference.value)
+      : (proofReference.value || '').trim()
+
     const res = await chatApi.sendPaymentProof(conversationId.value, {
       paymentRequestMessageId: selectedPaymentRequest.value.messageId,
-      referenceNumber: proofReference.value,
+      referenceNumber: normalizedReference,
       proofImageUrl,
       note: proofNote.value.trim(),
     })
@@ -1406,9 +1714,14 @@ watch(isSocketConnected, (connected) => {
     markAsRead(conversationId.value)
   }
 })
-
 // ── Lifecycle ───────────────────────────────────────
 onMounted(async () => {
+  // Whole-page drag-to-attach — active only while Messages page is mounted
+  window.addEventListener('dragenter', onPageDragEnter)
+  window.addEventListener('dragover',  onPageDragOver)
+  window.addEventListener('dragleave', onPageDragLeave)
+  window.addEventListener('drop',      onPageDrop)
+
   if (token.value) {
     connectSocket(token.value, customerId.value, 'customer')
     setupSocketListeners()
@@ -1464,6 +1777,14 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (typingTimeoutId) clearTimeout(typingTimeoutId)
+
+  // Tear down the whole-page drop listeners so no other page inherits them
+  window.removeEventListener('dragenter', onPageDragEnter)
+  window.removeEventListener('dragover',  onPageDragOver)
+  window.removeEventListener('dragleave', onPageDragLeave)
+  window.removeEventListener('drop',      onPageDrop)
+  pageDragDepth = 0
+  isDraggingFile.value = false
 })
 </script>
 

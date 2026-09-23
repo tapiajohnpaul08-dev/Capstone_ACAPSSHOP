@@ -66,6 +66,145 @@
 
       <div>
         <!-- ═══════════════════════════════════════════════════════════
+             ✅ NEW — EDIT ORDER CARD (collapsible)
+             Only fields the current status allows are enabled. Locked
+             fields stay visible (greyed out) with a helper line so
+             the customer understands why.
+             ═══════════════════════════════════════════════════════════ -->
+        <div v-if="showEditForm" class="rounded-xl border-2 border-amber-300 bg-white overflow-hidden mb-3">
+          <!-- Header -->
+          <div class="px-4 py-2.5 bg-gradient-to-r from-amber-50 to-white border-b border-amber-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-amber-600">
+                <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+              </svg>
+              <h3 class="font-bold text-sm text-amber-900">Edit Order</h3>
+            </div>
+            <button
+              @click="closeEditForm"
+              :disabled="isSavingEdit"
+              class="p-1 rounded-lg text-amber-600 hover:bg-amber-100 transition-colors disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Info banner -->
+          <div class="px-4 py-2 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-800">
+            Order is <strong>{{ order.status }}</strong>.
+            <span v-if="editableFieldsLabel">You can still edit: {{ editableFieldsLabel }}.</span>
+            <span v-else>No fields are editable at this stage.</span>
+          </div>
+
+          <div class="px-4 py-3 space-y-3">
+
+            <!-- Delivery method (Pending only) -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Delivery Method</label>
+              <select
+                v-model="editForm.receivingMode"
+                :disabled="!canEdit('receivingMode') || isSavingEdit"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <option value="Pick-up">Pick-up</option>
+                <option value="Delivery">Delivery</option>
+              </select>
+              <p v-if="!canEdit('receivingMode')" class="text-[10px] text-gray-400 mt-0.5">
+                Locked after the order is confirmed.
+              </p>
+            </div>
+
+            <!-- Delivery address (Delivery orders only) -->
+            <div v-if="order.receivingMode === 'Delivery'">
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Delivery Address</label>
+              <input
+                v-model="editForm.address"
+                type="text"
+                :disabled="!canEdit('address') || isSavingEdit"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                placeholder="Full delivery address"
+              />
+              <p v-if="!canEdit('address')" class="text-[10px] text-gray-400 mt-0.5">
+                Address cannot be changed at this stage.
+              </p>
+            </div>
+
+            <div v-if="order.receivingMode === 'Delivery'">
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Postal Code</label>
+              <input
+                v-model="editForm.postalCode"
+                type="text"
+                :disabled="!canEdit('postalCode') || isSavingEdit"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                placeholder="e.g., 1100"
+              />
+            </div>
+
+            <!-- Expected delivery (Pending + Confirmed) -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Expected Delivery</label>
+              <input
+                v-model="editForm.expectedDelivery"
+                type="date"
+                :disabled="!canEdit('expectedDelivery') || isSavingEdit"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+              />
+              <p v-if="!canEdit('expectedDelivery')" class="text-[10px] text-gray-400 mt-0.5">
+                Delivery date is locked once production has been scheduled.
+              </p>
+            </div>
+
+            <!-- Notes (always editable until Completed/Cancelled) -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Notes</label>
+              <textarea
+                v-model="editForm.notes"
+                rows="3"
+                :disabled="!canEdit('notes') || isSavingEdit"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                placeholder="Any instructions or clarifications for our team"
+              ></textarea>
+            </div>
+
+            <!-- Error line -->
+            <div v-if="editError" class="p-2 bg-red-50 border border-red-200 rounded-lg text-[11px] text-red-700">
+              {{ editError }}
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-2 pt-1">
+              <button
+                @click="saveEdit"
+                :disabled="!hasEditChanges || isSavingEdit"
+                class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
+              >
+                <svg v-if="isSavingEdit" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                {{ isSavingEdit ? 'Saving…' : hasEditChanges ? 'Save Changes' : 'No Changes' }}
+              </button>
+              <button
+                @click="resetEditForm"
+                :disabled="!hasEditChanges || isSavingEdit"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Reset
+              </button>
+              <button
+                @click="closeEditForm"
+                :disabled="isSavingEdit"
+                class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════════
              ✅ NEW — DELAY BANNER (the transparency centerpiece)
              ═══════════════════════════════════════════════════════════ -->
         <div
@@ -616,6 +755,17 @@
 
       <!-- Action Buttons - Compact -->
       <div class="flex flex-wrap gap-1.5 mt-3">
+        <button
+          v-if="orderIsEditable"
+          @click="openEditForm"
+          class="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>
+          </svg>
+          Edit Order
+        </button>
+
         <button @click="contactSupport" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1">
           <Phone class="w-3 h-3" />
           Support
@@ -882,6 +1032,11 @@ import { ref, computed, onMounted, onUnmounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useOrders } from '@/composables/useOrders.js'
 import { ordersApi, feedBackApi } from '@/api'
+import {
+  canEditField,
+  canEditOrder,
+  describeEditableFields,
+} from '@/composables/useOrderEditability.js'
 import ConfirmationModal from '@/modals/ConfirmationModal.vue'
 import FeedbackModal from '@/modals/FeedbackModal.vue'
 import FeedbackFormModal from '@/modals/FeedbackFormModal.vue'
@@ -948,8 +1103,7 @@ const route = useRoute()
 const router = useRouter()
 // ✅ `orders` ref is used in handleCancel / handleToggleReceived;
 //    `loading` was never defined and threw ReferenceError on click.
-const { fetchOrder, cancelOrder, orders, loading } = useOrders()
-
+const { fetchOrder, cancelOrder, updateOrder, orders, loading } = useOrders()
 // ─── STATE ──────────────────────────────────────────────────────────────
 const order = ref(null)
 const isLoading = ref(true)
@@ -969,6 +1123,25 @@ const existingFeedback = ref(null)
 
 const showDetails = ref(false)
 const showDesign = ref(false)
+
+// ── Edit form state ─────────────────────────────────────────────
+const showEditForm = ref(false)
+const isSavingEdit = ref(false)
+const editError = ref('')
+
+// Snapshot of the fields the customer can change. Populated by
+// openEditForm() from the current order, diffed against it on save.
+const editForm = ref({
+  receivingMode: '',
+  address: '',
+  postalCode: '',
+  notes: '',
+  expectedDelivery: '',
+})
+
+// Snapshot taken at openEditForm() time. Used by hasEditChanges to
+// detect which fields the customer actually touched.
+const editSnapshot = ref({ ...editForm.value })
 
 
 // ✅ NEW — Estimated durations per status (business days)
@@ -1219,6 +1392,103 @@ const getTotalPaid = computed(() => {
 const getRemainingBalance = computed(() => {
   return Math.max(0, calculatedTotal.value - getTotalPaid.value)
 })
+
+// ── Editability helpers ─────────────────────────────────────────
+const orderIsEditable = computed(() => canEditOrder(order.value))
+
+const editableFieldsLabel = computed(() => {
+  if (!order.value) return ''
+  const labels = describeEditableFields(order.value)
+  if (labels.length === 0) return ''
+  if (labels.length === 1) return labels[0]
+  if (labels.length === 2) return `${labels[0]} and ${labels[1]}`
+  return `${labels.slice(0, -1).join(', ')}, and ${labels[labels.length - 1]}`
+})
+
+function canEdit(field) {
+  return canEditField(order.value, field)
+}
+
+// Diff the edit form against the snapshot; only include fields the
+// customer changed AND is allowed to change.
+const hasEditChanges = computed(() => {
+  if (!order.value) return false
+  const form = editForm.value
+  const snap = editSnapshot.value
+  for (const key of Object.keys(form)) {
+    if (!canEdit(key)) continue
+    if (String(form[key] || '') !== String(snap[key] || '')) return true
+  }
+  return false
+})
+
+// Only build a payload of changed + allowed fields so we don't
+// trigger backend whitelist rejections on untouched fields.
+const editPayload = computed(() => {
+  if (!order.value) return {}
+  const form = editForm.value
+  const snap = editSnapshot.value
+  const payload = {}
+  for (const key of Object.keys(form)) {
+    if (!canEdit(key)) continue
+    const next = String(form[key] ?? '')
+    const prev = String(snap[key] ?? '')
+    if (next !== prev) payload[key] = form[key]
+  }
+  return payload
+})
+
+function openEditForm() {
+  if (!order.value) return
+  editError.value = ''
+  editForm.value = {
+    receivingMode: order.value.receivingMode || 'Pick-up',
+    address: order.value.address || '',
+    postalCode: order.value.postalCode || '',
+    notes: order.value.notes || '',
+    expectedDelivery: order.value.expectedDeliveryRaw || '',
+  }
+  editSnapshot.value = { ...editForm.value }
+  showEditForm.value = true
+}
+
+function closeEditForm() {
+  if (isSavingEdit.value) return
+  showEditForm.value = false
+  editError.value = ''
+}
+
+function resetEditForm() {
+  editForm.value = { ...editSnapshot.value }
+  editError.value = ''
+}
+
+async function saveEdit() {
+  if (!order.value || isSavingEdit.value) return
+  const payload = editPayload.value
+  if (Object.keys(payload).length === 0) {
+    editError.value = 'No changes to save.'
+    return
+  }
+
+  isSavingEdit.value = true
+  editError.value = ''
+
+  try {
+    const res = await updateOrder(order.value.id, payload)
+    if (res.success && res.order) {
+      order.value = res.order
+      showEditForm.value = false
+      showToast('Order updated successfully', 'success')
+    } else {
+      editError.value = res.message || 'Failed to update order.'
+    }
+  } catch (e) {
+    editError.value = e.message || 'Failed to update order.'
+  } finally {
+    isSavingEdit.value = false
+  }
+}
 
 // ─── HELPERS ──────────────────────────────────────────────────────────
 function getTotalQuantity() {
