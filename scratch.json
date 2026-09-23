@@ -1,104 +1,140 @@
 {
-    "id": "ORD-2026-062-PROV",
-    "orderId": "ORD-2026-062-PROV",
-    "orderNumber": "ORD-2026-062-PROV",
-    "status": "Confirmed",
-    "statusValue": "confirmed",
-    "paymentStatus": "Partial",
-    "isProvided": true,
-    "supplyType": "Own Cups",
+    "id": "ORD-2026-162-COMP",
+    "orderId": "ORD-2026-162-COMP",
+    "orderNumber": "ORD-2026-162-COMP",
+    "status": "Completed",
+    "delayHistory": [],
+    "isCurrentlyDelayed": false,
+    "currentDelay": null,
+    "originalExpectedDelivery": "2026-09-28T06:28:02.167Z",
+    "statusValue": "completed",
+    "paymentStatus": "Paid",
+    "isProvided": false,
+    "supplyType": "Company Cups",
     "hasDesign": true,
     "deliveryMethod": "Delivery",
-    "totalAmount": 1000,
-    "designFee": 500,
-    "shippingFee": 500,
+    "totalAmount": 33900,
+    "designFee": 3000,
+    "shippingFee": 900,
     "partialPayments": [
         {
-            "amount": 500,
-            "referenceNumber": "1231231313132",
-            "date": "2026-09-22T10:43:32.815Z",
+            "amount": 16950,
+            "referenceNumber": "123456789122234",
+            "date": "2026-09-23T06:45:00.704Z",
             "updatedBy": "John Paul Tapia"
+        },
+        {
+            "amount": 16950,
+            "referenceNumber": null,
+            "date": "2026-09-23T06:47:58.080Z",
+            "updatedBy": "Kevin Salas"
         }
     ],
-    "quantity": 500,
+    "quantity": 3000,
     "image": null,
-    "date": "9/22/2026",
-    "createdAt": "2026-09-22T10:41:31.948Z",
+    "date": "9/23/2026",
+    "createdAt": "2026-09-23T06:28:02.567Z",
     "items": [
         {
-            "productId": null,
-            "name": "Tumbler",
-            "category": "Customer Provided",
+            "productId": "PRD-2026-560",
+            "name": "HARD CUPS",
+            "category": "Plastic Cups",
             "size": "1L",
-            "quantity": 500,
-            "estimatedTotal": 0,
+            "quantity": 3000,
+            "estimatedTotal": 30000,
+            "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916703/beverage/products/product-1785916701775-687209326.jpg",
             "design": {
-                "source": "upload",
-                "printSize": "3x3",
-                "printPlacement": "Full-Wrap",
-                "designNotes": "",
-                "files": [
-                    {
-                        "name": "GEC-DC Q1.jpg",
-                        "size": 133899,
-                        "type": "image/jpeg",
-                        "path": "https://res.cloudinary.com/vwrxijez/image/upload/v1790073635/beverage/designs/design-1790073632528-918559390.jpg",
-                        "_id": "6ab25b5b06c4888425a93e02"
-                    }
-                ]
+                "source": "saved",
+                "printSize": "4x4",
+                "printPlacement": "Front-Only",
+                "designNotes": "Matte Color",
+                "files": []
             }
         }
     ],
-    "customerName": "Jear Hachero",
-    "customerEmail": "jearlangito@gmail.com",
-    "customerPhone": "+639709406573",
-    "address": "Purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Luzon, Philippines",
-    "postalCode": "3007",
-    "company": "ACAPS Trading",
+    "customerName": "John Paul Tapia",
+    "customerEmail": "tapiajohnpaul08@gmail.com",
+    "customerPhone": "09123445678",
+    "address": "Block 83, Lot 30, Alley 77, Phase 1, Lumina Plaridel, Culianin, Plaridel, Bulacan, 3004, Luzon, Philippines",
+    "postalCode": "3004",
+    "company": "JP's Cafe",
     "fulfillment": {
         "deliveryAddress": "",
         "sameAsCustomer": false
     },
     "designDetails": [
         {
-            "designSource": "upload",
-            "printSize": "3x3",
-            "printPlacement": "Full-Wrap",
-            "designNotes": "",
-            "files": [
-                {
-                    "name": "GEC-DC Q1.jpg",
-                    "size": 133899,
-                    "type": "image/jpeg",
-                    "path": "https://res.cloudinary.com/vwrxijez/image/upload/v1790073635/beverage/designs/design-1790073632528-918559390.jpg",
-                    "_id": "6ab25b5b06c4888425a93e00"
-                }
-            ],
+            "designSource": "saved",
+            "printSize": "4x4",
+            "printPlacement": "Front-Only",
+            "designNotes": "Matte Color",
+            "files": [],
             "imagePaths": [],
-            "_id": "6ab25b5b06c4888425a93dff"
+            "_id": "6ab371720797cdf7efa58536"
         }
     ],
-    "expectedDelivery": "9/29/2026",
-    "fromCustomerToCompanyDeliveryDate": "2026-09-24T00:00:00.000Z",
-    "preferredDate": "2026-09-29T00:00:00.000Z",
+    "expectedDelivery": "9/28/2026",
+    "fromCustomerToCompanyDeliveryDate": null,
+    "dropOffStatus": "Pending",
+    "preferredDate": "2026-09-27T00:00:00.000Z",
     "preferredTime": "",
-    "productionSchedule": null,
-    "notes": "Individual Designs | Items: Tumbler",
+    "productionSchedule": "2026-09-24T00:00:00.000Z",
+    "notes": "Individual Designs | Items: HARD CUPS",
     "statusHistory": [
         {
             "status": "Pending",
-            "timestamp": "2026-09-22T10:41:31.939Z",
-            "notes": "Order created (customer provided items)",
+            "timestamp": "2026-09-23T06:28:02.562Z",
+            "notes": "Order created",
             "productionSchedule": "",
             "updatedBy": "Customer"
         },
         {
             "status": "Confirmed",
-            "timestamp": "2026-09-22T10:43:32.816Z",
-            "notes": "Downpayment verified — ₱500 via gcash (ref: 1231231313132)",
+            "timestamp": "2026-09-23T06:45:00.704Z",
+            "notes": "Downpayment verified — ₱16,950 via gcash (ref: 123456789122234)",
             "productionSchedule": "",
             "updatedBy": "John Paul Tapia"
+        },
+        {
+            "status": "Scheduled",
+            "timestamp": "2026-09-23T06:45:58.515Z",
+            "notes": "Order scheduled for production on Sep 24, 2026, 12:00 AM",
+            "productionSchedule": "2026-09-24",
+            "updatedBy": "John Paul Tapia"
+        },
+        {
+            "status": "In Production",
+            "timestamp": "2026-09-23T06:46:01.224Z",
+            "notes": "Order is now in production",
+            "productionSchedule": "",
+            "updatedBy": "John Paul Tapia"
+        },
+        {
+            "driverDetails": {
+                "driverName": "Kevin Salas",
+                "driverPhone": "9425125245",
+                "plateNumber": "ADA812",
+                "truckDescription": "White Elf"
+            },
+            "status": "Out for Delivery",
+            "timestamp": "2026-09-23T06:46:18.239Z",
+            "notes": "Order is out for delivery (Driver: Kevin Salas, Phone: 9425125245)",
+            "productionSchedule": "",
+            "updatedBy": "John Paul Tapia"
+        },
+        {
+            "driverDetails": {
+                "driverName": "Kevin Salas",
+                "driverPhone": "9425125245",
+                "plateNumber": "ADA812",
+                "truckDescription": "White Elf"
+            },
+            "status": "Completed",
+            "timestamp": "2026-09-23T06:47:59.075Z",
+            "notes": "Order has been delivered and received",
+            "productionSchedule": "",
+            "updatedBy": "Kevin Salas"
         }
     ],
-    "proofOfDelivery": null
+    "proofOfDelivery": "https://res.cloudinary.com/vwrxijez/image/upload/v1790146076/beverage/proofs/ac6dbgfjk0lwsdy5cbak.jpg"
 }

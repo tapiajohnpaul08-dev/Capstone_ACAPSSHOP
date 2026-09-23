@@ -630,23 +630,6 @@
   Cancel
 </button>
 
-        <button 
-          v-if="isOutForDelivery && !order.isReceived" 
-          @click="handleToggleReceived"
-          class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
-        >
-          <CheckCircle class="w-3 h-3" />
-          {{ order.receivingMode === 'Pick-up' ? 'Picked Up' : 'Received' }}
-        </button>
-
-        <button 
-          v-if="isOutForDelivery && order.isReceived" 
-          disabled
-          class="px-3 py-1.5 bg-gray-200 text-gray-500 rounded-lg cursor-not-allowed text-[10px] font-medium inline-flex items-center gap-1"
-        >
-          <CheckCircle class="w-3 h-3" />
-          {{ order.receivingMode === 'Pick-up' ? 'Picked Up ✓' : 'Received ✓' }}
-        </button>
 
         <button 
           v-if="order.status?.toLowerCase() === 'completed' || order.status?.toLowerCase() === 'cancelled'" 
@@ -1427,7 +1410,9 @@ function getStatusDescription(status) {
   if (isPickupReady) {
     return 'Your order is ready for pickup at our store. Please visit us to collect your items.'
   }
-  
+  console.log('ORDERRRR:', order.value)
+  console.log('Remaining Balance:', order.value?.totalAmount / 2)
+  const remainingBal = order.value?.totalAmount / 2
   const descriptions = {
     'pending': 'Your order has been placed and is waiting for review by our team.',
     'confirmed': 'Your order has been confirmed! We are preparing it for scheduling.',
@@ -1435,7 +1420,7 @@ function getStatusDescription(status) {
     'in production': 'Your order is now in production. Our team is working on it.',
     'out for delivery': order.value?.deliveryMethod === 'Pick-up' 
       ? 'Your order is ready for pickup at our store.' 
-      : 'Your order is on its way! A driver has been assigned for delivery.',
+      : `'Your order is on its way! Please prepare ₱${remainingBal.toLocaleString()} for final your final payment A driver has been assigned for delivery.'`,
     'ready to pick-up': 'Your order is ready for pickup at our store. Please visit us to collect your items.',
     'completed': 'Your order has been successfully completed.',
     'cancelled': 'This order has been cancelled.'
