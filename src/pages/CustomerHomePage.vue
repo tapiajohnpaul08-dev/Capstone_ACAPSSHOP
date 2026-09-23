@@ -246,13 +246,10 @@
                     · {{ item.quantity.toLocaleString() }} pcs
                   </p>
                   <!-- ✅ Flow 3 — show what this lid pairs with -->
-                  <p
-                    v-if="item.pairedWith"
-                    class="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
-                      fill="none" stroke="currentColor" stroke-width="2.5">
-                      <path d="M9 12l2 2 4-4"/>
+                  <p v-if="item.pairedWith" class="text-[11px] text-amber-600 flex items-center gap-1 mt-0.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.5">
+                      <path d="M9 12l2 2 4-4" />
                     </svg>
                     Pairs with {{ item.pairedWith }}
                   </p>

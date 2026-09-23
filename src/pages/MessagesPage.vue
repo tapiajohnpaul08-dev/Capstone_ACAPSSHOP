@@ -1,49 +1,41 @@
 <template>
   <div class="container mx-auto px-4 py-6 max-w-[1400px]">
     <!-- Mobile view switcher: 'list' shows sidebar, 'chat' shows the conversation -->
-    <div
-      class="lg:grid lg:gap-4 lg:grid-cols-[320px_1fr] lg:h-[calc(100vh-140px)]"
-      :class="selectedOrder ? 'xl:grid-cols-[320px_1fr_380px]' : ''"
-    >
+    <div class="lg:grid lg:gap-4 lg:grid-cols-[320px_1fr] lg:h-[calc(100vh-140px)]"
+      :class="selectedOrder ? 'xl:grid-cols-[320px_1fr_380px]' : ''">
 
       <!-- ────── LEFT: Conversations sidebar ────── -->
       <!-- On mobile: shown when mobileView === 'list'; hidden when mobileView === 'chat' -->
-      <div
-        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0"
-        :class="mobileView === 'list' ? 'flex' : 'hidden lg:flex'"
-        style="height: calc(100dvh - 140px);"
-      >
+      <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0"
+        :class="mobileView === 'list' ? 'flex' : 'hidden lg:flex'" style="height: calc(100dvh - 140px);">
         <!-- Sidebar header -->
         <div class="shrink-0 px-4 py-3 border-b bg-gradient-to-r from-gray-50 to-white">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <MessageSquare class="w-4 h-4 text-blue-600" />
               <h4 class="font-semibold text-sm text-gray-900">Conversations</h4>
-              <span
-                v-if="conversations.length > 0"
-                class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700"
-              >
+              <span v-if="conversations.length > 0"
+                class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
                 {{ conversations.length }}
               </span>
             </div>
-            <button
-              @click="loadConversationList"
-              :disabled="isLoadingConversations"
+            <button @click="loadConversationList" :disabled="isLoadingConversations"
               class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50"
-              title="Refresh"
-            >
+              title="Refresh">
               <RefreshCw :class="['w-3.5 h-3.5', isLoadingConversations ? 'animate-spin' : '']" />
             </button>
           </div>
         </div>
 
         <!-- Loading -->
-        <div v-if="isLoadingConversations && conversations.length === 0" class="flex-1 flex items-center justify-center">
+        <div v-if="isLoadingConversations && conversations.length === 0"
+          class="flex-1 flex items-center justify-center">
           <div class="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
 
         <!-- Empty -->
-        <div v-else-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div v-else-if="conversations.length === 0"
+          class="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <div class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center mb-3">
             <MessageSquare class="w-6 h-6 text-blue-400" />
           </div>
@@ -55,13 +47,9 @@
 
         <!-- Conversation list -->
         <div v-else class="flex-1 overflow-y-auto divide-y divide-gray-100">
-          <button
-            v-for="conv in conversations"
-            :key="conv.conversationId"
-            @click="selectConversationFromList(conv)"
+          <button v-for="conv in conversations" :key="conv.conversationId" @click="selectConversationFromList(conv)"
             class="w-full text-left px-4 py-3 hover:bg-blue-50/50 transition-colors"
-            :class="activeConversationId === conv.conversationId ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'"
-          >
+            :class="activeConversationId === conv.conversationId ? 'bg-blue-50/70 border-l-4 border-l-blue-600' : 'border-l-4 border-l-transparent'">
             <div class="flex items-start gap-2.5">
               <div class="flex-1 min-w-0">
                 <!-- Row 1: orderId + time -->
@@ -79,16 +67,12 @@
                 </p>
                 <!-- Row 3: badges -->
                 <div class="flex items-center gap-1 mt-1 flex-wrap">
-                  <span
-                    v-if="conv.unreadCount > 0"
-                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white"
-                  >
+                  <span v-if="conv.unreadCount > 0"
+                    class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-600 text-white">
                     {{ conv.unreadCount }} new
                   </span>
-                  <span
-                    v-if="conv.status === 'resolved'"
-                    class="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600"
-                  >
+                  <span v-if="conv.status === 'resolved'"
+                    class="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
                     Resolved
                   </span>
                 </div>
@@ -100,497 +84,431 @@
 
       <!-- ────── MIDDLE: Chat panel ────── -->
       <!-- On mobile: shown when mobileView === 'chat' -->
-      <div
-        class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0 relative"
-        :class="mobileView === 'chat' ? 'flex' : 'hidden lg:flex'"
-        style="height: calc(100dvh - 140px);"
-      >
+      <div class="bg-white rounded-xl border shadow-sm overflow-hidden flex flex-col min-h-0 relative"
+        :class="mobileView === 'chat' ? 'flex' : 'hidden lg:flex'" style="height: calc(100dvh - 140px);">
         <!-- Mobile back button -->
-        <button
-          @click="mobileView = 'list'"
+        <button @click="mobileView = 'list'"
           class="lg:hidden absolute top-3 left-3 z-10 w-9 h-9 rounded-full bg-white shadow-md border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-          aria-label="Back to conversations"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6"/>
+          aria-label="Back to conversations">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m15 18-6-6 6-6" />
           </svg>
         </button>
 
-      <!-- Header -->
-      <div class="px-6 py-3 sm:py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0 pl-14 lg:pl-6">
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="w-10 h-10 sm:w-10 sm:h-10 rounded-full bg-white-600 flex items-center justify-center shadow-md shrink-0">
-                  <img :src="Logo" alt="ACAPS TRADING" class="w-10 h-10"  />
-            </div>
-            <div class="min-w-0">
-              <h4 class="font-semibold text-gray-900 text-sm sm:text-base">ACAPSHOP</h4>
-            </div>
-          </div>
-
-          <!-- ✅ Reopen negotiation panel button -->
-          <button
-            v-if="!selectedOrder && myPendingOrders.length > 0"
-            @click="reopenNegotiationPanel"
-            class="shrink-0 inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
-            title="View order details & negotiate"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <span class="hidden xs:inline">Order</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Messages Container -->
-      <div
-        ref="messagesContainer"
-        class="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white"
-      >
-        <div v-if="isLoadingMessages" class="flex justify-center py-12">
-          <div class="flex flex-col items-center gap-3">
-            <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm text-gray-400">Loading messages...</p>
-          </div>
-        </div>
-
-        <template v-else>
-          <template v-for="(group, dateIndex) in groupedMessages" :key="dateIndex">
-            <div class="flex justify-center my-4">
-              <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{{ formatDateHeader(group.date) }}</span>
-            </div>
-
-            <div class="space-y-3">
+        <!-- Header -->
+        <div class="px-6 py-3 sm:py-4 border-b bg-gradient-to-r from-blue-50 to-white shrink-0 pl-14 lg:pl-6">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
               <div
-                v-for="msg in group.messages"
-                :key="msg.messageId"
-                class="group"
-              >
+                class="w-10 h-10 sm:w-10 sm:h-10 rounded-full bg-white-600 flex items-center justify-center shadow-md shrink-0">
+                <img :src="Logo" alt="ACAPS TRADING" class="w-10 h-10" />
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-semibold text-gray-900 text-sm sm:text-base">ACAPSHOP</h4>
+              </div>
+            </div>
 
-                <!-- ✅ SYSTEM MESSAGE — full-width centered pill -->
-                <div
-                  v-if="msg.contentType === 'system'"
-                  class="w-full flex justify-center my-2"
-                >
-                  <span
-                    class="px-3 py-1 rounded-full text-xs font-medium"
-                    :class="msg.isDeleted
+            <!-- ✅ Reopen negotiation panel button -->
+            <button v-if="!selectedOrder && myPendingOrders.length > 0" @click="reopenNegotiationPanel"
+              class="shrink-0 inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+              title="View order details & negotiate">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <span class="hidden xs:inline">Order</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div ref="messagesContainer" class="flex-1 overflow-y-auto p-6 bg-gradient-to-b from-gray-50 to-white">
+          <div v-if="isLoadingMessages" class="flex justify-center py-12">
+            <div class="flex flex-col items-center gap-3">
+              <div class="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p class="text-sm text-gray-400">Loading messages...</p>
+            </div>
+          </div>
+
+          <template v-else>
+            <template v-for="(group, dateIndex) in groupedMessages" :key="dateIndex">
+              <div class="flex justify-center my-4">
+                <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{{ formatDateHeader(group.date)
+                  }}</span>
+              </div>
+
+              <div class="space-y-3">
+                <div v-for="msg in group.messages" :key="msg.messageId" class="group">
+
+                  <!-- ✅ SYSTEM MESSAGE — full-width centered pill -->
+                  <div v-if="msg.contentType === 'system'" class="w-full flex justify-center my-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-medium" :class="msg.isDeleted
                       ? 'bg-gray-100 text-gray-400 italic'
-                      : 'bg-blue-50 text-blue-700 border border-blue-100'"
-                  >
-                    {{ msg.content }}
-                  </span>
-                </div>
-
-                <!-- 💳 PAYMENT REQUEST CARD -->
-                <div
-                  v-else-if="msg.contentType === 'payment-request'"
-                  class="w-full flex justify-start my-2"
-                >
-                  <div class="max-w-md w-full bg-white border-2 border-amber-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-3 border-b border-amber-200 flex items-center gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600">
-                        <rect x="2" y="5" width="20" height="14" rx="2"/>
-                        <line x1="2" y1="10" x2="22" y2="10"/>
-                      </svg>
-                      <span class="font-bold text-amber-800 text-sm">Payment Request</span>
-                      <span
-                        v-if="msg.paymentRequestData?.status"
-                        class="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                        :class="{
-                          'bg-yellow-200 text-yellow-800': msg.paymentRequestData.status === 'pending',
-                          'bg-blue-200 text-blue-800': msg.paymentRequestData.status === 'proof-submitted',
-                          'bg-green-200 text-green-800': msg.paymentRequestData.status === 'verified',
-                          'bg-red-200 text-red-800': msg.paymentRequestData.status === 'rejected',
-                          'bg-gray-200 text-gray-700': msg.paymentRequestData.status === 'superseded',
-                        }"
-                      >
-                        {{ msg.paymentRequestData.status }}
-                      </span>
-                    </div>
-
-                    <div class="p-4 space-y-2 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-500">Method</span>
-                        <span class="font-semibold">
-                          {{ msg.paymentRequestData?.method === 'gcash' ? 'GCash' : 'Bank Transfer' }}
-                        </span>
-                      </div>
-                      <div v-if="msg.paymentRequestData?.bankName" class="flex justify-between">
-                        <span class="text-gray-500">Bank</span>
-                        <span class="font-semibold">{{ msg.paymentRequestData.bankName }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-gray-500">Account Name</span>
-                        <span class="font-semibold">{{ msg.paymentRequestData?.accountName }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-gray-500">Account Number</span>
-                        <span class="font-mono font-semibold">{{ msg.paymentRequestData?.accountNumber }}</span>
-                      </div>
-                      <div class="flex justify-between pt-2 border-t border-gray-100">
-                        <span class="text-gray-500">Amount Due</span>
-                        <span class="font-bold text-amber-700">
-                          ₱{{ (msg.paymentRequestData?.amountDue || 0).toLocaleString() }}
-                        </span>
-                      </div>
-                      <p
-                        v-if="msg.paymentRequestData?.notes"
-                        class="text-xs text-gray-500 italic pt-2 border-t border-gray-100"
-                      >
-                        {{ msg.paymentRequestData.notes }}
-                      </p>
-
-                      <button
-                        v-if="msg.paymentRequestData?.status === 'pending'"
-                        @click="openPaymentProofModal(msg)"
-                        class="w-full mt-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors"
-                      >
-                        I've Paid — Upload Proof
-                      </button>
-                      <div
-                        v-else-if="msg.paymentRequestData?.status === 'proof-submitted'"
-                        class="text-xs text-blue-600 text-center pt-2"
-                      >
-                        Proof submitted — awaiting admin review
-                      </div>
-                      <div
-                        v-else-if="msg.paymentRequestData?.status === 'verified'"
-                        class="text-xs text-green-600 text-center pt-2"
-                      >
-                        ✓ Payment verified — order confirmed
-                      </div>
-                      <div
-                        v-else-if="msg.paymentRequestData?.status === 'rejected'"
-                        class="text-xs text-red-600 text-center pt-2"
-                      >
-                        ✗ Payment rejected{{ msg.paymentRequestData.rejectionReason ? `: ${msg.paymentRequestData.rejectionReason}` : '' }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 🧾 PAYMENT PROOF CARD (customer's own) -->
-                <div
-                  v-else-if="msg.contentType === 'payment-proof'"
-                  class="w-full flex justify-end my-2"
-                >
-                  <div class="max-w-md w-full bg-blue-50 border border-blue-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div class="px-4 py-3 border-b border-blue-200 flex items-center justify-between">
-                      <span class="font-bold text-blue-800 text-sm">Payment Proof Submitted</span>
-                      <span
-                        class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                        :class="{
-                          'bg-yellow-200 text-yellow-800': msg.paymentProofData?.status === 'pending-review',
-                          'bg-green-200 text-green-800': msg.paymentProofData?.status === 'approved',
-                          'bg-red-200 text-red-800': msg.paymentProofData?.status === 'rejected',
-                        }"
-                      >
-                        {{ (msg.paymentProofData?.status || '').replace('-', ' ') }}
-                      </span>
-                    </div>
-                    <div class="p-4 space-y-2 text-sm">
-                      <div class="flex justify-between">
-                        <span class="text-gray-500">Amount</span>
-                        <span class="font-semibold">₱{{ (msg.paymentProofData?.amountPaid || 0).toLocaleString() }}</span>
-                      </div>
-                      <div class="flex justify-between">
-                        <span class="text-gray-500">Reference</span>
-                        <span class="font-mono text-xs">{{ msg.paymentProofData?.referenceNumber || '—' }}</span>
-                      </div>
-                      <img
-                        v-if="msg.paymentProofData?.proofImageUrl"
-                        :src="msg.paymentProofData.proofImageUrl"
-                        alt="Proof"
-                        class="w-full rounded-lg border border-blue-200 cursor-pointer"
-                        @click="openImageViewer(msg.paymentProofData.proofImageUrl)"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- QUOTE / REGULAR message row -->
-                <div
-                  v-else
-                  class="flex items-start"
-                  :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'"
-                >
-                  <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
-                      <span class="text-white text-xs font-bold">A</span>
-                    </div>
+                      : 'bg-blue-50 text-blue-700 border border-blue-100'">
+                      {{ msg.content }}
+                    </span>
                   </div>
 
-                  <div
-                    v-if="msg.senderType === 'customer' && !msg.isDeleted"
-                    class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center mr-2"
-                  >
-                    <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors" title="Reply">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-blue-600">
-                        <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
-                        <path d="M21 15l-5-5 5-5"/>
-                      </svg>
-                    </button>
-                    <button
-                      v-if="canUnsendMessage(msg)"
-                      @click="openUnsendModal(msg)"
-                      class="p-1.5 rounded-full hover:bg-red-100 transition-colors"
-                      title="Unsend"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-red-600">
-                        <path d="M3 6h18"/>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                        <path d="M10 11v6"/>
-                        <path d="M14 11v6"/>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div
-                    class="relative max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm"
-                    :class="msg.senderType === 'customer'
-                      ? 'bg-blue-600 text-white rounded-br-sm'
-                      : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm'"
-                  >
+                  <!-- 💳 PAYMENT REQUEST CARD -->
+                  <div v-else-if="msg.contentType === 'payment-request'" class="w-full flex justify-start my-2">
                     <div
-                      v-if="msg.replyTo"
-                      class="text-xs mb-1.5 p-1.5 rounded"
-                      :class="msg.senderType === 'customer' ? 'bg-blue-500 bg-opacity-20' : 'bg-gray-100'"
-                    >
-                      <span class="text-[10px] opacity-70">↩️ Replying to:</span>
-                      <p class="text-xs truncate max-w-[200px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
-                        {{ msg.replyTo.content }}
-                      </p>
-                    </div>
+                      class="max-w-md w-full bg-white border-2 border-amber-200 rounded-2xl shadow-sm overflow-hidden">
+                      <div
+                        class="bg-gradient-to-r from-amber-50 to-amber-100 px-4 py-3 border-b border-amber-200 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" class="text-amber-600">
+                          <rect x="2" y="5" width="20" height="14" rx="2" />
+                          <line x1="2" y1="10" x2="22" y2="10" />
+                        </svg>
+                        <span class="font-bold text-amber-800 text-sm">Payment Request</span>
+                        <span v-if="msg.paymentRequestData?.status"
+                          class="ml-auto text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" :class="{
+                            'bg-yellow-200 text-yellow-800': msg.paymentRequestData.status === 'pending',
+                            'bg-blue-200 text-blue-800': msg.paymentRequestData.status === 'proof-submitted',
+                            'bg-green-200 text-green-800': msg.paymentRequestData.status === 'verified',
+                            'bg-red-200 text-red-800': msg.paymentRequestData.status === 'rejected',
+                            'bg-gray-200 text-gray-700': msg.paymentRequestData.status === 'superseded',
+                          }">
+                          {{ msg.paymentRequestData.status }}
+                        </span>
+                      </div>
 
-                    <p v-if="msg.content && !msg.isDeleted" class="text-sm whitespace-pre-wrap break-words">{{ msg.content }}</p>
+                      <div class="p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                          <span class="text-gray-500">Method</span>
+                          <span class="font-semibold">
+                            {{ msg.paymentRequestData?.method === 'gcash' ? 'GCash' : 'Bank Transfer' }}
+                          </span>
+                        </div>
+                        <div v-if="msg.paymentRequestData?.bankName" class="flex justify-between">
+                          <span class="text-gray-500">Bank</span>
+                          <span class="font-semibold">{{ msg.paymentRequestData.bankName }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-500">Account Name</span>
+                          <span class="font-semibold">{{ msg.paymentRequestData?.accountName }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-500">Account Number</span>
+                          <span class="font-mono font-semibold">{{ msg.paymentRequestData?.accountNumber }}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t border-gray-100">
+                          <span class="text-gray-500">Amount Due</span>
+                          <span class="font-bold text-amber-700">
+                            ₱{{ (msg.paymentRequestData?.amountDue || 0).toLocaleString() }}
+                          </span>
+                        </div>
+                        <p v-if="msg.paymentRequestData?.notes"
+                          class="text-xs text-gray-500 italic pt-2 border-t border-gray-100">
+                          {{ msg.paymentRequestData.notes }}
+                        </p>
 
-                    <p v-if="msg.isDeleted" class="text-sm italic" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
-                      This message was unsent
-                    </p>
-
-                    <div v-if="msg.attachments?.length && !msg.isDeleted" class="mt-2 space-y-2">
-                      <div v-for="(file, idx) in msg.attachments" :key="idx">
-                        <img
-                          v-if="isImageFile(file)"
-                          :src="getFileUrl(file)"
-                          :alt="file.name || 'Image'"
-                          class="max-w-full max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                          @click="openImageViewer(getFileUrl(file))"
-                          @error="handleImageError"
-                        />
-                        <div v-else class="flex items-center gap-2 p-2 rounded-lg" :class="msg.senderType === 'customer' ? 'bg-blue-700' : 'bg-gray-100'">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="msg.senderType === 'customer' ? 'text-blue-300' : 'text-gray-500'">
-                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                          </svg>
-                          <a :href="getFileUrl(file)" target="_blank" class="text-sm hover:underline truncate flex-1" :class="msg.senderType === 'customer' ? 'text-blue-100' : 'text-blue-600'">
-                            {{ file.name || 'Download' }}
-                          </a>
+                        <button v-if="msg.paymentRequestData?.status === 'pending'" @click="openPaymentProofModal(msg)"
+                          class="w-full mt-3 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700 transition-colors">
+                          I've Paid — Upload Proof
+                        </button>
+                        <div v-else-if="msg.paymentRequestData?.status === 'proof-submitted'"
+                          class="text-xs text-blue-600 text-center pt-2">
+                          Proof submitted — awaiting admin review
+                        </div>
+                        <div v-else-if="msg.paymentRequestData?.status === 'verified'"
+                          class="text-xs text-green-600 text-center pt-2">
+                          ✓ Payment verified — order confirmed
+                        </div>
+                        <div v-else-if="msg.paymentRequestData?.status === 'rejected'"
+                          class="text-xs text-red-600 text-center pt-2">
+                          ✗ Payment rejected{{ msg.paymentRequestData.rejectionReason ? `:
+                          ${msg.paymentRequestData.rejectionReason}` : '' }}
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    <div class="flex items-center gap-1 mt-1.5 justify-end">
-                      <span class="text-[10px]" :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
-                        {{ formatTime(msg.createdAt || msg.timestamp) }}
-                      </span>
+                  <!-- 🧾 PAYMENT PROOF CARD (customer's own) -->
+                  <div v-else-if="msg.contentType === 'payment-proof'" class="w-full flex justify-end my-2">
+                    <div
+                      class="max-w-md w-full bg-blue-50 border border-blue-200 rounded-2xl shadow-sm overflow-hidden">
+                      <div class="px-4 py-3 border-b border-blue-200 flex items-center justify-between">
+                        <span class="font-bold text-blue-800 text-sm">Payment Proof Submitted</span>
+                        <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" :class="{
+                          'bg-yellow-200 text-yellow-800': msg.paymentProofData?.status === 'pending-review',
+                          'bg-green-200 text-green-800': msg.paymentProofData?.status === 'approved',
+                          'bg-red-200 text-red-800': msg.paymentProofData?.status === 'rejected',
+                        }">
+                          {{ (msg.paymentProofData?.status || '').replace('-', ' ') }}
+                        </span>
+                      </div>
+                      <div class="p-4 space-y-2 text-sm">
+                        <div class="flex justify-between">
+                          <span class="text-gray-500">Amount</span>
+                          <span class="font-semibold">₱{{ (msg.paymentProofData?.amountPaid || 0).toLocaleString()
+                            }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                          <span class="text-gray-500">Reference</span>
+                          <span class="font-mono text-xs">{{ msg.paymentProofData?.referenceNumber || '—' }}</span>
+                        </div>
+                        <img v-if="msg.paymentProofData?.proofImageUrl" :src="msg.paymentProofData.proofImageUrl"
+                          alt="Proof" class="w-full rounded-lg border border-blue-200 cursor-pointer"
+                          @click="openImageViewer(msg.paymentProofData.proofImageUrl)" />
+                      </div>
                     </div>
                   </div>
 
-                  <div
-                    v-if="msg.senderType === 'admin' && !msg.isDeleted"
-                    class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center ml-2"
-                  >
-                    <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors" title="Reply">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400 hover:text-blue-600">
-                        <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
-                        <path d="M21 15l-5-5 5-5"/>
-                      </svg>
-                    </button>
-                  </div>
-
-                  <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                      <span class="text-white text-xs font-bold">{{ userInitial }}</span>
+                  <!-- QUOTE / REGULAR message row -->
+                  <div v-else class="flex items-start"
+                    :class="msg.senderType === 'customer' ? 'justify-end' : 'justify-start'">
+                    <div v-if="msg.senderType === 'admin'" class="flex-shrink-0 mr-2 mt-1">
+                      <div
+                        class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-sm">
+                        <span class="text-white text-xs font-bold">A</span>
+                      </div>
                     </div>
-                  </div>
 
+                    <div v-if="msg.senderType === 'customer' && !msg.isDeleted"
+                      class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center mr-2">
+                      <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+                        title="Reply">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          class="text-gray-400 hover:text-blue-600">
+                          <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z" />
+                          <path d="M21 15l-5-5 5-5" />
+                        </svg>
+                      </button>
+                      <button v-if="canUnsendMessage(msg)" @click="openUnsendModal(msg)"
+                        class="p-1.5 rounded-full hover:bg-red-100 transition-colors" title="Unsend">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          class="text-gray-400 hover:text-red-600">
+                          <path d="M3 6h18" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div class="relative max-w-[75%] rounded-2xl px-4 py-2.5 shadow-sm" :class="msg.senderType === 'customer'
+                      ? 'bg-blue-600 text-white rounded-br-sm'
+                      : 'bg-white text-gray-900 border border-gray-200 rounded-bl-sm'">
+                      <div v-if="msg.replyTo" class="text-xs mb-1.5 p-1.5 rounded"
+                        :class="msg.senderType === 'customer' ? 'bg-blue-500 bg-opacity-20' : 'bg-gray-100'">
+                        <span class="text-[10px] opacity-70">↩️ Replying to:</span>
+                        <p class="text-xs truncate max-w-[200px]"
+                          :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-500'">
+                          {{ msg.replyTo.content }}
+                        </p>
+                      </div>
+
+                      <p v-if="msg.content && !msg.isDeleted" class="text-sm whitespace-pre-wrap break-words">{{
+                        msg.content }}</p>
+
+                      <p v-if="msg.isDeleted" class="text-sm italic"
+                        :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
+                        This message was unsent
+                      </p>
+
+                      <div v-if="msg.attachments?.length && !msg.isDeleted" class="mt-2 space-y-2">
+                        <div v-for="(file, idx) in msg.attachments" :key="idx">
+                          <img v-if="isImageFile(file)" :src="getFileUrl(file)" :alt="file.name || 'Image'"
+                            class="max-w-full max-h-48 rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            @click="openImageViewer(getFileUrl(file))" @error="handleImageError" />
+                          <div v-else class="flex items-center gap-2 p-2 rounded-lg"
+                            :class="msg.senderType === 'customer' ? 'bg-blue-700' : 'bg-gray-100'">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                              fill="none" stroke="currentColor" stroke-width="2"
+                              :class="msg.senderType === 'customer' ? 'text-blue-300' : 'text-gray-500'">
+                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                              <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <a :href="getFileUrl(file)" target="_blank" class="text-sm hover:underline truncate flex-1"
+                              :class="msg.senderType === 'customer' ? 'text-blue-100' : 'text-blue-600'">
+                              {{ file.name || 'Download' }}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-1 mt-1.5 justify-end">
+                        <span class="text-[10px]"
+                          :class="msg.senderType === 'customer' ? 'text-blue-200' : 'text-gray-400'">
+                          {{ formatTime(msg.createdAt || msg.timestamp) }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div v-if="msg.senderType === 'admin' && !msg.isDeleted"
+                      class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity self-center ml-2">
+                      <button @click="setReplyTo(msg)" class="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+                        title="Reply">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                          class="text-gray-400 hover:text-blue-600">
+                          <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z" />
+                          <path d="M21 15l-5-5 5-5" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div v-if="msg.senderType === 'customer'" class="flex-shrink-0 ml-2 mt-1">
+                      <div
+                        class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
+                        <span class="text-white text-xs font-bold">{{ userInitial }}</span>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <!-- Typing Indicator -->
+            <div v-if="isTyping" class="flex justify-start mt-2">
+              <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+                <div class="flex gap-1 items-center">
+                  <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+                  <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+                  <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+                  <span class="text-xs text-gray-500 ml-1">Support is typing...</span>
                 </div>
               </div>
             </div>
           </template>
-
-          <!-- Typing Indicator -->
-          <div v-if="isTyping" class="flex justify-start mt-2">
-            <div class="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
-              <div class="flex gap-1 items-center">
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
-                <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
-                <span class="text-xs text-gray-500 ml-1">Support is typing...</span>
-              </div>
-            </div>
-          </div>
-        </template>
-      </div>
-
-      <!-- Reply indicator -->
-      <div v-if="replyToMessage" class="border-t px-4 py-2 bg-blue-50 border-blue-100 flex items-center justify-between">
-        <div class="flex items-center gap-2 min-w-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-600 flex-shrink-0">
-            <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z"/>
-            <path d="M21 15l-5-5 5-5"/>
-          </svg>
-          <div class="min-w-0">
-            <span class="text-xs text-blue-600 font-medium">Replying to:</span>
-            <p class="text-sm text-gray-600 truncate">{{ replyToMessage.content || '📎 Attachment' }}</p>
-          </div>
-        </div>
-        <button @click="clearReply" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Input Area -->
-      <div class="border-t bg-white p-4 shrink-0">
-        <div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
-          <div v-for="(file, idx) in pendingAttachments" :key="idx" class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
-            <img v-if="file.previewUrl" :src="file.previewUrl" class="w-10 h-10 object-cover rounded" />
-            <svg v-else-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
-              <rect x="2" y="2" width="20" height="20" rx="2.18"/>
-              <circle cx="8.5" cy="8.5" r="1.5"/>
-              <path d="M21 15l-5-5-6 6-3-3-4 4"/>
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500">
-              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-              <polyline points="14 2 14 8 20 8"/>
-            </svg>
-            <div class="max-w-[150px]">
-              <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
-              <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
-            </div>
-            <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-              </svg>
-            </button>
-          </div>
         </div>
 
-        <div class="flex gap-2 items-center">
-          <div class="relative">
-            <input
-              ref="fileInput"
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
-              class="hidden"
-              @change="handleFileSelect"
-            />
-            <button
-              @click="openFileSelector"
-              :disabled="isSending"
-              class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50"
-              title="Attach files"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="flex-1 relative">
-            <textarea
-              v-model="newMessage"
-              @keydown.enter.exact.prevent="sendMessage"
-              @keydown.enter.shift.exact="newMessage += '\n'"
-              rows="1"
-              placeholder="Type your message..."
-              class="w-full min-h-[42px] max-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors"
-              @input="handleTyping"
-            ></textarea>
-          </div>
-
-          <button
-            @click="sendMessage"
-            :disabled="(pendingAttachments.length === 0 && !newMessage.trim()) || isSending"
-            class="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
-          >
-            <svg v-if="!isSending" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/>
-              <path d="m21.854 2.147-10.94 10.939"/>
+        <!-- Reply indicator -->
+        <div v-if="replyToMessage"
+          class="border-t px-4 py-2 bg-blue-50 border-blue-100 flex items-center justify-between">
+          <div class="flex items-center gap-2 min-w-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" class="text-blue-600 flex-shrink-0">
+              <path d="M3 10a7 7 0 0 1 14 0v4a7 7 0 0 1-14 0z" />
+              <path d="M21 15l-5-5 5-5" />
             </svg>
-            <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <div class="min-w-0">
+              <span class="text-xs text-blue-600 font-medium">Replying to:</span>
+              <p class="text-sm text-gray-600 truncate">{{ replyToMessage.content || '📎 Attachment' }}</p>
+            </div>
+          </div>
+          <button @click="clearReply" class="text-gray-400 hover:text-gray-600 flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
           </button>
         </div>
 
-        <p class="text-xs text-gray-400 mt-3 text-center">Attach image/file or type a message</p>
-      </div>
+        <!-- Input Area -->
+        <div class="border-t bg-white p-4 shrink-0">
+          <div v-if="pendingAttachments.length > 0" class="mb-3 flex flex-wrap gap-2">
+            <div v-for="(file, idx) in pendingAttachments" :key="idx"
+              class="relative bg-gray-50 rounded-lg p-2 flex items-center gap-2 border">
+              <img v-if="file.previewUrl" :src="file.previewUrl" class="w-10 h-10 object-cover rounded" />
+              <svg v-else-if="file.type?.startsWith('image/')" xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-blue-500">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="M21 15l-5-5-6 6-3-3-4 4" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" class="text-gray-500">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                <polyline points="14 2 14 8 20 8" />
+              </svg>
+              <div class="max-w-[150px]">
+                <p class="text-xs font-medium text-gray-700 truncate">{{ file.name }}</p>
+                <p class="text-xs text-gray-400">{{ formatFileSize(file.size) }}</p>
+              </div>
+              <button @click="removeAttachment(idx)" class="text-gray-400 hover:text-red-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex gap-2 items-center">
+            <div class="relative">
+              <input ref="fileInput" type="file" multiple accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.csv"
+                class="hidden" @change="handleFileSelect" />
+              <button @click="openFileSelector" :disabled="isSending"
+                class="h-10 w-10 flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50"
+                title="Attach files">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2">
+                  <path
+                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+              </button>
+            </div>
+
+            <div class="flex-1 relative">
+              <textarea v-model="newMessage" @keydown.enter.exact.prevent="sendMessage"
+                @keydown.enter.shift.exact="newMessage += '\n'" rows="1" placeholder="Type your message..."
+                class="w-full min-h-[42px] max-h-[120px] rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors"
+                @input="handleTyping"></textarea>
+            </div>
+
+            <button @click="sendMessage"
+              :disabled="(pendingAttachments.length === 0 && !newMessage.trim()) || isSending"
+              class="h-10 w-10 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm">
+              <svg v-if="!isSending" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                  d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z" />
+                <path d="m21.854 2.147-10.94 10.939" />
+              </svg>
+              <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </button>
+          </div>
+
+          <p class="text-xs text-gray-400 mt-3 text-center">Attach image/file or type a message</p>
+        </div>
       </div>
       <!-- ────── /MIDDLE: Chat panel ────── -->
 
       <!-- ────── RIGHT: Negotiation panel (bottom sheet on mobile) ────── -->
       <Teleport to="body">
         <!-- Mobile: bottom sheet -->
-        <div
-          v-if="selectedOrder"
-          class="fixed inset-x-0 bottom-0 z-40 lg:hidden bg-white rounded-t-2xl border-t shadow-2xl max-h-[70vh] flex flex-col"
-        >
+        <div v-if="selectedOrder"
+          class="fixed inset-x-0 bottom-0 z-40 lg:hidden bg-white rounded-t-2xl border-t shadow-2xl max-h-[70vh] flex flex-col">
           <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mt-2 shrink-0"></div>
           <div class="flex-1 min-h-0 overflow-hidden">
-            <NegotiationOrderPanel
-              :order="selectedOrder"
-              @clear="clearSelectedOrder"
-            />
+            <NegotiationOrderPanel :order="selectedOrder" @clear="clearSelectedOrder" />
           </div>
         </div>
       </Teleport>
 
       <!-- ────── RIGHT: Negotiation panel ────── -->
       <!-- Desktop / tablet landscape: inline third column -->
-      <div
-        v-if="selectedOrder"
-        class="hidden xl:flex bg-white rounded-xl border shadow-sm overflow-hidden flex-col min-h-0 xl:col-span-1"
-      >
-        <NegotiationOrderPanel
-          :order="selectedOrder"
-          @clear="clearSelectedOrder"
-        />
+      <div v-if="selectedOrder"
+        class="hidden xl:flex bg-white rounded-xl border shadow-sm overflow-hidden flex-col min-h-0 xl:col-span-1">
+        <NegotiationOrderPanel :order="selectedOrder" @clear="clearSelectedOrder" />
       </div>
 
       <!-- Tablet portrait & mobile: bottom sheet -->
       <Teleport to="body">
         <Transition name="sheet">
-          <div
-            v-if="selectedOrder"
-            class="xl:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col"
-          >
+          <div v-if="selectedOrder" class="xl:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col">
             <!-- Backdrop -->
-            <div
-              class="fixed inset-0 bg-black/40 -z-10"
-              @click="clearSelectedOrder"
-            ></div>
+            <div class="fixed inset-0 bg-black/40 -z-10" @click="clearSelectedOrder"></div>
 
             <!-- Sheet -->
-            <div
-              class="bg-white rounded-t-2xl border-t shadow-2xl flex flex-col max-h-[80vh]"
-              style="padding-bottom: env(safe-area-inset-bottom);"
-            >
+            <div class="bg-white rounded-t-2xl border-t shadow-2xl flex flex-col max-h-[80vh]"
+              style="padding-bottom: env(safe-area-inset-bottom);">
               <!-- Drag handle -->
               <div class="shrink-0 pt-2 pb-1 flex justify-center">
                 <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
               </div>
 
               <div class="flex-1 min-h-0 overflow-hidden">
-                <NegotiationOrderPanel
-                  :order="selectedOrder"
-                  @clear="clearSelectedOrder"
-                />
+                <NegotiationOrderPanel :order="selectedOrder" @clear="clearSelectedOrder" />
               </div>
             </div>
           </div>
@@ -602,11 +520,9 @@
 
   <!-- ────── Payment Proof Upload Modal ────── -->
   <Teleport to="body">
-    <div
-      v-if="showProofModal"
+    <div v-if="showProofModal"
       class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      @click.self="showProofModal = false"
-    >
+      @click.self="showProofModal = false">
       <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
         <h3 class="text-lg font-bold mb-4">Upload Payment Proof</h3>
 
@@ -627,12 +543,9 @@
           <!-- Reference number -->
           <div>
             <label class="block text-xs font-semibold text-gray-600 mb-1">Reference Number</label>
-            <input
-              v-model="proofReference"
-              type="number"
+            <input v-model="proofReference" type="number"
               class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g. 1234567890"
-            />
+              placeholder="e.g. 1234567890" />
           </div>
 
           <!-- Image picker -->
@@ -640,58 +553,36 @@
             <label class="block text-xs font-semibold text-gray-600 mb-1">
               Upload Receipt / Screenshot
             </label>
-            <input
-              ref="proofFileInput"
-              type="file"
-              accept="image/*"
-              class="hidden"
-              @change="handleProofFileSelect"
-            />
-            <button
-              type="button"
-              @click="proofFileInput?.click()"
-              class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors"
-            >
+            <input ref="proofFileInput" type="file" accept="image/*" class="hidden" @change="handleProofFileSelect" />
+            <button type="button" @click="proofFileInput?.click()"
+              class="w-full py-2 border-2 border-dashed rounded-lg text-sm text-gray-500 hover:border-blue-400 hover:text-blue-600 transition-colors">
               {{ proofFile ? proofFile.name : 'Choose image…' }}
             </button>
-            <img
-              v-if="proofPreview"
-              :src="proofPreview"
-              class="mt-2 w-full max-h-40 object-contain rounded-lg border"
-            />
+            <img v-if="proofPreview" :src="proofPreview"
+              class="mt-2 w-full max-h-40 object-contain rounded-lg border" />
           </div>
 
           <!-- Note -->
           <div>
             <label class="block text-xs font-semibold text-gray-600 mb-1">Note (optional)</label>
-            <textarea
-              v-model="proofNote"
-              rows="2"
+            <textarea v-model="proofNote" rows="2"
               class="w-full px-3 py-2 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Anything the admin should know…"
-            ></textarea>
+              placeholder="Anything the admin should know…"></textarea>
           </div>
         </div>
 
         <!-- Actions -->
         <div class="flex gap-3 mt-5">
-          <button
-            type="button"
-            @click="showProofModal = false"
-            :disabled="isSubmittingProof"
-            class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
+          <button type="button" @click="showProofModal = false" :disabled="isSubmittingProof"
+            class="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50">
             Cancel
           </button>
-          <button
-            type="button"
-            @click="submitPaymentProof"
-            :disabled="!proofFile || isSubmittingProof"
-            class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-          >
-            <svg v-if="isSubmittingProof" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          <button type="button" @click="submitPaymentProof" :disabled="!proofFile || isSubmittingProof"
+            class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            <svg v-if="isSubmittingProof" class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+              fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             {{ isSubmittingProof ? 'Submitting…' : 'Submit' }}
           </button>
@@ -1303,7 +1194,7 @@ async function sendMessage() {
   } finally {
     isSending.value = false
   }
-} 
+}
 
 // ✅ UPDATED — Now accepts an optional `orderId` so we can open a
 // specific per-order conversation directly.
@@ -1412,15 +1303,15 @@ function formatConversationTime(dateValue) {
 
 // ── Socket listeners ────────────────────────────────
 function setupSocketListeners() {
-  
+
   onNewMessage((message) => {
 
-     console.log('📩 [customer] onNewMessage received:', {
-    messageId: message.messageId,
-    contentType: message.contentType,
-    conversationId: message.conversationId,
-    senderType: message.senderType,
-  })
+    console.log('📩 [customer] onNewMessage received:', {
+      messageId: message.messageId,
+      contentType: message.contentType,
+      conversationId: message.conversationId,
+      senderType: message.senderType,
+    })
 
     // ✅ Update sidebar preview in real time
     const sidebarConv = conversations.value.find(c => c.conversationId === message.conversationId)
@@ -1468,7 +1359,7 @@ function setupSocketListeners() {
     }
   })
 
-    onPaymentRequestUpdated((updatedReq) => {
+  onPaymentRequestUpdated((updatedReq) => {
     if (!updatedReq) return
     const idx = messages.value.findIndex(m => m.messageId === updatedReq.messageId)
     if (idx !== -1) {
@@ -1484,16 +1375,16 @@ function setupSocketListeners() {
     }
   })
 
-onOrderNegotiationUpdated((updatedOrder) => {
-  if (!updatedOrder) return
-  if (selectedOrder.value?.orderId === updatedOrder.orderId) {
-    if (updatedOrder.status === 'Pending' && updatedOrder.paymentStatus === 'Unpaid') {
-      selectedOrder.value = updatedOrder
-    } else {
-      clearSelectedOrder()
+  onOrderNegotiationUpdated((updatedOrder) => {
+    if (!updatedOrder) return
+    if (selectedOrder.value?.orderId === updatedOrder.orderId) {
+      if (updatedOrder.status === 'Pending' && updatedOrder.paymentStatus === 'Unpaid') {
+        selectedOrder.value = updatedOrder
+      } else {
+        clearSelectedOrder()
+      }
     }
-  }
-})
+  })
 
   onUserTyping(({ userType, isTyping: typing }) => {
     if (userType === 'admin') isTyping.value = typing
@@ -1578,16 +1469,38 @@ onUnmounted(() => {
 
 <style scoped>
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
 }
-.animate-bounce { animation: bounce 0.8s ease-in-out infinite; }
 
-.modal-enter-active, .modal-leave-active { transition: opacity 0.2s ease; }
-.modal-enter-from, .modal-leave-to { opacity: 0; }
+.animate-bounce {
+  animation: bounce 0.8s ease-in-out infinite;
+}
 
-.toast-enter-active, .toast-leave-active { transition: all 0.3s ease; }
-.toast-enter-from, .toast-leave-to {
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(12px);
 }
@@ -1597,6 +1510,7 @@ onUnmounted(() => {
 .sheet-leave-active {
   transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.2s ease;
 }
+
 .sheet-enter-from,
 .sheet-leave-to {
   transform: translateY(100%);

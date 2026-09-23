@@ -6,11 +6,12 @@
     <div class="shrink-0 px-4 sm:px-5 py-3 sm:py-4 border-b bg-gradient-to-r from-blue-50 to-white">
       <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shrink-0">
+          <div
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-md shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
             </svg>
           </div>
           <div>
@@ -18,14 +19,13 @@
             <p class="text-xs text-gray-500 font-mono">{{ order.orderId }}</p>
           </div>
         </div>
-        <button
-          @click="$emit('clear')"
+        <button @click="$emit('clear')"
           class="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          title="Close negotiation panel"
-        >
+          title="Close negotiation panel">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2">
-            <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
           </svg>
         </button>
       </div>
@@ -37,22 +37,16 @@
       <!-- Status row -->
       <div class="px-4 sm:px-5 py-3 border-b bg-white">
         <div class="flex flex-wrap items-center gap-1.5">
-          <span
-            class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-            :class="statusBadgeClass(order.status)"
-          >
+          <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+            :class="statusBadgeClass(order.status)">
             {{ order.status || 'Pending' }}
           </span>
-          <span
-            class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
-            :class="paymentBadgeClass(order.paymentStatus)"
-          >
+          <span class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+            :class="paymentBadgeClass(order.paymentStatus)">
             {{ order.paymentStatus || 'Unpaid' }}
           </span>
-          <span
-            v-if="order.negotiationStatus === 'in_progress'"
-            class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-100 text-blue-700"
-          >
+          <span v-if="order.negotiationStatus === 'in_progress'"
+            class="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
             In Negotiation
           </span>
         </div>
@@ -110,9 +104,9 @@
         <div class="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" class="text-blue-500 shrink-0 mt-0.5">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M12 16v-4"/>
-            <path d="M12 8h.01"/>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 16v-4" />
+            <path d="M12 8h.01" />
           </svg>
           <span class="leading-snug">
             The admin may adjust pricing. You'll see changes here in real time.

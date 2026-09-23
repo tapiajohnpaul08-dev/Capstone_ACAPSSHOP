@@ -147,6 +147,41 @@
       </div>
     </div>
 
+<!-- ✅ Completion Thank-You Banner -->
+<div
+  v-if="order.status === 'Completed'"
+  class="flex items-start gap-3 p-3.5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl mb-3"
+>
+  <div class="w-9 h-9 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-green-600">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  </div>
+  <div class="flex-1 min-w-0">
+    <p class="font-bold text-green-800 text-sm">
+      Order Completed — Thank You!
+    </p>
+    <p class="text-xs text-green-700 mt-0.5 leading-relaxed">
+      <template v-if="order.receivingMode === 'Pick-up'">
+        Your order was picked up on
+        <strong>{{ formatDate(order.updatedAt || order.completedAt) }}</strong>.
+      </template>
+      <template v-else>
+        Your order was delivered on
+        <strong>{{ formatDate(order.updatedAt || order.completedAt) }}</strong>.
+      </template>
+      We appreciate your business and hope to serve you again soon.
+    </p>
+    <button
+      @click="scrollToFeedback"
+      v-if="!hasFeedback"
+      class="mt-1.5 text-[11px] font-bold text-green-800 underline underline-offset-2 hover:text-green-900"
+    >
+      Share your experience →
+    </button>
+  </div>
+</div>
+
          
       </div>
 
@@ -672,18 +707,12 @@
         </div>
       </div>
 
-      <div v-if="order.status?.toLowerCase() === 'completed'" class="mt-2 p-2.5 bg-green-50 border border-green-200 rounded-lg">
-        <div class="flex items-start gap-2">
-          <CheckCircle class="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 class="font-semibold text-green-800 text-xs">Order Completed</h4>
-            <p class="text-xs text-green-700">{{ order.receivingMode === 'Pick-up' ? 'Pickup completed.' : 'Delivered successfully.' }}</p>
-          </div>
-        </div>
-      </div>
-
       <!-- ✅ FEEDBACK SECTION - Displayed at the bottom -->
-      <div v-if="order.status?.toLowerCase() === 'completed'" class="mt-4">
+      <div
+        v-if="order.status === 'Completed'"
+        id="feedback-section"
+        class="mt-4"
+      >
         <div class="bg-white rounded-xl border overflow-hidden">
           <div class="px-4 py-2.5 border-b bg-gray-50 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -866,7 +895,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, h } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useOrders } from '@/composables/useOrders.js'
 import { ordersApi, feedBackApi } from '@/api'
@@ -1093,6 +1122,12 @@ const nextStatusHint = computed(() => {
     durationHint: STATUS_DURATIONS[next.key] || '',
   }
 })
+
+// Smooth-scroll to the feedback section
+function scrollToFeedback() {
+  const el = document.getElementById('feedback-section')
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 // ✅ NEW — Compute the index of the current status for the stepper
 const currentStepperIndex = computed(() => {
@@ -1623,8 +1658,41 @@ async function handleCancel() {
   }
 }
 
+// ── Realtime: refetch when this specific order changes ────────────
+let realtimeRefreshTimer = null
+async function loadOrderById(id) {
+  const res = await fetchOrder(id)
+  if (res.success && res.order) {
+    order.value = res.order
+  }
+}
+
+function handleRealtimeOrderChanged(e) {
+  const changedId = e.detail?.orderId
+  if (!changedId) return
+
+  // The URL param may be either the human-readable orderId
+  // ("ORD-2026-062-COMP") or the mongo _id. Match either.
+  const currentId = route.params.id
+  const currentOrder = order.value
+  const matches =
+    changedId === currentId ||
+    changedId === currentOrder?.orderId ||
+    changedId === currentOrder?.id
+
+  if (!matches) return
+
+  console.log('📡 [order-detail] refetching on realtime event', e.detail)
+  clearTimeout(realtimeRefreshTimer)
+  realtimeRefreshTimer = setTimeout(() => {
+    loadOrderById(currentId)
+  }, 300)
+}
+
 // ─── LIFECYCLE ────────────────────────────────────────────────────────
 onMounted(async () => {
+  window.addEventListener('realtime:order-changed', handleRealtimeOrderChanged)
+
   const res = await fetchOrder(route.params.id)
   if (res.success) {
     order.value = res.order
@@ -1633,7 +1701,7 @@ onMounted(async () => {
     console.log('Design fee:', designFee.value)
     console.log('Subtotal:', calculatedSubtotal.value)
     console.log('Calculated total:', calculatedTotal.value)
-    
+
     if (!order.value.items && order.value.product) {
       order.value.items = [{
         name: order.value.product,
@@ -1644,11 +1712,15 @@ onMounted(async () => {
         design: order.value.designDetails?.[0] || null
       }]
     }
-    
-    // ✅ Check if feedback exists for this order
+
     await checkFeedbackExists()
   }
   isLoading.value = false
+})
+
+onUnmounted(() => {
+  window.removeEventListener('realtime:order-changed', handleRealtimeOrderChanged)
+  clearTimeout(realtimeRefreshTimer)
 })
 </script>
 

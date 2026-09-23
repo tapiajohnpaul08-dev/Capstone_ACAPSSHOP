@@ -1,13 +1,9 @@
 <template>
   <div class="flex flex-col min-h-screen bg-gray-50">
-    <NavigationBar
-      :notif-count="notificationCount"
-      :cart-count="cartCount"
-      :unread-count="unreadCount"
-      @bell-click="handleBell"
-    />
+    <NavigationBar :notif-count="notificationCount" :cart-count="cartCount" :unread-count="unreadCount"
+      @bell-click="handleBell" />
     <main class="flex-1 min-h-0">
-        <router-view :key="$route.fullPath" />
+      <router-view :key="$route.fullPath" />
     </main>
     <Footer v-if="!hideFooter" />
   </div>
@@ -67,7 +63,7 @@ function handleNewMessageReceived() {
 // ── Lifecycle ─────────────────────────────────────────
 onMounted(() => {
   fetchUnreadCount()
-  
+
   // Listen for unread count updates from socket
   window.addEventListener('unreadCountUpdated', handleUnreadCountUpdate)
   window.addEventListener('newMessageReceived', handleNewMessageReceived)
