@@ -68,9 +68,66 @@
   @product-changed="onProductChanged"
 />
 
+          <!-- ✅ NEW — Item photo uploader (own-cups only) -->
+          <div v-if="isOwnCups" class="mt-5 bg-white rounded-xl border">
+            <div class="px-6 pt-6 pb-4 border-b">
+              <div class="flex items-center gap-2">
+                <Camera class="w-4 h-4 text-blue-600" />
+                <h4 class="font-semibold text-gray-900">Photos of Your Item</h4>
+                <span
+                  v-if="hasAnyItemPhoto"
+                  class="ml-auto text-xs font-semibold text-green-600 flex items-center gap-1"
+                >
+                  <CheckCircle class="w-3.5 h-3.5" />
+                  {{ itemPhotoCount }} uploaded
+                </span>
+                <span
+                  v-else
+                  class="ml-auto text-xs font-semibold text-amber-600 flex items-center gap-1"
+                >
+                  <AlertTriangle class="w-3.5 h-3.5" />
+                  Required
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Show us what your item looks like so we know what we're printing on.
+              </p>
+            </div>
+            <div class="px-6 py-5">
+              <ItemPhotoUploader
+                v-model="ownCupsItemPhotos"
+                :disabled="isSubmitting"
+                :max-files="5"
+              />
+            </div>
+          </div>
+
+          <!-- ✅ NEW — Amber banner when item photo is missing -->
+          <div
+            v-if="isOwnCups && !hasAnyItemPhoto && submitAttempted"
+            class="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3"
+          >
+            <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-amber-900">
+                Upload at least one item photo to continue
+              </p>
+              <p class="text-xs text-amber-700 mt-0.5">
+                We need to see the item you're bringing in before we can configure the print.
+              </p>
+            </div>
+          </div>
+
           <div class="mt-4 flex items-center justify-between">
             <div>
-              <span v-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
+              <span
+                v-if="requiresItemPhoto && !hasAnyItemPhoto"
+                class="text-xs text-amber-600 flex items-center gap-1"
+              >
+                <AlertTriangle class="w-3 h-3" />
+                Item photo required
+              </span>
+              <span v-else-if="!isStepValid" class="text-xs text-red-500 flex items-center gap-1">
                 <AlertCircle class="w-3 h-3" />
                 {{ step0Errors[0] || 'Please complete all required fields' }}
               </span>
@@ -79,16 +136,33 @@
                 All product details complete
               </span>
             </div>
-            <button @click="nextStep" :disabled="!isStepValid || isSubmitting" class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
-         hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
-         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              :title="!isStepValid ? 'Complete all fields to continue' : 'Continue'">
-              {{ onlyLids ? 'Continue' : designableItems.length > 1 ? 'Configure Designs' : 'Add Design' }}
+            <button
+              @click="nextStep"
+              :disabled="!canProceedFromProducts || isSubmitting"
+              class="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all inline-flex items-center gap-2
+                     hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-gray-200
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              :title="
+                requiresItemPhoto && !hasAnyItemPhoto
+                  ? 'Upload an item photo to continue'
+                  : !isStepValid
+                    ? 'Complete all fields to continue'
+                    : 'Continue'
+              "
+            >
+              {{
+                requiresItemPhoto && !hasAnyItemPhoto
+                  ? 'Upload Item Photo'
+                  : onlyLids
+                    ? 'Continue'
+                    : designableItems.length > 1
+                      ? 'Configure Designs'
+                      : 'Add Design'
+              }}
               <ArrowRight class="w-4 h-4" />
             </button>
           </div>
         </div>
-
         <!-- ==================== STEP 1: DESIGN ==================== -->
         <div v-if="getStepKey(currentStep) === 'design'">
 
@@ -454,6 +528,22 @@
                     {{ designNotesSummary || 'No additional notes provided.' }}
                   </p>
                 </div>
+
+                <!-- ✅ NEW — Item photos preview -->
+                <div v-if="isOwnCups && ownCupsItemPhotos.length > 0">
+                  <h5 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">
+                    Item Photos ({{ ownCupsItemPhotos.length }})
+                  </h5>
+                  <div class="grid grid-cols-4 gap-2">
+                    <img
+                      v-for="(url, idx) in ownCupsItemPhotos"
+                      :key="idx"
+                      :src="url"
+                      :alt="`Item photo ${idx + 1}`"
+                      class="w-full aspect-square object-cover rounded-lg border border-gray-200"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -490,16 +580,30 @@
           <span class="text-lg font-bold text-blue-600">₱{{ totalAmount.toLocaleString() }}</span>
         </div>
 
-        <button @click="handleSubmit" :disabled="!isFormValid || isSubmitting" class="px-8 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold transition-all shadow-sm inline-flex items-center justify-center gap-2 min-w-[170px]
-         hover:bg-blue-700 hover:shadow-md disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-gray-200
-         focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          :title="!isFormValid ? 'Please fix validation errors before submitting' : 'Submit your order'">
+        <button
+          @click="handleSubmit"
+          :disabled="!canSubmitFinal || isSubmitting"
+          class="px-8 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold transition-all shadow-sm inline-flex items-center justify-center gap-2 min-w-[170px]
+                 hover:bg-blue-700 hover:shadow-md disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-gray-200
+                 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          :title="
+            requiresItemPhoto && !hasAnyItemPhoto
+              ? 'Upload an item photo first'
+              : !isFormValid
+                ? 'Please fix validation errors before submitting'
+                : 'Submit your order'
+          "
+        >
           <template v-if="isSubmitting">
             <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             Submitting…
+          </template>
+          <template v-else-if="requiresItemPhoto && !hasAnyItemPhoto">
+            <Upload class="w-4 h-4" />
+            Upload Item Photo
           </template>
           <template v-else>
             <CheckCircle class="w-4 h-4" />
@@ -557,6 +661,8 @@ import OrderSummaryCard from '@/components/create-order/OrderSummaryCard.vue'
 import DesignManager from '@/components/create-order/DesignManager.vue'
 import DesignModeSelector from '@/components/create-order/DesignModeSelector.vue'
 import ProductSelector from '@/components/create-order/ProductSelector.vue'
+import ItemPhotoUploader from '@/components/create-order/ItemPhotoUploader.vue'
+import { useItemPhotoRequirement } from '@/composables/useItemPhotoRequirement'
 import { productsApi, ordersApi, authApi } from '@/api.js'
 import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
 
@@ -568,6 +674,9 @@ import {
   CheckCircle,
   AlertCircle,
   FileText,
+  Camera,
+  AlertTriangle,
+  Upload,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -601,6 +710,12 @@ const customerInfo = ref({
   phone: '',
   saveAsDefault: false,
 })
+
+// ✅ NEW — Photos of the customer's OWN physical item (own-cups orders).
+// These are distinct from design files — they show production what
+// surface they'll be printing on.
+const ownCupsItemPhotos = ref([])
+const submitAttempted = ref(false)
 
 const fulfillment = ref({
   method: 'delivery',
@@ -671,6 +786,27 @@ function getLastStepIndex() {
 const orderType = computed(() => (route.query.type === 'company-product' ? 'company-product' : 'own-cups'))
 const isCartOrder = computed(() => route.query.source === 'cart')
 const isOwnCups = computed(() => orderType.value === 'own-cups')
+
+// ✅ NEW — Item photo requirement (own-cups only).
+const {
+  requiresItemPhoto,
+  hasAnyItemPhoto,
+  itemPhotoError,
+  itemPhotoCount,
+} = useItemPhotoRequirement(isOwnCups, ownCupsItemPhotos)
+
+// ✅ Combined gates used by the continue / submit buttons
+const canProceedFromProducts = computed(() => {
+  if (!isStepValid.value) return false
+  if (requiresItemPhoto.value && !hasAnyItemPhoto.value) return false
+  return true
+})
+
+const canSubmitFinal = computed(() => {
+  if (!isFormValid.value) return false
+  if (requiresItemPhoto.value && !hasAnyItemPhoto.value) return false
+  return true
+})
 
 // ═══════════════════════════════════════════════════════════════════
 // ✅ NEW — Lid detection & design-scope helpers
@@ -849,7 +985,7 @@ function getShippingFee() {
 
 const totalAmount = computed(() => {
   let total = productSubtotal.value
-  if (isOwnCups.value || hasDesign.value) total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
+  if (isOwnCups.value || hasDesign.value) total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE 
   total += getShippingFee()
   return total
 })
@@ -1145,6 +1281,8 @@ function saveDraft() {
       placementSettings: placementSettings.value,
       customerInfo: customerInfo.value,
       fulfillment: fulfillment.value,
+      // ✅ NEW — persist uploaded item photos through a refresh
+      ownCupsItemPhotos: ownCupsItemPhotos.value,
       savedAt: Date.now(),
     }
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
@@ -1186,7 +1324,19 @@ watch(
 
 // ─── SUBMIT ────────────────────────────────────────────────────────────────
 async function handleSubmit() {
+  submitAttempted.value = true
+
   if (!isFormValid.value) return
+
+  // ✅ NEW — Guard: own-cups orders need at least one photo of the
+  // customer's physical item before we can accept the submission.
+  if (requiresItemPhoto.value && !hasAnyItemPhoto.value) {
+    document
+      .querySelector('[data-item-photo-upload]')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    showToast(itemPhotoError.value, 'error')
+    return
+  }
 
   isSubmitting.value = true
   try {
@@ -1332,6 +1482,9 @@ async function handleSubmit() {
 
     const orderData = {
       items: itemsArray,
+      // ✅ NEW — top-level mirror so the backend's dual lookup always
+      // finds the photos even if items[] parsing changes in future.
+      itemPhotos: isOwnCups.value ? [...ownCupsItemPhotos.value] : [],
       quantity: itemsArray.reduce((sum, item) => sum + (item.quantity || 0), 0),
       address: fullDeliveryAddress.value,
       postalCode: fulfillment.value.deliveryPostalCode || '',
@@ -1419,6 +1572,8 @@ function buildItemPayload(product, design) {
       // ✅ Own-cups have no product rim
       rimDiameter: null,
       itemType: 'cup',
+      // ✅ NEW — Photos of the customer's own physical item
+      itemPhotos: [...ownCupsItemPhotos.value],
     }
   }
 
@@ -1505,6 +1660,14 @@ watch(orderProducts, (newProducts) => {
   }
 }, { immediate: true })
 
+// ✅ NEW — Clear item photos when the customer leaves own-cups mode
+watch(isOwnCups, (val) => {
+  if (!val) {
+    ownCupsItemPhotos.value = []
+    submitAttempted.value = false
+  }
+})
+
 function parseProductDataFromQuery() {
   const productId = route.query.productId
   const productName = route.query.productName
@@ -1542,6 +1705,10 @@ onMounted(async () => {
     placementSettings.value = draft.placementSettings || []
     customerInfo.value = draft.customerInfo || customerInfo.value
     fulfillment.value = { ...fulfillment.value, ...(draft.fulfillment || {}) }
+    // ✅ NEW — restore uploaded item photos
+    ownCupsItemPhotos.value = Array.isArray(draft.ownCupsItemPhotos)
+      ? draft.ownCupsItemPhotos
+      : []
     currentStep.value = Math.min(draft.currentStep || 0, activeSteps.value.length - 1)
     showToast('Restored your previous draft', 'success')
   } else {

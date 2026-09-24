@@ -10,6 +10,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@aivangogh/ph-address": "^2026.2.3",
     "axios": "^1.16.1",
     "dotenv": "^17.4.2",
     "lucide-vue-next": "^1.0.0",

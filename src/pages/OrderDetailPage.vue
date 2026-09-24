@@ -94,79 +94,58 @@
           <!-- Info banner -->
           <div class="px-4 py-2 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-800">
             Order is <strong>{{ order.status }}</strong>.
-            <span v-if="editableFieldsLabel">You can still edit: {{ editableFieldsLabel }}.</span>
-            <span v-else>No fields are editable at this stage.</span>
+            <span v-if="canEdit('address')">
+              You can update the <strong>delivery address</strong> while the order is Pending.
+            </span>
+            <span v-else>
+              Only Pending orders can be edited. Contact support if you need to make a change.
+            </span>
           </div>
 
           <div class="px-4 py-3 space-y-3">
 
-            <!-- Delivery method (Pending only) -->
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Delivery Method</label>
-              <select
-                v-model="editForm.receivingMode"
-                :disabled="!canEdit('receivingMode') || isSavingEdit"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-              >
-                <option value="Pick-up">Pick-up</option>
-                <option value="Delivery">Delivery</option>
-              </select>
-              <p v-if="!canEdit('receivingMode')" class="text-[10px] text-gray-400 mt-0.5">
-                Locked after the order is confirmed.
-              </p>
+            <!-- Pick-up orders have no address to edit -->
+            <div
+              v-if="order.receivingMode !== 'Delivery'"
+              class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-xs text-gray-600"
+            >
+              This is a <strong>Pick-up</strong> order, so there's no delivery address to change.
+              Contact support if you need to switch to Delivery.
             </div>
 
-            <!-- Delivery address (Delivery orders only) -->
-            <div v-if="order.receivingMode === 'Delivery'">
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Delivery Address</label>
-              <input
-                v-model="editForm.address"
-                type="text"
-                :disabled="!canEdit('address') || isSavingEdit"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-                placeholder="Full delivery address"
-              />
-              <p v-if="!canEdit('address')" class="text-[10px] text-gray-400 mt-0.5">
-                Address cannot be changed at this stage.
-              </p>
-            </div>
+            <!-- Delivery address -->
+            <template v-else>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">
+                  Delivery Address
+                </label>
+                <input
+                  v-model="editForm.address"
+                  type="text"
+                  :disabled="!canEdit('address') || isSavingEdit"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  placeholder="House/Unit/Flr #, Building, Street, Barangay, City"
+                />
+                <p v-if="!canEdit('address')" class="text-[10px] text-gray-400 mt-0.5">
+                  The address can only be changed while the order is Pending.
+                </p>
+              </div>
 
-            <div v-if="order.receivingMode === 'Delivery'">
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Postal Code</label>
-              <input
-                v-model="editForm.postalCode"
-                type="text"
-                :disabled="!canEdit('postalCode') || isSavingEdit"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-                placeholder="e.g., 1100"
-              />
-            </div>
-
-            <!-- Expected delivery (Pending + Confirmed) -->
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Expected Delivery</label>
-              <input
-                v-model="editForm.expectedDelivery"
-                type="date"
-                :disabled="!canEdit('expectedDelivery') || isSavingEdit"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-              />
-              <p v-if="!canEdit('expectedDelivery')" class="text-[10px] text-gray-400 mt-0.5">
-                Delivery date is locked once production has been scheduled.
-              </p>
-            </div>
-
-            <!-- Notes (always editable until Completed/Cancelled) -->
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 mb-1">Notes</label>
-              <textarea
-                v-model="editForm.notes"
-                rows="3"
-                :disabled="!canEdit('notes') || isSavingEdit"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
-                placeholder="Any instructions or clarifications for our team"
-              ></textarea>
-            </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">
+                  Postal Code
+                </label>
+                <input
+                  v-model="editForm.postalCode"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="4"
+                  :disabled="!canEdit('postalCode') || isSavingEdit"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  placeholder="e.g., 1100"
+                />
+              </div>
+            </template>
 
             <!-- Error line -->
             <div v-if="editError" class="p-2 bg-red-50 border border-red-200 rounded-lg text-[11px] text-red-700">
@@ -269,7 +248,7 @@
         </div>
 
         <!-- ✅ Only show for own-cups orders waiting on the customer's drop-off -->
-    <div v-if="order.isProvided && order.dropOffStatus === 'Pending' && order.status !== 'Cancelled' "
+    <div v-if="order.isProvided && order.dropOffStatus === 'Pending' && order.status !== 'Cancelled' && order.status !=='Pending' "
       class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-md mb-3"
     >
       <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -283,6 +262,32 @@
         <p class="text-xs text-amber-700 mt-0.5">
           Your Order <strong>cannot</strong> be proceed to <strong>Scheduled</strong> without your item.
         </p>
+      </div>
+    </div>
+
+            <!-- ✅ Only show for own-cups orders waiting on the customer's drop-off -->
+    <div v-if="order.status === 'Pending'"
+      class="flex items-start gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-md mb-3"
+    >
+      <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-amber-600">
+          <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+          <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-bold text-amber-800 text-sm">Your order is not final yet</p>
+      <p class="text-xs mt-0.5 text-amber-700">
+        This payment breakdown is only an <strong>estimate</strong>. The final total will be
+        confirmed after our team reviews your order — we'll reach out in
+<strong>
+  <router-link
+    :to="`/customer/messages?tab=${order.orderId}`"
+    class="underline underline-offset-2 hover:text-amber-900"
+  >
+    Messages
+  </router-link>
+</strong>      </p>
       </div>
     </div>
 
@@ -668,6 +673,7 @@
                 <span class="text-blue-600">{{ formatPrice(calculatedTotal) }}</span>
               </div>
 
+
               <!-- 6. Partial Payments -->
               <div v-if="order.partialPayments && order.partialPayments.length > 0" class="pt-1 border-t border-gray-100">
                 <div class="flex justify-between text-[10px]">
@@ -756,7 +762,7 @@
       <!-- Action Buttons - Compact -->
       <div class="flex flex-wrap gap-1.5 mt-3">
         <button
-          v-if="orderIsEditable"
+          v-if="order.status === 'Pending'"
           @click="openEditForm"
           class="px-3 py-1.5 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
         >
@@ -772,8 +778,8 @@
         </button>
         
         <button 
-  v-if="['pending', 'confirmed', 'scheduled'].includes(order.status?.toLowerCase())" 
-  @click="showCancelConfirm = true" 
+  v-if="order.status === 'Scheduled' || order.status === 'Pending' || order.status === 'Confirmed' "
+    @click="showCancelConfirm = true"
   class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
 >
   <XCircle class="w-3 h-3" />
@@ -788,14 +794,6 @@
         >
           <RefreshCw class="w-3 h-3" />
           Reorder
-        </button>
-
-        <button 
-          @click="printOrder" 
-          class="px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1"
-        >
-          <Printer class="w-3 h-3" />
-          Print
         </button>
 
       </div>
@@ -1131,12 +1129,10 @@ const editError = ref('')
 
 // Snapshot of the fields the customer can change. Populated by
 // openEditForm() from the current order, diffed against it on save.
+// ✅ Simplified — the ONLY editable field is the delivery address.
 const editForm = ref({
-  receivingMode: '',
   address: '',
   postalCode: '',
-  notes: '',
-  expectedDelivery: '',
 })
 
 // Snapshot taken at openEditForm() time. Used by hasEditChanges to
@@ -1442,11 +1438,8 @@ function openEditForm() {
   if (!order.value) return
   editError.value = ''
   editForm.value = {
-    receivingMode: order.value.receivingMode || 'Pick-up',
     address: order.value.address || '',
     postalCode: order.value.postalCode || '',
-    notes: order.value.notes || '',
-    expectedDelivery: order.value.expectedDeliveryRaw || '',
   }
   editSnapshot.value = { ...editForm.value }
   showEditForm.value = true

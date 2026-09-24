@@ -8,36 +8,17 @@
 // Keep the two tables in sync. If you add a field to the backend,
 // add it here too.
 
+// ✅ Simplified — matches the backend matrix in OrderController.js.
+// Only Pending orders are editable, and only the delivery address
+// (address + postal code) may be changed by the customer.
 const EDITABLE_BY_STATUS = {
-  Pending: [
-    'receivingMode',
-    'address',
-    'postalCode',
-    'notes',
-    'expectedDelivery',
-    'preferredDate',
-  ],
-  Confirmed: [
-    'address',
-    'postalCode',
-    'notes',
-    'expectedDelivery',
-  ],
-  Scheduled: [
-    'address',
-    'postalCode',
-    'notes',
-  ],
-  'In Production': [
-    'notes',
-  ],
-  'Out for Delivery': [
-    'address',
-    'postalCode',
-    'notes',
-  ],
-  Completed: [],
-  Cancelled: [],
+  Pending:             ['address', 'postalCode'],
+  Confirmed:           [],
+  Scheduled:           [],
+  'In Production':     [],
+  'Out for Delivery':  [],
+  Completed:           [],
+  Cancelled:           [],
 }
 
 export function canEditField(order, field) {
@@ -80,11 +61,8 @@ export function describeEditableFields(order) {
     return true
   })
   const labels = {
-    receivingMode: 'delivery method',
     address: 'delivery address',
     postalCode: 'postal code',
-    notes: 'notes',
-    expectedDelivery: 'expected delivery date',
   }
   return fields.map((f) => labels[f] || f)
 }

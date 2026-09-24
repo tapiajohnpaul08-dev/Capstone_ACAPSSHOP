@@ -652,6 +652,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useSocket } from '@/composables/useSocket'
 import { chatApi, ordersApi } from '@/api'
@@ -660,6 +661,7 @@ import NegotiationOrderPanel from '@/components/chat/NegotiationOrderPanel.vue'
 import Logo from '@/assets/images/ACAPS_LOGO_ONLY.png'
 
 const { userInitial, customerId, token } = useAuth()
+const route = useRoute()
 const {
   isConnected: isSocketConnected,
   connect: connectSocket,
@@ -1526,6 +1528,67 @@ async function initConversation(orderId = null) {
   }
 }
 
+// ✅ NEW — Open (or create) the per-order conversation for a given orderId.
+// Used by:
+//   1. onMounted, when `?tab=<orderId>` is present in the URL
+//   2. the route watcher, when the customer clicks another "Messages" link
+//      from a different order without leaving the page
+async function openConversationForOrder(orderId) {
+  if (!orderId) return
+
+  // Try to reuse an existing conversation for this order (any status —
+  // ChatServices.getOrCreateConversation matches on customerId + orderId)
+  const existing = conversations.value.find((c) => c.orderId === orderId)
+
+  if (existing) {
+    conversationId.value = existing.conversationId
+    activeConversationId.value = existing.conversationId
+    if (isSocketConnected.value) {
+      joinConversation(existing.conversationId)
+    }
+    await loadMessages()
+
+    // Restore the negotiation panel if the order is still Pending+Unpaid
+    const pendingMatch = myPendingOrders.value.find((o) => o.orderId === orderId)
+    if (pendingMatch) {
+      selectedOrder.value = pendingMatch
+      showOrderPicker.value = orderId
+      saveSelectedOrderId(orderId)
+    }
+    return
+  }
+
+  // No cached conversation yet — let the backend find or create it.
+  // getOrCreateConversation is per-order: if the order already has a
+  // thread, it returns it; otherwise it creates a fresh one.
+  try {
+    const response = await chatApi.getOrCreateConversation('Customer Support', orderId)
+    if (response.success && response.data) {
+      conversationId.value = response.data.conversationId
+      activeConversationId.value = response.data.conversationId
+
+      if (isSocketConnected.value) {
+        joinConversation(conversationId.value)
+      }
+      await loadMessages()
+
+      // Refresh the sidebar so the new thread appears
+      await loadConversationList()
+
+      // Open the negotiation panel if applicable
+      const pendingMatch = myPendingOrders.value.find((o) => o.orderId === orderId)
+      if (pendingMatch) {
+        selectedOrder.value = pendingMatch
+        showOrderPicker.value = orderId
+        saveSelectedOrderId(orderId)
+      }
+    }
+  } catch (err) {
+    console.error('openConversationForOrder failed:', err)
+    showToast('error', 'Failed to open conversation')
+  }
+}
+
 // ✅ NEW — Load all conversations for the customer (sidebar data)
 async function loadConversationList() {
   isLoadingConversations.value = true
@@ -1704,6 +1767,20 @@ function setupSocketListeners() {
   })
 }
 
+// ✅ NEW — React to `?tab=<orderId>` changes while the page is mounted.
+// Scenario: the customer is already on Messages, then clicks a "Messages"
+// link from another order's detail page. Vue Router reuses the component
+// and only the query changes, so we need to re-open the target thread.
+watch(
+  () => (typeof route.query.tab === 'string' ? route.query.tab.trim() : ''),
+  async (newOrderId, oldOrderId) => {
+    if (!newOrderId || newOrderId === oldOrderId) return
+    if (!isSocketConnected.value && !conversationId.value) return
+    await openConversationForOrder(newOrderId)
+    await scrollToBottom()
+  }
+)
+
 // ── Watchers ────────────────────────────────────────
 watch(() => messages.value.length, () => scrollToBottom(), { flush: 'post' })
 watch(groupedMessages, () => scrollToBottom(), { flush: 'post' })
@@ -1739,36 +1816,46 @@ onMounted(async () => {
   await loadConversationList()
   await loadPendingOrders()
 
-  // ✅ Decide which conversation to open:
-  //   1. If sessionStorage has a saved order, open the conversation for it
-  //   2. Else if there's an open conversation in the list, open the newest
-  //   3. Else create a fresh general conversation
-  const savedOrderId = getSavedOrderId()
-  const targetConv = savedOrderId
-    ? conversations.value.find((c) => c.orderId === savedOrderId)
-    : conversations.value[0]
+  // ✅ Decide which conversation to open, in priority order:
+  //
+  //   1. `?tab=<orderId>` in the URL  — explicit "open this order's chat"
+  //      (used by the "before any payment" note and any per-order Messages
+  //      link in the customer flow).
+  //   2. sessionStorage's last-selected order — restores the customer's
+  //      previous context when they navigate away and back.
+  //   3. The newest conversation in the sidebar.
+  //   4. A fresh general conversation if the customer has none.
+  const queryOrderId =
+    typeof route.query.tab === 'string' ? route.query.tab.trim() : ''
 
-  if (targetConv) {
-    // Open the specific conversation
-    conversationId.value = targetConv.conversationId
-    activeConversationId.value = targetConv.conversationId
-    if (isSocketConnected.value) {
-      joinConversation(targetConv.conversationId)
-    }
-    await loadMessages()
-
-    // If it has an order, restore the negotiation panel
-    if (targetConv.orderId) {
-      const found = myPendingOrders.value.find((o) => o.orderId === targetConv.orderId)
-      if (found) {
-        selectedOrder.value = found
-        showOrderPicker.value = targetConv.orderId
-      }
-    }
+  if (queryOrderId) {
+    await openConversationForOrder(queryOrderId)
   } else {
-    // No conversations at all — create a general one so the page isn't blank
-    await initConversation()
-    await loadConversationList()
+    const savedOrderId = getSavedOrderId()
+    const targetConv = savedOrderId
+      ? conversations.value.find((c) => c.orderId === savedOrderId)
+      : conversations.value[0]
+
+    if (targetConv) {
+      conversationId.value = targetConv.conversationId
+      activeConversationId.value = targetConv.conversationId
+      if (isSocketConnected.value) {
+        joinConversation(targetConv.conversationId)
+      }
+      await loadMessages()
+
+      if (targetConv.orderId) {
+        const found = myPendingOrders.value.find((o) => o.orderId === targetConv.orderId)
+        if (found) {
+          selectedOrder.value = found
+          showOrderPicker.value = targetConv.orderId
+        }
+      }
+    } else {
+      // No conversations at all — create a general one so the page isn't blank
+      await initConversation()
+      await loadConversationList()
+    }
   }
 
   await nextTick()
