@@ -212,7 +212,6 @@ const selectedStatus = ref('all')
 const isLoading = ref(false)
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
 // Status tabs matching your backend status values
 const statusTabs = [
   { value: 'all', label: 'All' },
@@ -233,13 +232,12 @@ const getOrderCount = (status) => {
   }).length
 }
 
-// ✅ NEW — Count of delayed orders (used by a "Delayed" tab if you add one)
-const delayedCount = computed(() =>
-  orders.value.filter((o) => o.isCurrentlyDelayed).length
-)
+
 
 // Filter orders by selected status
 const filteredOrders = computed(() => {
+  console.log(orders)
+
   if (selectedStatus.value === 'all') return orders.value
   return orders.value.filter((o) => {
     const orderStatus = o.status?.toLowerCase() || ''
@@ -284,9 +282,10 @@ function getStatusBadgeClass(status) {
     'pending': 'bg-yellow-100 text-yellow-800',
     'scheduled': 'bg-blue-100 text-blue-800',
     'in production': 'bg-purple-100 text-purple-800',
-    'out for delivery': 'bg-green-100 text-green-800',
-    'completed': 'bg-gray-100 text-gray-800',
-    'cancelled': 'bg-red-100 text-red-800'
+    'out for delivery': 'bg-blue-200 text-blue-800',
+    'completed': 'bg-green-100 text-green-800',
+    'cancelled': 'bg-red-100 text-red-800',
+    'confirmed': 'bg-green-200 text-white-800',
   }
   return classes[statusLower] || 'bg-gray-100 text-gray-800'
 }

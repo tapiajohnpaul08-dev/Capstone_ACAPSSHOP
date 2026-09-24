@@ -1,117 +1,467 @@
-{
-    "id": "ORD-2026-957-PROV",
-    "orderId": "ORD-2026-957-PROV",
-    "orderNumber": "ORD-2026-957-PROV",
-    "status": "In Production",
-    "delayHistory": [],
-    "isCurrentlyDelayed": false,
-    "currentDelay": null,
-    "originalExpectedDelivery": "2026-09-29T04:31:43.351Z",
-    "statusValue": "production",
-    "paymentStatus": "Partial",
-    "isProvided": true,
-    "supplyType": "Own Cups",
-    "hasDesign": true,
-    "receivingMode": "Delivery",
-    "deliveryMethod": "Delivery",
-    "totalAmount": 1000,
-    "designFee": 500,
-    "shippingFee": 500,
-    "partialPayments": [
-        {
-            "amount": 500,
-            "referenceNumber": "8585555555555",
-            "date": "2026-09-24T04:34:05.107Z",
-            "updatedBy": "John Paul Tapia"
-        }
-    ],
-    "quantity": 500,
-    "image": null,
-    "date": "9/24/2026",
-    "createdAt": "2026-09-24T04:31:43.357Z",
-    "items": [
-        {
-            "productId": null,
-            "name": "Tumbler",
-            "category": "Customer Provided",
-            "size": "1L",
-            "quantity": 500,
-            "estimatedTotal": 0,
-            "design": {
-                "source": "saved",
+[
+    {
+        "id": "ORD-2026-255-PROV",
+        "orderId": "ORD-2026-255-PROV",
+        "orderNumber": "ORD-2026-255-PROV",
+        "status": "Pending",
+        "delayHistory": [],
+        "isCurrentlyDelayed": false,
+        "currentDelay": null,
+        "originalExpectedDelivery": "2026-09-29T12:18:00.025Z",
+        "statusValue": "pending",
+        "paymentStatus": "Unpaid",
+        "isProvided": true,
+        "supplyType": "Own Cups",
+        "hasDesign": true,
+        "receivingMode": "Pick-up",
+        "deliveryMethod": "Pick-up",
+        "totalAmount": 1000,
+        "designFee": 500,
+        "shippingFee": 500,
+        "partialPayments": [],
+        "quantity": 500,
+        "image": null,
+        "date": "9/24/2026",
+        "createdAt": "2026-09-24T12:18:00.075Z",
+        "items": [
+            {
+                "productId": null,
+                "name": "sdasd",
+                "category": "Customer Provided",
+                "size": "dasda",
+                "quantity": 500,
+                "estimatedTotal": 0,
+                "design": {
+                    "source": "saved",
+                    "printSize": "3x3",
+                    "printPlacement": "Front-Only",
+                    "designNotes": "",
+                    "files": []
+                }
+            }
+        ],
+        "customerName": "Jear Hachero",
+        "customerEmail": "jearlangito@gmail.com",
+        "customerPhone": "+639709406573",
+        "address": "purok 3, Riverside, Poblacion, Bustos, Bulacan, 3007, Luzon, Philippines",
+        "postalCode": "3007",
+        "company": "ACAPS Trading",
+        "fulfillment": {
+            "deliveryAddress": "",
+            "sameAsCustomer": false
+        },
+        "designDetails": [
+            {
+                "designSource": "saved",
                 "printSize": "3x3",
                 "printPlacement": "Front-Only",
                 "designNotes": "",
+                "files": [],
+                "imagePaths": [],
+                "_id": "6ab514f8a6ffe5f45d966a36"
+            }
+        ],
+        "expectedDelivery": "9/29/2026",
+        "expectedDeliveryRaw": "2026-09-29",
+        "fromCustomerToCompanyDeliveryDate": "2026-09-24T00:00:00.000Z",
+        "dropOffStatus": "Pending",
+        "preferredDate": "2026-09-28T00:00:00.000Z",
+        "preferredDateRaw": "2026-09-28",
+        "preferredTime": "",
+        "productionSchedule": null,
+        "notes": "Individual Designs | Items: sdasd",
+        "statusHistory": [
+            {
+                "status": "Pending",
+                "timestamp": "2026-09-24T12:18:00.030Z",
+                "notes": "Order created (customer provided items)",
+                "productionSchedule": "",
+                "updatedBy": "Customer"
+            }
+        ],
+        "proofOfDelivery": null
+    },
+    {
+        "id": "ORD-2026-957-PROV",
+        "orderId": "ORD-2026-957-PROV",
+        "orderNumber": "ORD-2026-957-PROV",
+        "status": "Out for Delivery",
+        "delayHistory": [],
+        "isCurrentlyDelayed": false,
+        "currentDelay": null,
+        "originalExpectedDelivery": "2026-09-29T04:31:43.351Z",
+        "statusValue": "ready",
+        "paymentStatus": "Partial",
+        "isProvided": true,
+        "supplyType": "Own Cups",
+        "hasDesign": true,
+        "receivingMode": "Delivery",
+        "deliveryMethod": "Delivery",
+        "totalAmount": 1000,
+        "designFee": 500,
+        "shippingFee": 500,
+        "partialPayments": [
+            {
+                "amount": 500,
+                "referenceNumber": "8585555555555",
+                "date": "2026-09-24T04:34:05.107Z",
+                "updatedBy": "John Paul Tapia"
+            }
+        ],
+        "quantity": 500,
+        "image": null,
+        "date": "9/24/2026",
+        "createdAt": "2026-09-24T04:31:43.357Z",
+        "items": [
+            {
+                "productId": null,
+                "name": "Tumbler",
+                "category": "Customer Provided",
+                "size": "1L",
+                "quantity": 500,
+                "estimatedTotal": 0,
+                "design": {
+                    "source": "saved",
+                    "printSize": "3x3",
+                    "printPlacement": "Front-Only",
+                    "designNotes": "",
+                    "files": []
+                }
+            }
+        ],
+        "customerName": "Jear Hachero",
+        "customerEmail": "jearlangito@gmail.com",
+        "customerPhone": "+639709406573",
+        "address": "purok 3, Riverside, POBLACION, Bustos, bulacan, 3997, Luzon, Philippines",
+        "postalCode": "3997",
+        "company": "ACAPS Trading",
+        "fulfillment": {
+            "deliveryAddress": "",
+            "sameAsCustomer": false
+        },
+        "designDetails": [
+            {
+                "designSource": "saved",
+                "printSize": "3x3",
+                "printPlacement": "Front-Only",
+                "designNotes": "",
+                "files": [],
+                "imagePaths": [],
+                "_id": "6ab4a7aff8173a855f723771"
+            }
+        ],
+        "expectedDelivery": "9/29/2026",
+        "expectedDeliveryRaw": "2026-09-29",
+        "fromCustomerToCompanyDeliveryDate": "2026-09-25T00:00:00.000Z",
+        "dropOffStatus": "Received",
+        "preferredDate": "2026-09-29T00:00:00.000Z",
+        "preferredDateRaw": "2026-09-29",
+        "preferredTime": "",
+        "productionSchedule": "2026-09-24T00:00:00.000Z",
+        "notes": "Individual Designs | Items: Tumbler",
+        "statusHistory": [
+            {
+                "status": "Pending",
+                "timestamp": "2026-09-24T04:31:43.351Z",
+                "notes": "Order created (customer provided items)",
+                "productionSchedule": "",
+                "updatedBy": "Customer"
+            },
+            {
+                "status": "Confirmed",
+                "timestamp": "2026-09-24T04:34:05.108Z",
+                "notes": "Downpayment verified — ₱500 via gcash (ref: 8585555555555)",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "Confirmed",
+                "timestamp": "2026-09-24T04:34:43.172Z",
+                "notes": "Customer dropped off their items.",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "Scheduled",
+                "timestamp": "2026-09-24T04:34:51.323Z",
+                "notes": "Order scheduled for production on Sep 24, 2026, 08:00 AM",
+                "productionSchedule": "2026-09-24",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "In Production",
+                "timestamp": "2026-09-24T07:13:55.038Z",
+                "notes": "Order is now in production",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "driverDetails": {
+                    "driverName": "Acaps Rider",
+                    "driverPhone": "9452516535",
+                    "plateNumber": "KFS23K",
+                    "truckDescription": "White L300"
+                },
+                "status": "Out for Delivery",
+                "timestamp": "2026-09-24T13:42:08.382Z",
+                "notes": "Order is out for delivery (Driver: Acaps Rider, Phone: 9452516535)",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            }
+        ],
+        "proofOfDelivery": null
+    },
+    {
+        "id": "ORD-2026-153-COMP",
+        "orderId": "ORD-2026-153-COMP",
+        "orderNumber": "ORD-2026-153-COMP",
+        "status": "Completed",
+        "delayHistory": [
+            {
+                "isDelayed": false,
+                "category": "weather",
+                "reason": "hEAVY RAIN",
+                "notes": "",
+                "originalExpectedDelivery": "2026-09-29T04:02:05.973Z",
+                "newExpectedDelivery": "2026-09-29T00:00:00.000Z",
+                "reportedBy": "John Paul Tapia",
+                "reportedByType": "admin",
+                "reportedAt": "2026-09-24T04:20:14.599Z",
+                "resolvedAt": "2026-09-24T04:20:41.355Z",
+                "resolvedBy": "John Paul Tapia"
+            }
+        ],
+        "isCurrentlyDelayed": false,
+        "currentDelay": null,
+        "originalExpectedDelivery": "2026-09-29T04:02:05.973Z",
+        "statusValue": "completed",
+        "paymentStatus": "Paid",
+        "isProvided": false,
+        "supplyType": "Company Cups",
+        "hasDesign": true,
+        "receivingMode": "Delivery",
+        "deliveryMethod": "Delivery",
+        "totalAmount": 6625,
+        "designFee": 5000,
+        "shippingFee": 500,
+        "partialPayments": [
+            {
+                "amount": 3313,
+                "referenceNumber": "4221313123121",
+                "date": "2026-09-24T04:15:51.476Z",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "amount": 3312,
+                "referenceNumber": null,
+                "date": "2026-09-24T04:26:13.888Z",
+                "updatedBy": "Acaps Rider"
+            }
+        ],
+        "quantity": 500,
+        "image": null,
+        "date": "9/24/2026",
+        "createdAt": "2026-09-24T04:02:06.265Z",
+        "items": [
+            {
+                "productId": "PRD-2026-018",
+                "name": "FROSTED PP U-CUPS",
+                "category": "Plastic Cups",
+                "size": "22oz",
+                "quantity": 500,
+                "estimatedTotal": 1125,
+                "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785916941/beverage/products/product-1785916940114-917472877.jpg",
+                "design": {
+                    "source": "saved",
+                    "printSize": "3x3",
+                    "printPlacement": "Front-Only",
+                    "designNotes": "",
+                    "files": []
+                }
+            }
+        ],
+        "customerName": "Jear Hachero",
+        "customerEmail": "jearlangito@gmail.com",
+        "customerPhone": "+639709406573",
+        "address": "purok 3, Riverside, POBLACION, Bustos, bulacan, 3997, Luzon, Philippines",
+        "postalCode": "3997",
+        "company": "ACAPS Trading",
+        "fulfillment": {
+            "deliveryAddress": "",
+            "sameAsCustomer": false
+        },
+        "designDetails": [
+            {
+                "imagePaths": [],
+                "_id": "6ab4a0bef8173a855f723132",
                 "files": []
             }
-        }
-    ],
-    "customerName": "Jear Hachero",
-    "customerEmail": "jearlangito@gmail.com",
-    "customerPhone": "+639709406573",
-    "address": "purok 3, Riverside, POBLACION, Bustos, bulacan, 3997, Luzon, Philippines",
-    "postalCode": "3997",
-    "company": "ACAPS Trading",
-    "fulfillment": {
-        "deliveryAddress": "",
-        "sameAsCustomer": false
+        ],
+        "expectedDelivery": "9/29/2026",
+        "expectedDeliveryRaw": "2026-09-29",
+        "fromCustomerToCompanyDeliveryDate": null,
+        "dropOffStatus": "Pending",
+        "preferredDate": "2026-09-28T00:00:00.000Z",
+        "preferredDateRaw": "2026-09-28",
+        "preferredTime": "",
+        "productionSchedule": "2026-09-24T00:00:00.000Z",
+        "notes": "Individual Designs | Items: FROSTED PP U-CUPS",
+        "statusHistory": [
+            {
+                "status": "Pending",
+                "timestamp": "2026-09-24T04:02:06.259Z",
+                "notes": "Order created",
+                "productionSchedule": "",
+                "updatedBy": "Customer"
+            },
+            {
+                "status": "Confirmed",
+                "timestamp": "2026-09-24T04:15:51.477Z",
+                "notes": "Downpayment verified — ₱3,313 via gcash (ref: 4221313123121)",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "Scheduled",
+                "timestamp": "2026-09-24T04:18:25.803Z",
+                "notes": "Order scheduled for production on Sep 24, 2026, 08:00 AM",
+                "productionSchedule": "2026-09-24",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "In Production",
+                "timestamp": "2026-09-24T04:19:00.871Z",
+                "notes": "Order is now in production",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "driverDetails": {
+                    "driverName": "Acaps Rider",
+                    "driverPhone": "9452516535",
+                    "plateNumber": "KFS23K",
+                    "truckDescription": "White L300"
+                },
+                "status": "Out for Delivery",
+                "timestamp": "2026-09-24T04:19:47.247Z",
+                "notes": "Order is out for delivery (Driver: Acaps Rider, Phone: 9452516535)",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "Out for Delivery",
+                "timestamp": "2026-09-24T04:20:14.599Z",
+                "notes": "Order delayed — hEAVY RAIN",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "status": "Out for Delivery",
+                "timestamp": "2026-09-24T04:20:41.355Z",
+                "notes": "Delay resolved — order back on track",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            },
+            {
+                "driverDetails": {
+                    "driverName": "Acaps Rider",
+                    "driverPhone": "9452516535",
+                    "plateNumber": "KFS23K",
+                    "truckDescription": "White L300"
+                },
+                "status": "Completed",
+                "timestamp": "2026-09-24T04:26:14.387Z",
+                "notes": "Order has been delivered and received",
+                "productionSchedule": "",
+                "updatedBy": "Acaps Rider"
+            }
+        ],
+        "proofOfDelivery": "https://res.cloudinary.com/vwrxijez/image/upload/v1790223971/beverage/proofs/qhrmuk0nn5hvtf0qa1fc.jpg"
     },
-    "designDetails": [
-        {
-            "designSource": "saved",
-            "printSize": "3x3",
-            "printPlacement": "Front-Only",
-            "designNotes": "",
-            "files": [],
-            "imagePaths": [],
-            "_id": "6ab4a7aff8173a855f723771"
-        }
-    ],
-    "expectedDelivery": "9/29/2026",
-    "expectedDeliveryRaw": "2026-09-29",
-    "fromCustomerToCompanyDeliveryDate": "2026-09-25T00:00:00.000Z",
-    "dropOffStatus": "Received",
-    "preferredDate": "2026-09-29T00:00:00.000Z",
-    "preferredDateRaw": "2026-09-29",
-    "preferredTime": "",
-    "productionSchedule": "2026-09-24T00:00:00.000Z",
-    "notes": "Individual Designs | Items: Tumbler",
-    "statusHistory": [
-        {
-            "status": "Pending",
-            "timestamp": "2026-09-24T04:31:43.351Z",
-            "notes": "Order created (customer provided items)",
-            "productionSchedule": "",
-            "updatedBy": "Customer"
+    {
+        "id": "ORD-2026-644-COMP",
+        "orderId": "ORD-2026-644-COMP",
+        "orderNumber": "ORD-2026-644-COMP",
+        "status": "Cancelled",
+        "delayHistory": [],
+        "isCurrentlyDelayed": false,
+        "currentDelay": null,
+        "originalExpectedDelivery": "2026-09-28T17:54:17.377Z",
+        "statusValue": "cancelled",
+        "paymentStatus": "Unpaid",
+        "isProvided": false,
+        "supplyType": "Company Cups",
+        "hasDesign": false,
+        "receivingMode": "Pick-up",
+        "deliveryMethod": "Pick-up",
+        "totalAmount": 900,
+        "designFee": 0,
+        "shippingFee": 0,
+        "partialPayments": [],
+        "quantity": 500,
+        "image": null,
+        "date": "9/24/2026",
+        "createdAt": "2026-09-23T17:54:17.735Z",
+        "items": [
+            {
+                "productId": "PRD-2026-437",
+                "name": "PP U-CUPS",
+                "category": "Plastic Cups",
+                "size": "12oz",
+                "quantity": 500,
+                "estimatedTotal": 900,
+                "image": "https://res.cloudinary.com/vwrxijez/image/upload/v1785814490/beverage/products/product-1785814466680-472338585.jpg",
+                "design": {
+                    "source": "no-design",
+                    "printSize": "",
+                    "printPlacement": "",
+                    "designNotes": "No design - plain product, as is.",
+                    "files": []
+                }
+            }
+        ],
+        "customerName": "Jear Hachero",
+        "customerEmail": "jearlangito@gmail.com",
+        "customerPhone": "+639709406573",
+        "address": "",
+        "postalCode": "",
+        "company": "ACAPS Trading",
+        "fulfillment": {
+            "deliveryAddress": "",
+            "sameAsCustomer": false
         },
-        {
-            "status": "Confirmed",
-            "timestamp": "2026-09-24T04:34:05.108Z",
-            "notes": "Downpayment verified — ₱500 via gcash (ref: 8585555555555)",
-            "productionSchedule": "",
-            "updatedBy": "John Paul Tapia"
-        },
-        {
-            "status": "Confirmed",
-            "timestamp": "2026-09-24T04:34:43.172Z",
-            "notes": "Customer dropped off their items.",
-            "productionSchedule": "",
-            "updatedBy": "John Paul Tapia"
-        },
-        {
-            "status": "Scheduled",
-            "timestamp": "2026-09-24T04:34:51.323Z",
-            "notes": "Order scheduled for production on Sep 24, 2026, 08:00 AM",
-            "productionSchedule": "2026-09-24",
-            "updatedBy": "John Paul Tapia"
-        },
-        {
-            "status": "In Production",
-            "timestamp": "2026-09-24T07:13:55.038Z",
-            "notes": "Order is now in production",
-            "productionSchedule": "",
-            "updatedBy": "John Paul Tapia"
-        }
-    ],
-    "proofOfDelivery": null
-}
+        "designDetails": [
+            {
+                "imagePaths": [],
+                "_id": "6ab41249308c8fab174cd5fb",
+                "files": []
+            }
+        ],
+        "expectedDelivery": "9/29/2026",
+        "expectedDeliveryRaw": "2026-09-28",
+        "fromCustomerToCompanyDeliveryDate": null,
+        "dropOffStatus": "Pending",
+        "preferredDate": "2026-09-28T00:00:00.000Z",
+        "preferredDateRaw": "2026-09-28",
+        "preferredTime": "",
+        "productionSchedule": null,
+        "notes": "No Design - Plain product as is | Items: PP U-CUPS",
+        "statusHistory": [
+            {
+                "status": "Pending",
+                "timestamp": "2026-09-23T17:54:17.718Z",
+                "notes": "Order created",
+                "productionSchedule": "",
+                "updatedBy": "Customer"
+            },
+            {
+                "status": "Cancelled",
+                "timestamp": "2026-09-23T22:13:48.237Z",
+                "notes": "Order has been cancelled",
+                "productionSchedule": "",
+                "updatedBy": "John Paul Tapia"
+            }
+        ],
+        "proofOfDelivery": null
+    }
+]
