@@ -237,12 +237,14 @@
               <p class="text-[10px] text-amber-600">
                 Reported {{ formatRelativeTime(order.currentDelay.reportedAt) }}
               </p>
+               <router-link
+    :to="`/customer/messages?tab=${order.orderId}`">
               <button
-                @click="contactSupport"
                 class="text-[10px] font-bold text-amber-800 underline underline-offset-2 hover:text-amber-900"
               >
                 Contact Support →
               </button>
+            </router-link>
             </div>
           </div>
         </div>
@@ -771,11 +773,16 @@
           </svg>
           Edit Order
         </button>
-
-        <button @click="contactSupport" class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1">
+          <router-link
+    :to="`/customer/messages?tab=${order.orderId}`"
+  >
+    
+ 
+        <button  class="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors text-[10px] font-medium inline-flex items-center gap-1">
           <Phone class="w-3 h-3" />
           Support
         </button>
+         </router-link>
         
         <button 
   v-if="order.status === 'Scheduled' || order.status === 'Pending' || order.status === 'Confirmed' "
@@ -1755,9 +1762,6 @@ function goBack() {
   router.push('/customer/orders') 
 }
 
-function contactSupport() { 
-  window.location.href = 'mailto:support@acapshop.com?subject=Order Support'
-}
 
 function printOrder() {
   window.print()

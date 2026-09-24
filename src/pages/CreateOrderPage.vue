@@ -59,6 +59,7 @@
         <!-- ==================== STEP 0: PRODUCTS ==================== -->
         <div v-if="getStepKey(currentStep) === 'product'">
 <ProductSelector
+  :key="formKey"
   v-model="orderProducts"
   :order-type="orderType"
   :is-cart-order="isCartOrder"
@@ -725,6 +726,10 @@ const fulfillment = ref({
   saveAddressAsDefault: false,
 })
 
+// ✅ NEW — Bumped on reset to force ProductSelector (and any keyed
+// children) to fully remount, wiping their internal refs too.
+const formKey = ref(0)
+
 const errors = ref({ customer: {}, fulfillment: {} })
 
 // Saved profile / address for "use saved" banners
@@ -1323,6 +1328,83 @@ watch(
 )
 
 // ─── SUBMIT ────────────────────────────────────────────────────────────────
+
+/**
+ * ✅ NEW — Wipe every form field back to a fresh state so the customer
+ * can place another order without manually clearing stale data.
+ *
+ * Called from handleSubmit() right after a successful response, so the
+ * success modal appears over a clean form. If the customer closes the
+ * modal and stays on the page, they start with a blank slate.
+ *
+ * What is preserved:
+ *   • Pre-filled customer info (name / email / phone / company) pulled
+ *     from the server profile — no need to retype them.
+ *   • The customer's own `saveAsDefault` preference on customer info.
+ *   • savedProfile / savedAddress / savedAddresses — server-side data,
+ *     not form state.
+ *
+ * What is cleared:
+ *   • Products, quantities, sizes, cart items
+ *   • Design mode, item designs, shared design, placement settings
+ *   • Item photos (own-cups)
+ *   • Fulfillment address + dates
+ *   • Validation errors, submit attempts, step position
+ */
+function resetOrderForm() {
+  // 1. Bump the key so ProductSelector (and any other keyed child)
+  //    destroys + remounts, resetting its internal `selectedSize`,
+  //    `singleQuantity`, and `ownCupsData` refs.
+  formKey.value++
+
+  // 2. Design state
+  designMode.value = 'individual'
+  sharedDesign.value = {
+    designSource: 'upload',
+    files: [],
+    printSize: '',
+    printPlacement: '',
+    designNotes: '',
+    selectedTemplateId: null,
+    selectedTemplate: null,
+  }
+  placementSettings.value = []
+  itemDesigns.value = []
+
+  // 3. Products
+  orderProducts.value = []
+  selectedProductData.value = null
+
+  // 4. Customer info — refill from the loaded profile so the customer
+  //    doesn't retype their name / email / phone for every order.
+  //    `saveAsDefault` is preserved because it's a sticky preference.
+  customerInfo.value = {
+    name: savedProfile.value?.name || '',
+    company: savedProfile.value?.company || '',
+    email: savedProfile.value?.email || '',
+    phone: savedProfile.value?.phone || '',
+    saveAsDefault: customerInfo.value.saveAsDefault,
+  }
+
+  // 5. Fulfillment
+  fulfillment.value = {
+    method: 'delivery',
+    deliveryAddress: '',
+    sameAsCustomer: false,
+    saveAddressAsDefault: false,
+  }
+
+  // 6. Own-cups item photos + validation state
+  ownCupsItemPhotos.value = []
+  submitAttempted.value = false
+
+  // 7. Errors
+  errors.value = { customer: {}, fulfillment: {} }
+
+  // 8. Back to step 0
+  currentStep.value = 0
+}
+
 async function handleSubmit() {
   submitAttempted.value = true
 
@@ -1520,7 +1602,12 @@ async function handleSubmit() {
       if (customerInfo.value.saveAsDefault) {
         localStorage.setItem('defaultCustomerInfo', JSON.stringify(customerInfo.value))
       }
+
+      // ✅ Order the reset AFTER persistence so we don't wipe the values
+      // we're still reading (saveAsDefault localStorage write above).
       clearDraft()
+      resetOrderForm()
+
       showSuccess.value = true
     } else {
       showToast(response.message || 'Failed to submit order')
