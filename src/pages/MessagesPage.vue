@@ -670,6 +670,7 @@ const {
   sendTyping,
   markAsRead,
   onNewMessage,
+  offNewMessage,             // ← ADD
   onMessageUnsent,
   onPaymentRequestUpdated,
   onPaymentProofUpdated,
@@ -1673,52 +1674,60 @@ function formatConversationTime(dateValue) {
 }
 
 // ── Socket listeners ────────────────────────────────
-function setupSocketListeners() {
+// Named handler so we can pass the SAME reference to offNewMessage() on
+// unmount and safely detach only our own listener (App.vue's stays put).
+function handleIncomingMessage(message) {
+  console.log('📩 [customer] onNewMessage received:', {
+    messageId: message.messageId,
+    contentType: message.contentType,
+    conversationId: message.conversationId,
+    senderType: message.senderType,
+  })
 
-  onNewMessage((message) => {
+  const isForCurrentConv = message.conversationId === conversationId.value
 
-    console.log('📩 [customer] onNewMessage received:', {
-      messageId: message.messageId,
-      contentType: message.contentType,
-      conversationId: message.conversationId,
-      senderType: message.senderType,
-    })
+  // ── 1. Update the sidebar preview + unread badge (always) ───
+  const sidebarConv = conversations.value.find(c => c.conversationId === message.conversationId)
+  if (sidebarConv) {
+    sidebarConv.lastMessage = message.content
+    sidebarConv.lastMessageAt = message.createdAt || new Date().toISOString()
+  }
 
-    // ✅ Update sidebar preview in real time
-    const sidebarConv = conversations.value.find(c => c.conversationId === message.conversationId)
-    if (sidebarConv) {
-      sidebarConv.lastMessage = message.content
-      sidebarConv.lastMessageAt = message.createdAt || new Date().toISOString()
-      if (message.senderType === 'admin' && activeConversationId.value !== message.conversationId) {
-        sidebarConv.unreadCount = (sidebarConv.unreadCount || 0) + 1
+  // ── 2. Replace the pending optimistic message (only for current conv) ──
+  if (isForCurrentConv && pendingTempId) {
+    const index = messages.value.findIndex(m => m.messageId === pendingTempId)
+    if (index !== -1) {
+      messages.value[index] = {
+        ...message,
+        isPending: false,
+        replyTo: message.replyTo || messages.value[index].replyTo,
       }
+      pendingTempId = null
+      scrollToBottom()
+      return
     }
+  }
 
-    if (pendingTempId) {
-      const index = messages.value.findIndex(m => m.messageId === pendingTempId)
-      if (index !== -1) {
-        messages.value[index] = {
-          ...message,
-          isPending: false,
-          replyTo: message.replyTo || messages.value[index].replyTo,
-        }
-        pendingTempId = null
-        scrollToBottom()
-        return
-      }
-    }
+  // ── 3. Append the incoming message (only for current conv) ──
+  if (isForCurrentConv) {
     const exists = messages.value.some(m => m.messageId === message.messageId)
     if (!exists) {
       messages.value.push(message)
       scrollToBottom()
-      if (conversationId.value && message.conversationId === conversationId.value) {
+      if (conversationId.value) {
         markAsRead(conversationId.value)
       }
     }
-    window.dispatchEvent(new CustomEvent('newMessageReceived', {
-      detail: { conversationId: message.conversationId },
-    }))
-  })
+  }
+
+  // ── 4. Legacy window event (kept for backward compatibility) ──
+  window.dispatchEvent(new CustomEvent('newMessageReceived', {
+    detail: { conversationId: message.conversationId },
+  }))
+}
+
+function setupSocketListeners() {
+  onNewMessage(handleIncomingMessage)
   onMessageUnsent(({ messageId }) => {
     const index = messages.value.findIndex(m => m.messageId === messageId)
     if (index !== -1) {
@@ -1791,6 +1800,13 @@ watch(isSocketConnected, (connected) => {
     markAsRead(conversationId.value)
   }
 })
+
+// Mirror the active conversation id to a window global so App.vue's
+// notification handler can suppress toasts for the thread the customer
+// is already looking at.
+watch(conversationId, (id) => {
+  window.__activeConversationId = id || null
+}, { immediate: true })
 // ── Lifecycle ───────────────────────────────────────
 onMounted(async () => {
   // Whole-page drag-to-attach — active only while Messages page is mounted
@@ -1864,6 +1880,18 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (typingTimeoutId) clearTimeout(typingTimeoutId)
+
+  // Clear the mirror so toasts resume once the customer leaves Messages
+  window.__activeConversationId = null
+
+  // ✅ Detach OUR listener only. App.vue's global handler stays attached
+  // and keeps firing on every page. Without this, navigating away from
+  // Messages would leave a stale handler bound to a dead component.
+  try {
+    offNewMessage(handleIncomingMessage)
+  } catch (e) {
+    console.warn('[MessagesPage] offNewMessage cleanup failed:', e)
+  }
 
   // Tear down the whole-page drop listeners so no other page inherits them
   window.removeEventListener('dragenter', onPageDragEnter)

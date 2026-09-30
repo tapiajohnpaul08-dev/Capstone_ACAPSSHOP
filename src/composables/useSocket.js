@@ -172,10 +172,20 @@ export function useSocket() {
   }
 
   // Event listeners
+  //
+  // NOTE: `onNewMessage` ADDS a listener (does NOT replace). Multiple
+  // components can subscribe simultaneously — App.vue for global
+  // notifications, MessagesPage for the chat UI. Each caller must
+  // call `offNewMessage(handler)` on unmount to release its own slot.
   const onNewMessage = (callback) => {
     if (socketInstance) {
-      socketInstance.off('new-message')
       socketInstance.on('new-message', callback)
+    }
+  }
+
+  const offNewMessage = (callback) => {
+    if (socketInstance) {
+      socketInstance.off('new-message', callback)
     }
   }
 
@@ -301,6 +311,7 @@ export function useSocket() {
 
     // Event listeners
     onNewMessage,
+    offNewMessage,
     onMessageSent,
     onMessageUnsent,
     onPaymentRequestUpdated,

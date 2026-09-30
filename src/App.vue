@@ -1,6 +1,6 @@
-<!-- src/App.vue -->
 <template>
   <router-view />
+  <MessageToast />
   <FeedbackModal
     v-model:visible="feedbackVisible"
     :title="feedbackTitle"
@@ -11,43 +11,105 @@
 </template>
 
 <script>
-import { onMounted, watch } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import FeedbackModal from '@/modals/FeedbackModal.vue'
 import { useFeedback } from '@/utils/useFeedback'
 import { useSocket } from '@/composables/useSocket'
+import MessageToast from '@/components/notifications/MessageToast.vue'
+import { useMessageNotifications } from '@/composables/useMessageNotifications'
 
 export default {
-  components: { FeedbackModal },
+  components: { FeedbackModal, MessageToast },
+
   setup() {
     const socket = useSocket()
+    const { notify, resetTabCounter } = useMessageNotifications()
 
-    // ── Connect the shared customer socket if a token exists ────────
-    const tryConnect = () => {
-      const token = localStorage.getItem('customerToken') || localStorage.getItem('token')
-      if (token) {
-        console.log('🔌 [App.vue] connecting customer socket')
-        socket.connect(token)
-      }
+    // ── Toast handlers ────────────────────────────────────────────
+    function handleVisibilityChange() {
+      if (!document.hidden) resetTabCounter()
     }
 
-    // ── Bridge: turn order:changed socket events into window events ─
-    // Any page can then do:
-    //   window.addEventListener('realtime:order-changed', handler)
+    // ── Global new-message handler ────────────────────────────────
+    // Runs from App.vue so the notification fires on EVERY page,
+    // not just when MessagesPage is mounted.
+    function handleGlobalNewMessage(message) {
+      if (!message) return
+      if (message.senderType !== 'admin') return
+
+      // Suppress the toast if the customer is currently looking at
+      // that exact conversation. MessagesPage mirrors its active
+      // conversation id onto window.__activeConversationId.
+      if (window.__activeConversationId === message.conversationId) return
+
+      notify({
+        conversationId: message.conversationId,
+        senderName: 'ACAPSHOP Support',
+        content: message.content || '',
+        attachments: Array.isArray(message.attachments) ? message.attachments.length : 0,
+        createdAt: message.createdAt || new Date().toISOString(),
+      })
+    }
+
+
+    // Guard so App.vue attaches its global handler exactly ONCE per
+    // app lifetime. Never call socket.off() here — that would remove
+    // other components' (e.g. MessagesPage's) listeners too.
+    let messageListenerAttached = false
+    const attachMessageListener = () => {
+      if (messageListenerAttached) return
+      socket.onNewMessage(handleGlobalNewMessage)
+      messageListenerAttached = true
+      console.log('🔔 [App.vue] new-message listener attached')
+    }
+
+    // ── Connect the shared customer socket if a token exists ─────
+    const tryConnect = () => {
+      const token = localStorage.getItem('customerToken') || localStorage.getItem('token')
+      if (!token) return
+
+      let userId = null
+      try {
+        const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+        userId = stored.customerId || stored._id || stored.id || null
+      } catch {}
+
+      console.log('🔌 [App.vue] connecting customer socket', {
+        hasToken: !!token,
+        userId,
+      })
+
+      socket.connect(token, userId, 'customer')
+
+      // ✅ CRITICAL — attach the listener AFTER connect(), so it binds
+      // to the freshly-created socket instance. Attaching before connect
+      // (when socketInstance was null) silently no-ops.
+      attachMessageListener()
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────────
     onMounted(() => {
       tryConnect()
 
+      // Existing order-changed bridge
       socket.onOrderChanged((data) => {
         console.log('📡 [customer] realtime order:changed', data)
         window.dispatchEvent(
           new CustomEvent('realtime:order-changed', { detail: data }),
         )
       })
+
+      document.addEventListener('visibilitychange', handleVisibilityChange)
     })
 
-    // ── Reconnect after login, disconnect awareness after logout ────
-    // Login pages set `customerToken` in localStorage; logouts remove it.
-    // Monkey-patching lets us react without touching every login/logout
-    // site individually.
+    onUnmounted(() => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    })
+
+    // ── Reconnect on login / disconnect on logout ────────────────
+    // Monkey-patch localStorage so a fresh login (which writes the
+    // token AFTER App.vue has already mounted) still triggers a
+    // connect + listener-attach.
     if (typeof window !== 'undefined') {
       const originalSet = localStorage.setItem.bind(localStorage)
       const originalRemove = localStorage.removeItem.bind(localStorage)
@@ -59,8 +121,6 @@ export default {
       localStorage.removeItem = (key) => {
         originalRemove(key)
         if (key === 'customerToken' || key === 'token') {
-          // Token removed → tear down the socket so a fresh login
-          // gets a fresh connection with the new identity.
           socket.disconnect()
         }
       }
