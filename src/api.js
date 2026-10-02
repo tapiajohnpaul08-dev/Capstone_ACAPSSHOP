@@ -21,6 +21,14 @@ const handleResponse = async (request) => {
 
 // ─── Customer Auth ───────────────────────────────────────────────────────────
 export const authApi = {
+
+  // src/api.js — inside authApi
+async checkEmailExists(email) {
+  return handleResponse(
+    axiosInstance.post('/customer/check-email', { email })
+  )
+},
+
   async register(userData) {
     return handleResponse(
       axiosInstance.post('/customer/register', userData)

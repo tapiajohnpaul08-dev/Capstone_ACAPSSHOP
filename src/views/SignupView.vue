@@ -75,17 +75,51 @@
             <div class="space-y-1">
               <label for="phone" class="text-sm font-medium">Phone number <span class="text-red-500">*</span></label>
               <div class="flex items-center gap-2">
-                <p class="text-gray-500 border border-gray-300 p-1.5 h-9 rounded-md text-sm w-12 text-center">+63</p>
+                <p class="text-gray-500 border border-gray-300 p-1.5 h-9 rounded-md text-sm w-12 text-center shrink-0 select-none">+63</p>
                 <input
                   id="phone"
-                  v-model="form.phone"
+                  ref="phoneInput"
+                  :value="form.phone"
+                  @input="handlePhoneInput"
+                  @blur="validatePhoneField"
+                  @keypress="handlePhoneKeypress"
                   type="tel"
-                  placeholder="917 000 0000"
+                  inputmode="numeric"
+                  placeholder="917 123 4567"
                   autocomplete="tel"
-                  :class="['flex-1 flex h-9 w-full rounded-md border px-3 py-1 text-sm bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50', errors.phone ? 'border-red-500' : 'border-gray-300']"
+                  maxlength="12"
+                  :class="[
+                    'flex-1 flex h-9 w-full rounded-md border px-3 py-1 text-sm bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50',
+                    errors.phone
+                      ? 'border-red-500 focus-visible:ring-red-500'
+                      : isPhoneValid
+                        ? 'border-green-500 focus-visible:ring-green-500'
+                        : 'border-gray-300 focus-visible:ring-blue-500'
+                  ]"
                 />
               </div>
-              <p v-if="errors.phone" class="text-xs text-red-500">{{ errors.phone }}</p>
+
+              <!-- Inline feedback -->
+              <p
+                v-if="errors.phone"
+                class="text-xs text-red-500 flex items-center gap-1"
+              >
+                <AlertCircle class="w-3 h-3 shrink-0" />
+                {{ errors.phone }}
+              </p>
+              <p
+                v-else-if="isPhoneValid"
+                class="text-xs text-green-600 flex items-center gap-1"
+              >
+                <CheckCircle2 class="w-3 h-3 shrink-0" />
+                Valid Philippine mobile number
+              </p>
+              <p
+                v-else-if="form.phone"
+                class="text-xs text-gray-400"
+              >
+                Enter 10 digits — e.g., 917 123 4567
+              </p>
             </div>
 
             <!-- Email -->
@@ -265,17 +299,18 @@
 
 <script>
 import { appName } from '@/data/loginData.js'
-import { otpApi } from '@/api'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { otpApi, authApi } from '@/api'
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-vue-next'
 import backgroundImage from '@/assets/images/LoginFormBG.png'
-
 
 export default {
   name: 'SignUpView',
 
   components: {
     Eye,
-    EyeOff
+    EyeOff,
+    AlertCircle,
+    CheckCircle2
   },
 
   data() {
@@ -327,10 +362,115 @@ export default {
       if (score === 1) return 'text-red-500'
       if (score === 2) return 'text-orange-500'
       return 'text-green-600'
-    }
+    },
+
+    // ✅ NEW — live validity flag driving the green border + checkmark.
+    // Only true once the number is a complete, well-formed PH mobile.
+    isPhoneValid() {
+      const digits = String(this.form.phone || '').replace(/\D/g, '')
+      return /^9\d{9}$/.test(digits)
+    },
   },
 
   methods: {
+    // ─────────────────────────────────────────────────────────────
+    // Phone number — formatting + validation
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Format a raw phone string into the display shape "XXX XXX XXXX".
+     *
+     * Normalizes the most common ways people paste a PH number:
+     *   +639171234567   →  917 123 4567
+     *   639171234567    →  917 123 4567
+     *   09171234567     →  917 123 4567
+     *   917-123-4567    →  917 123 4567
+     *   9171234567      →  917 123 4567
+     */
+    formatPhone(value) {
+      let digits = String(value || '').replace(/\D/g, '')
+
+      // Strip a leading +63 / 63 when it's part of a full international number
+      if (digits.startsWith('63') && digits.length > 10) {
+        digits = digits.slice(2)
+      }
+      // Strip a leading 0 (trunk prefix — redundant because +63 is shown)
+      if (digits.startsWith('0')) {
+        digits = digits.slice(1)
+      }
+
+      // Cap at 10 digits — 9 followed by 9 more
+      digits = digits.slice(0, 10)
+
+      // Insert spaces for readability
+      if (digits.length <= 3) return digits
+      if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`
+      return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+    },
+
+    /**
+     * Fires on every keystroke / paste. Rewrites the field with the
+     * formatted value and clears any stale error message.
+     */
+    handlePhoneInput(event) {
+      const formatted = this.formatPhone(event.target.value)
+      this.form.phone = formatted
+      // Force the DOM input to match — Vue's :value binding would
+      // otherwise let the user's raw input sit on screen for one frame.
+      event.target.value = formatted
+
+      // Clear error the moment the user starts fixing it
+      if (this.errors.phone) this.errors.phone = ''
+    },
+
+    /**
+     * Block non-numeric keystrokes so the field can't even hold "abc".
+     * Multi-char keys (Backspace, Tab, Arrow keys…) and Ctrl/Cmd
+     * shortcuts are always allowed.
+     */
+    handlePhoneKeypress(event) {
+      if (event.ctrlKey || event.metaKey || event.altKey) return
+      if (event.key.length > 1) return // control keys
+      if (!/\d/.test(event.key)) event.preventDefault()
+    },
+
+    /**
+     * On blur, run the strict validator so an incomplete number
+     * surfaces its error even if the user hasn't hit Submit yet.
+     */
+    validatePhoneField() {
+      const digits = String(this.form.phone || '').replace(/\D/g, '')
+      if (!digits) {
+        this.errors.phone = 'Phone number is required'
+        return false
+      }
+      if (!/^9\d{9}$/.test(digits)) {
+        this.errors.phone = 'Enter a valid PH mobile number (10 digits starting with 9)'
+        return false
+      }
+      this.errors.phone = ''
+      return true
+    },
+
+    /**
+     * Ask the backend whether this email is already registered.
+     * Returns a normalized { success, exists, message } shape.
+     *
+     * Routes through authApi so the axios instance, base URL, and
+     * error handling all come from the same place the rest of the
+     * auth flow uses.
+     */
+    async checkEmailExists(email) {
+      const result = await authApi.checkEmailExists(email)
+      // handleResponse always returns { success, ... } — normalize
+      // `exists` to a strict boolean so template truthiness is safe.
+      return {
+        success: !!result.success,
+        exists: !!result.exists,
+        message: result.message || '',
+      }
+    },
+
     checkPasswordStrength() {
       const pw = this.form.password
       let score = 0
@@ -392,9 +532,14 @@ export default {
         this.errors.lastName = 'Last name is required'
         valid = false
       }
-
-      if (!this.form.phone.trim() || this.form.phone.trim().length < 7) {
-        this.errors.phone = 'Enter a valid phone number'
+      // ✅ Stricter — must be exactly 10 digits starting with 9,
+      // after stripping spaces / dashes / any +63 prefix the user pasted.
+      const phoneDigits = String(this.form.phone || '').replace(/\D/g, '')
+      if (!phoneDigits) {
+        this.errors.phone = 'Phone number is required'
+        valid = false
+      } else if (!/^9\d{9}$/.test(phoneDigits)) {
+        this.errors.phone = 'Enter a valid PH mobile number (10 digits starting with 9)'
         valid = false
       }
 
@@ -440,6 +585,19 @@ export default {
       this.isLoading = true
 
       try {
+        // Step 0: ✅ Pre-flight — don't waste an OTP on a registered email.
+        const emailCheck = await this.checkEmailExists(this.form.email)
+        if (!emailCheck.success) {
+          this.errors.email = emailCheck.message || 'Could not verify email'
+          this.isLoading = false
+          return
+        }
+        if (emailCheck.exists) {
+          this.errors.email = 'This email is already registered. Try signing in instead.'
+          this.isLoading = false
+          return
+        }
+
         // Step 1: Send OTP to email
         const otpResult = await otpApi.sendOtp(this.form.email)
 
@@ -450,11 +608,16 @@ export default {
         }
 
         // Step 2: Save pending registration data
+        // ✅ Send the phone in E.164 format (+639171234567) so the
+        // backend always receives a canonical value regardless of how
+        // the user typed it (spaces, leading 0, pasted +63, etc.).
+        const phoneDigits = String(this.form.phone || '').replace(/\D/g, '')
+
         const pendingData = {
           firstName: this.form.firstName,
           middleName: this.form.middleName,
           lastName: this.form.lastName,
-          phone: this.form.phone,
+          phone: `+63${phoneDigits}`,
           email: this.form.email,
           username: this.form.username,
           companyName: this.form.company || null,

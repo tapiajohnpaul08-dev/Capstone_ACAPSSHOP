@@ -273,6 +273,12 @@ export function useSocket() {
     }
   }
 
+    const onProductChanged = (cb) => {
+    if (!socketInstance) return
+    socketInstance.off('product:changed')
+    socketInstance.on('product:changed', cb)
+  };
+
 
   const respondToQuote = (messageId, response, reason = '') => {
     if (socketInstance?.connected) {
@@ -323,7 +329,8 @@ export function useSocket() {
     onQuoteReceived,
     onQuoteResponded,
     onOrderNegotiationUpdated,
-    onOrderChanged,              // ← ADD
+    onOrderChanged,
+    onProductChanged,              // ← ADD
     respondToQuote,
     off
   }

@@ -666,7 +666,12 @@ import ItemPhotoUploader from '@/components/create-order/ItemPhotoUploader.vue'
 import { useItemPhotoRequirement } from '@/composables/useItemPhotoRequirement'
 import { productsApi, ordersApi, authApi } from '@/api.js'
 import { PHONE_REGEX, EMAIL_REGEX } from '@/constants/orderConstants'
-
+import {
+  FEES,
+  computeLineTotal,
+  computeShippingFee,
+  computeCartTotal,
+} from '@/utils/cartPricing'
 import {
   ShoppingCart,
   Package,
@@ -755,13 +760,7 @@ async function refreshSavedAddresses() {
     console.warn('Failed to refresh addresses:', e)
   }
 }
-// ─── PRICE CONSTANTS ────────────────────────────────────────────────────────
-const FEES = {
-  DESIGN_AND_PRINTING_SERVICE_FEE: 500,
-  LUZON_FEE: 500,
-  VISAYAS_FEE: 1000,
-  MINDANAO_FEE: 1500,
-}
+
 
 // ─── DESIGN MODE ────────────────────────────────────────────────────────────
 const designMode = ref('individual')
@@ -946,54 +945,30 @@ const fullDeliveryAddress = computed(() => {
 })
 
 // ─── PRICE CALCULATION ──────────────────────────────────────────────────────
+// Delegates to the shared util so the sidebar summary and the review
+// step always agree on every number.
+
 function calculateBaseProductPrice(item) {
   if (isOwnCups.value) return 0
-
-  if (item.estimatedTotal) return item.estimatedTotal
-  if (item.unitPrice && item.quantity) return item.unitPrice * item.quantity
-
-  if (item.sizes && item.size) {
-    const size = item.sizes.find(s => s.name === item.size)
-    if (size) {
-      let unitPrice = size.price
-      const qty = item.quantity || 0
-      if (qty >= 5000 && size.bulkPrices?.[5000]) unitPrice = size.bulkPrices[5000] / 5000
-      else if (qty >= 2000 && size.bulkPrices?.[2000]) unitPrice = size.bulkPrices[2000] / 2000
-      else if (qty >= 1000 && size.bulkPrices?.[1000]) unitPrice = size.bulkPrices[1000] / 1000
-      else if (qty >= 500 && size.bulkPrices?.[500]) unitPrice = size.bulkPrices[500] / 500
-      return unitPrice * qty
-    }
-  }
-  return 0
+  return computeLineTotal(item)
 }
 
 function calculateItemTotal(item) {
   return calculateBaseProductPrice(item)
 }
 
-const productSubtotal = computed(() => {
-  let total = 0
-  for (const p of orderProducts.value) total += calculateBaseProductPrice(p)
-  return total
-})
+const breakdown = computed(() =>
+  computeCartTotal({
+    items: orderProducts.value,
+    isOwnCups: isOwnCups.value,
+    hasDesign: hasDesign.value,
+    fulfillment: fulfillment.value,
+  }),
+)
 
-function getShippingFee() {
-  if (fulfillment.value.method !== 'delivery') return 0
-  const region = fulfillment.value.deliveryRegion || ''
-  switch (region) {
-    case 'Luzon': return FEES.LUZON_FEE
-    case 'Visayas': return FEES.VISAYAS_FEE
-    case 'Mindanao': return FEES.MINDANAO_FEE
-    default: return 0
-  }
-}
-
-const totalAmount = computed(() => {
-  let total = productSubtotal.value
-  if (isOwnCups.value || hasDesign.value) total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE 
-  total += getShippingFee()
-  return total
-})
+const productSubtotal = computed(() => breakdown.value.productSubtotal)
+const getShippingFee = () => breakdown.value.shippingFee
+const totalAmount = computed(() => breakdown.value.totalAmount)
 
 // ─── VALIDATION ────────────────────────────────────────────────────────────
 // ✅ Safe trim helper — handles strings, arrays, objects, null without
@@ -1232,6 +1207,102 @@ function onProductChanged(products) {
     printPlacement: '',
     designNotes: '',
   }))
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ✅ REALTIME — Listen for admin product changes while the customer is
+// configuring their order.
+//
+//  • Product deleted → drop it from the order + toast
+//  • Product updated → refresh sizes/stock/price on the matching line
+//    and clamp quantity if new stock is lower
+//  • New product created → ignored (customer can't add a new SKU from
+//    inside the wizard; they'd go back to the catalog)
+// ═══════════════════════════════════════════════════════════════════
+function handleRealtimeProductChanged(e) {
+  const { action, productId, product: freshProduct } = e.detail || {}
+  if (!productId) return
+
+  console.log('📦 [CreateOrder] realtime product change:', action, productId)
+
+  // ── Product deleted ────────────────────────────────────────────
+  if (action === 'deleted') {
+    const idx = orderProducts.value.findIndex((p) => p.productId === productId)
+    if (idx === -1) return
+
+    const removedName = orderProducts.value[idx].name
+
+    // Remove from order + keep design/placement arrays aligned
+    orderProducts.value = orderProducts.value.filter(
+      (p) => p.productId !== productId,
+    )
+    itemDesigns.value.splice(idx, 1)
+    placementSettings.value.splice(idx, 1)
+
+    showToast(
+      `"${removedName}" was removed from your order — it's no longer available.`,
+      'error',
+    )
+    saveDraft()
+    return
+  }
+
+  // ── Product updated ────────────────────────────────────────────
+  if (action !== 'updated' || !freshProduct) return
+
+  let anyTouched = false
+
+  orderProducts.value = orderProducts.value.map((item) => {
+    if (item.productId !== productId) return item
+
+    anyTouched = true
+
+    // Find the fresh size entry matching the currently-selected size
+    const freshSize = freshProduct.sizes?.find((s) => s.name === item.size)
+    const minOrder = freshProduct.minOrder || item.minOrder || 500
+
+    // Clamp quantity if the new stock can't satisfy it
+    let nextQty = item.quantity
+    if (freshSize && freshSize.stock != null && freshSize.stock > 0) {
+      if (nextQty > freshSize.stock) {
+        const clamped = Math.max(
+          minOrder,
+          Math.floor(freshSize.stock / 500) * 500,
+        )
+        showToast(
+          `Stock for "${item.name}" (${item.size}) dropped — quantity adjusted to ${clamped.toLocaleString()} pcs.`,
+          'error',
+        )
+        nextQty = clamped
+      }
+    } else if (freshSize && freshSize.stock === 0) {
+      showToast(
+        `"${item.name}" (${item.size}) just went out of stock. Please pick another size.`,
+        'error',
+      )
+    }
+
+    return {
+      ...item,
+      name: freshProduct.name,
+      image: freshProduct.image,
+      category: freshProduct.category,
+      minOrder,
+      // Fresh sizes array → bulk prices + stock recompute
+      sizes: freshProduct.sizes,
+      quantity: nextQty,
+    }
+  })
+
+  // ── Also refresh the "selected product" snapshot for single-product mode ──
+  if (
+    selectedProductData.value &&
+    selectedProductData.value.id === productId
+  ) {
+    selectedProductData.value = { ...selectedProductData.value, ...freshProduct }
+  }
+
+  if (anyTouched) saveDraft()
 }
 
 function updateItemDesign(index, design) {
@@ -1964,11 +2035,17 @@ onMounted(async () => {
   }
 
   await fetchTemplates()
+
+  // ✅ Subscribe to realtime catalog changes. App.vue forwards every
+  // `product:changed` socket event as a window event, so the wizard
+  // stays in sync with admin edits while the customer is filling it out.
+  window.addEventListener('realtime:product-changed', handleRealtimeProductChanged)
 })
 
 onBeforeUnmount(() => {
   clearTimeout(saveTimer)
   saveDraft()
+  window.removeEventListener('realtime:product-changed', handleRealtimeProductChanged)
 })
 </script>
 

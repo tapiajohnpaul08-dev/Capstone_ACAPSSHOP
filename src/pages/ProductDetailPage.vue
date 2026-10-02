@@ -514,7 +514,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch} from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { productsApi, feedBackApi } from '@/api'
 import { 
@@ -626,7 +626,7 @@ const compatibleCups = computed(() => {
 // Each returned lid includes a `matchingSizes` array with only the
 // specific sizes whose rimDiameter equals the cup's rim.
 const compatibleLids = computed(() => {
-  if (!product.value || isLid.value) return []
+  if (!product.value || isLid.value ) return []
   const rim = selectedSize.value?.rimDiameter
   if (!rim) return []
 
@@ -1188,6 +1188,71 @@ function formatDate(dateValue) {
 
 // ─── LIFECYCLE ─────────────────────────────────────────────────────────
 
+// ✅ NEW — Reload the full catalog so the "Fits these cups" /
+// "Add compatible lids" lists stay correct after any product change.
+// Bypasses the early-return guard in loadCatalogForCompatibility
+// because we WANT a fresh fetch here.
+async function refreshCompatibilityCatalog() {
+  try {
+    const res = await productsApi.getAllProducts()
+    if (res.success && res.data) {
+      allProducts.value = res.data
+    }
+  } catch (err) {
+    console.error('Failed to refresh compatibility catalog:', err)
+  }
+}
+
+// ✅ NEW — React to realtime catalog changes.
+//
+//  • Currently-viewed product deleted → redirect home.
+//  • Currently-viewed product updated → patch in place, preserving
+//    the customer's size selection when possible.
+//  • Any other change → refresh the compatibility catalog so the
+//    lids / cups picker reflects the current state.
+function handleProductChanged(e) {
+  const { action, productId, product: freshProduct } = e.detail || {}
+  if (!productId) return
+
+  console.log('📦 [Detail] applying product change:', action, productId)
+
+  const isViewingThisProduct = product.value && productId === product.value.id
+
+  // ── The product the customer is looking at was deleted ──
+  if (isViewingThisProduct && action === 'deleted') {
+    showToast('This product is no longer available', 'error')
+    // Give the toast a moment to be seen before we navigate away.
+    setTimeout(() => router.replace('/'), 1200)
+    return
+  }
+
+  // ── The product the customer is looking at was updated ──
+  if (isViewingThisProduct && action === 'updated' && freshProduct) {
+    const prevSizeName = selectedSize.value?.name
+
+    // Merge fresh fields onto the local copy.
+    product.value = { ...product.value, ...freshProduct }
+
+    // Re-resolve the selected size: keep the same size name if it
+    // still exists, otherwise fall back to the first in-stock size.
+    const stillExists = (product.value.sizes || []).find((s) => s.name === prevSizeName)
+    selectedSize.value =
+      stillExists ||
+      product.value.sizes?.find((s) => s.stock > 0) ||
+      product.value.sizes?.[0] ||
+      null
+
+    showToast('Product details have been updated', 'success')
+  }
+
+  // ── Refresh the compatibility catalog if this page uses it ──
+  // (Only refetch when the catalog has already been loaded once —
+  // avoids a wasted request on pages that never show the picker.)
+  if (allProducts.value.length > 0) {
+    refreshCompatibilityCatalog()
+  }
+}
+
 onMounted(async () => {
   const productId = route.params.id
   console.log('Product ID from route:', productId)
@@ -1227,6 +1292,14 @@ onMounted(async () => {
   } else {
     loading.value = false
   }
+
+  // ✅ NEW — Subscribe to realtime catalog changes forwarded by App.vue.
+  window.addEventListener('realtime:product-changed', handleProductChanged)
+})
+
+// ✅ NEW — Clean up on unmount so navigating away doesn't leak listeners.
+onBeforeUnmount(() => {
+  window.removeEventListener('realtime:product-changed', handleProductChanged)
 })
 </script>
 

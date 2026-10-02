@@ -259,12 +259,12 @@
 
 <script setup>
 import { computed } from 'vue'
+import {
+  FEES,
+  computeLineTotal,
+} from '@/utils/cartPricing'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-
-let FEES = {
-  DESIGN_AND_PRINTING_SERVICE_FEE: 500,
-}
 
 const props = defineProps({
   // 'compact' for steps 0-2 (minimal info), 'full' for step 3 (everything)
@@ -332,43 +332,17 @@ const estimatedETA = computed(() => {
   return '3-7 business days'
 })
 
+// ✅ Delegates to the shared util so per-line totals match the total.
 function calculateCartItemTotal(item) {
-  if (item.estimatedTotal && item.estimatedTotal > 0) {
-    return `₱${item.estimatedTotal.toLocaleString()}`
-  }
-  if (item.sizes && item.size) {
-    const size = item.sizes.find(s => s.name === item.size)
-    if (size) {
-      let unitPrice = size.price
-      const qty = item.quantity
-      if (qty >= 5000 && size.bulkPrices?.[5000]) unitPrice = size.bulkPrices[5000] / 5000
-      else if (qty >= 2000 && size.bulkPrices?.[2000]) unitPrice = size.bulkPrices[2000] / 2000
-      else if (qty >= 1000 && size.bulkPrices?.[1000]) unitPrice = size.bulkPrices[1000] / 1000
-      else if (qty >= 500 && size.bulkPrices?.[500]) unitPrice = size.bulkPrices[500] / 500
-      return `₱${(unitPrice * qty).toLocaleString()}`
-    }
-  }
-  return '₱0'
+  const total = computeLineTotal(item)
+  return `₱${total.toLocaleString()}`
 }
 
 const cartSubtotal = computed(() => {
-  let total = 0
-  for (const item of props.cartItems) {
-    if (item.estimatedTotal && item.estimatedTotal > 0) {
-      total += item.estimatedTotal
-    } else if (item.sizes && item.size) {
-      const size = item.sizes.find(s => s.name === item.size)
-      if (size) {
-        let unitPrice = size.price
-        const qty = item.quantity
-        if (qty >= 5000 && size.bulkPrices?.[5000]) unitPrice = size.bulkPrices[5000] / 5000
-        else if (qty >= 2000 && size.bulkPrices?.[2000]) unitPrice = size.bulkPrices[2000] / 2000
-        else if (qty >= 1000 && size.bulkPrices?.[1000]) unitPrice = size.bulkPrices[1000] / 1000
-        else if (qty >= 500 && size.bulkPrices?.[500]) unitPrice = size.bulkPrices[500] / 500
-        total += unitPrice * qty
-      }
-    }
-  }
+  const total = (props.cartItems || []).reduce(
+    (sum, item) => sum + computeLineTotal(item),
+    0,
+  )
   return `₱${total.toLocaleString()}`
 })
 
@@ -392,57 +366,51 @@ function getUnitPrice() {
 const productTotalDisplay = computed(() => {
   if (props.orderType === 'own-cups') return '₱0.00'
 
+  // ── Cart orders — sum live line totals ─────────────────────────
   if (props.cartItems && props.cartItems.length > 0) {
-    let total = 0
-    for (const item of props.cartItems) {
-      if (item.estimatedTotal && item.estimatedTotal > 0) {
-        total += item.estimatedTotal
-      } else if (item.sizes && item.size) {
-        const size = item.sizes.find(s => s.name === item.size)
-        if (size) {
-          let unitPrice = size.price
-          const qty = item.quantity
-          if (qty >= 5000 && size.bulkPrices?.[5000]) unitPrice = size.bulkPrices[5000] / 5000
-          else if (qty >= 2000 && size.bulkPrices?.[2000]) unitPrice = size.bulkPrices[2000] / 2000
-          else if (qty >= 1000 && size.bulkPrices?.[1000]) unitPrice = size.bulkPrices[1000] / 1000
-          else if (qty >= 500 && size.bulkPrices?.[500]) unitPrice = size.bulkPrices[500] / 500
-          total += unitPrice * qty
-        }
-      }
-    }
+    const total = props.cartItems.reduce(
+      (sum, item) => sum + computeLineTotal(item),
+      0,
+    )
     return `₱${total.toLocaleString()}`
   }
 
+  // ── Single-product order ───────────────────────────────────────
   const qty = Number(props.quantity)
   if (!qty || isNaN(qty)) return '₱0.00'
 
-  const size = props.selectedProduct?.sizes?.find(s => s.name === props.sizes)
-    ?? props.selectedProduct?.sizes?.[0]
+  const size =
+    props.selectedProduct?.sizes?.find((s) => s.name === props.sizes) ??
+    props.selectedProduct?.sizes?.[0]
+
   if (size?.price) {
-    let unitPrice = size.price
-    const bulkPrices = size.bulkPrices
-    if (bulkPrices) {
-      if (qty >= 5000 && bulkPrices[5000]) unitPrice = bulkPrices[5000] / 5000
-      else if (qty >= 2000 && bulkPrices[2000]) unitPrice = bulkPrices[2000] / 2000
-      else if (qty >= 1000 && bulkPrices[1000]) unitPrice = bulkPrices[1000] / 1000
-      else if (qty >= 500 && bulkPrices[500]) unitPrice = bulkPrices[500] / 500
-    }
-    return `₱${(unitPrice * qty).toLocaleString()}`
+    const total = computeLineTotal({
+      sizes: [size],
+      size: size.name,
+      quantity: qty,
+    })
+    return `₱${total.toLocaleString()}`
   }
+
   return '₱0.00'
 })
 
 const estimatedTotalDisplay = computed(() => {
+  // Parent always supplies the authoritative total when it's > 0.
   if (props.totalAmount !== undefined && props.totalAmount > 0) {
     return `₱${props.totalAmount.toLocaleString()}`
   }
-  let total = 0
+
+  // Fallback when running standalone (no total prop): rebuild from
+  // the same rules the parent uses.
   const productTotalStr = productTotalDisplay.value.replace(/[₱,]/g, '')
-  const productTotal = parseFloat(productTotalStr) || 0
-  total += productTotal
+  let total = parseFloat(productTotalStr) || 0
+
   if (props.hasDesign || props.orderType === 'own-cups') {
     total += FEES.DESIGN_AND_PRINTING_SERVICE_FEE
   }
+  total += Number(props.shippingFee) || 0
+
   return `₱${total.toLocaleString()}`
 })
 </script>

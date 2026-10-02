@@ -99,6 +99,13 @@ export default {
         )
       })
 
+      socket.onProductChanged((data) => {
+        console.log('📦 [customer] realtime product:changed', data)
+        window.dispatchEvent(
+          new CustomEvent('realtime:product-changed', { detail: data }),
+        )
+      });
+
       document.addEventListener('visibilitychange', handleVisibilityChange)
     })
 

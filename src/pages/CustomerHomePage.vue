@@ -591,22 +591,80 @@ function handleOAuthToken() {
   return false
 }
 
-async function loadProducts() {
-  loading.value = true
+async function loadProducts({ silent = false } = {}) {
+  // Only show the full-page spinner on the initial load. Background
+  // refetches triggered by realtime events stay invisible so the
+  // catalog doesn't flicker.
+  if (!silent) loading.value = true
   try {
     const response = await productsApi.getAllProducts()
     if (response.success && response.data) {
       products.value = response.data
     } else {
       console.error('Failed to load products:', response.message)
-      showToast('Failed to load products')
+      if (!silent) showToast('Failed to load products')
     }
   } catch (error) {
     console.error('Error loading products:', error)
-    showToast('Error loading products')
+    if (!silent) showToast('Error loading products')
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
+}
+
+// ✅ NEW — Realtime catalog handler, wired to the window event that
+// App.vue broadcasts when the socket receives `product:changed`.
+function handleProductChanged(e) {
+  const { action, productId, product } = e.detail || {}
+  if (!productId) return
+
+  console.log('📦 [Home] applying product change:', action, productId)
+
+  if (action === 'created') {
+    // Refetch instead of unshift — the server sorts by
+    // featured → popular → category → popularity → name, so a new
+    // product could belong anywhere in the list.
+    loadProducts({ silent: true })
+    return
+  }
+
+  if (action === 'deleted') {
+    // Remove from the visible list immediately.
+    products.value = products.value.filter((p) => p.id !== productId)
+    // Also prune it out of the cart if the customer had it queued.
+    pruneCartByProductId(productId)
+    return
+  }
+
+  if (action === 'updated' && product) {
+    const idx = products.value.findIndex((p) => p.id === productId)
+    if (idx !== -1) {
+      products.value[idx] = { ...products.value[idx], ...product }
+    } else {
+      // Not in the current list (filtered out, or arrived after the
+      // create event). Refetch to stay in sync.
+      loadProducts({ silent: true })
+    }
+  }
+}
+
+// ✅ NEW — Remove every cart line whose product was just deleted.
+// Reads directly from localStorage, writes back, then asks useCart
+// to re-hydrate so the drawer updates live.
+function pruneCartByProductId(deletedProductId) {
+  const raw = localStorage.getItem('customerCart')
+  if (!raw) return
+
+  let cart
+  try { cart = JSON.parse(raw) } catch { return }
+  if (!Array.isArray(cart)) return
+
+  const filtered = cart.filter((item) => item.productId !== deletedProductId)
+  if (filtered.length === cart.length) return // nothing to do
+
+  localStorage.setItem('customerCart', JSON.stringify(filtered))
+  loadCart()  // re-reads from localStorage inside useCart
+  showToast('An item in your cart is no longer available')
 }
 
 function loadUserInfo() {
@@ -645,12 +703,16 @@ onMounted(async () => {
   // React to auth changes from other tabs or in-session events
   window.addEventListener('storage', syncAuth)
   window.addEventListener('authChanged', syncAuth)
+
+  // ✅ NEW — Subscribe to realtime catalog changes forwarded by App.vue.
+  window.addEventListener('realtime:product-changed', handleProductChanged)
 })
 
 onBeforeUnmount(() => {
   stopAutoSlide()
   window.removeEventListener('storage', syncAuth)
   window.removeEventListener('authChanged', syncAuth)
+  window.removeEventListener('realtime:product-changed', handleProductChanged)
 })
 </script>
 
