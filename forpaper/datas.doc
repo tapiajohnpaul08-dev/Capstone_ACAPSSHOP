@@ -1,0 +1,2591 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="UTF-8">
+<title>Appendices D &amp; E — ACAPSHOP Capstone</title>
+<!--[if gte mso 9]>
+<xml>
+<w:WordDocument>
+<w:View>Print</w:View>
+<w:Zoom>100</w:Zoom>
+<w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+@page {
+  size: 8.5in 11in;
+  margin: 1in 1in 1in 1.25in;
+  mso-page-orientation: portrait;
+}
+@page Section1 {
+  size: 8.5in 11in;
+  margin: 1in 1in 1in 1.25in;
+}
+div.Section1 { page: Section1; }
+
+body {
+  font-family: "Times New Roman", serif;
+  font-size: 12pt;
+  line-height: 1.5;
+  color: #000;
+}
+
+h1 {
+  font-family: "Times New Roman", serif;
+  font-size: 16pt;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 0;
+  margin-bottom: 24pt;
+  letter-spacing: 1pt;
+}
+
+h2 {
+  font-family: "Times New Roman", serif;
+  font-size: 14pt;
+  font-weight: bold;
+  margin-top: 24pt;
+  margin-bottom: 12pt;
+  page-break-after: avoid;
+}
+
+h3 {
+  font-family: "Times New Roman", serif;
+  font-size: 12pt;
+  font-weight: bold;
+  margin-top: 18pt;
+  margin-bottom: 8pt;
+  page-break-after: avoid;
+}
+
+h4 {
+  font-family: "Times New Roman", serif;
+  font-size: 12pt;
+  font-weight: bold;
+  font-style: italic;
+  margin-top: 14pt;
+  margin-bottom: 6pt;
+  page-break-after: avoid;
+}
+
+p {
+  margin: 0 0 10pt 0;
+  text-align: justify;
+  text-indent: 0.5in;
+}
+
+p.no-indent {
+  text-indent: 0;
+}
+
+.cover-header {
+  text-align: center;
+  font-weight: bold;
+  font-size: 12pt;
+  margin-bottom: 6pt;
+  text-indent: 0;
+}
+
+.cover-subheader {
+  text-align: center;
+  font-weight: bold;
+  font-size: 11pt;
+  margin-bottom: 24pt;
+  text-indent: 0;
+}
+
+table.dd {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: "Times New Roman", serif;
+  font-size: 10pt;
+  margin: 8pt 0 16pt 0;
+  page-break-inside: auto;
+}
+
+table.dd th {
+  background-color: #D9E2F3;
+  border: 1px solid #000;
+  padding: 4pt 6pt;
+  text-align: left;
+  font-weight: bold;
+  vertical-align: top;
+}
+
+table.dd td {
+  border: 1px solid #000;
+  padding: 4pt 6pt;
+  text-align: left;
+  vertical-align: top;
+}
+
+table.dd tr {
+  page-break-inside: avoid;
+}
+
+code, .code-inline {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 10pt;
+  background-color: #F2F2F2;
+  padding: 0 2pt;
+}
+
+pre.code-block {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 8.5pt;
+  line-height: 1.2;
+  background-color: #F7F7F7;
+  border: 1px solid #BBB;
+  padding: 8pt;
+  margin: 8pt 0 12pt 0;
+  white-space: pre;
+  overflow-wrap: normal;
+  page-break-inside: auto;
+  tab-size: 2;
+  text-indent: 0;
+}
+
+pre.code-block code {
+  background: none;
+  padding: 0;
+}
+
+.page-break {
+  page-break-after: always;
+}
+
+.discussion {
+  font-size: 11pt;
+  font-style: italic;
+  margin: 0 0 16pt 0;
+  text-indent: 0;
+  padding-left: 12pt;
+  border-left: 3px solid #888;
+}
+
+.toc-entry {
+  font-size: 12pt;
+  margin: 4pt 0;
+  text-indent: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="Section1">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- APPENDIX D — DATA DICTIONARY                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<p class="cover-header">DALUBHASAANG POLITEKNIKO NG LUNGSOD NG BALIWAG</p>
+<p class="cover-subheader">INSTITUTE OF INFORMATION TECHNOLOGY AND INNOVATION</p>
+
+<h1>APPENDIX D<br>DATA DICTIONARY</h1>
+
+<p class="no-indent">This appendix presents the data dictionary of the Integrated Web-Based Ordering and Inventory System for ACAPS Trading. The system uses MongoDB, a NoSQL database, which stores data in flexible documents organized into twelve (12) collections. Each collection is described below with its fields, data types, requirements, default values, and descriptions.</p>
+
+<!-- ─────────────── D.1 ─────────────── -->
+<h2>D.1&nbsp;&nbsp;Admin Collection (<code>admins</code>)</h2>
+<p class="no-indent">Stores administrator accounts for the Superior Admin, Sales Department, and Production Department roles.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:12%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key automatically generated for each document.</td></tr>
+<tr><td>adminId</td><td>String</td><td>Yes</td><td>—</td><td>Human-readable unique identifier in the format ADM-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>—</td><td>Given name of the administrator.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>""</td><td>Middle name of the administrator.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>—</td><td>Surname of the administrator.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>—</td><td>Unique username used for login.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>—</td><td>Unique email address, stored in lowercase.</td></tr>
+<tr><td>password</td><td>String</td><td>Yes</td><td>—</td><td>Bcrypt-hashed password (10 salt rounds). Plain text is never stored.</td></tr>
+<tr><td>role</td><td>String (enum)</td><td>Yes</td><td>—</td><td>Administrator role: Sales, Production, or Super Admin.</td></tr>
+<tr><td>lastLogin</td><td>Date</td><td>No</td><td>null</td><td>Timestamp of the most recent successful login.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Immutable creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Timestamp of the last modification.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>adminId</code> (unique), <code>email</code> (unique), <code>username</code>.</p>
+
+<!-- ─────────────── D.2 ─────────────── -->
+<h2>D.2&nbsp;&nbsp;Customer Collection (<code>customers</code>)</h2>
+<p class="no-indent">Stores all customer account information, saved addresses, saved design templates, and lifetime spending totals.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:17%">Data Type</th>
+  <th style="width:9%">Required</th>
+  <th style="width:9%">Default</th>
+  <th style="width:45%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>customerId</td><td>String</td><td>Yes</td><td>—</td><td>Unique human-readable ID in the format CUST-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>—</td><td>Given name.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>—</td><td>Middle name.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>—</td><td>Surname.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>—</td><td>Unique login username.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>—</td><td>Unique email address, lowercased.</td></tr>
+<tr><td>phone</td><td>String</td><td>No</td><td>""</td><td>Contact phone number.</td></tr>
+<tr><td>companyName</td><td>String</td><td>No</td><td>null</td><td>Optional business/company name.</td></tr>
+<tr><td>password</td><td>String</td><td>No</td><td>—</td><td>Bcrypt hash. null for OAuth-only accounts.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>—</td><td>Account status: Active or Offline.</td></tr>
+<tr><td>templateDesigns</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Saved design templates (see D.2.1).</td></tr>
+<tr><td>addresses</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Saved delivery addresses (see D.2.2).</td></tr>
+<tr><td>orders</td><td>Array&lt;ObjectId&gt;</td><td>No</td><td>[]</td><td>References to the customer's orders.</td></tr>
+<tr><td>totalSpent</td><td>Number</td><td>No</td><td>0</td><td>Cumulative amount paid. Updated atomically using $inc.</td></tr>
+<tr><td>provider</td><td>String (enum)</td><td>No</td><td>local</td><td>Authentication provider: local, google, or facebook.</td></tr>
+<tr><td>providerId</td><td>String</td><td>No</td><td>—</td><td>The provider's user ID for OAuth accounts.</td></tr>
+<tr><td>profileImage</td><td>String</td><td>No</td><td>null</td><td>Cloudinary URL of the profile image.</td></tr>
+<tr><td>isEmailVerified</td><td>Boolean</td><td>No</td><td>false</td><td>Flag set to true after OTP verification.</td></tr>
+<tr><td>marketingComs</td><td>Boolean</td><td>No</td><td>false</td><td>Opt-in flag for marketing communications.</td></tr>
+<tr><td>dataSharing</td><td>Boolean</td><td>No</td><td>false</td><td>Data sharing consent.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<h4>D.2.1&nbsp;&nbsp;<code>templateDesigns[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:15%">Required</th>
+  <th style="width:40%">Description</th>
+</tr>
+<tr><td>templateId</td><td>String</td><td>Yes</td><td>TPL-XXXX unique identifier.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>Display name of the template.</td></tr>
+<tr><td>imagePath</td><td>String</td><td>Yes</td><td>Cloudinary URL of the template image.</td></tr>
+<tr><td>printSize</td><td>String</td><td>No</td><td>Print size (e.g., 3x3 inches).</td></tr>
+<tr><td>placement</td><td>String</td><td>No</td><td>Placement (Front, Back, Wrap, etc.).</td></tr>
+<tr><td>notes</td><td>String</td><td>No</td><td>Additional design notes.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<h4>D.2.2&nbsp;&nbsp;<code>addresses[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:15%">Required</th>
+  <th style="width:40%">Description</th>
+</tr>
+<tr><td>label</td><td>String</td><td>No</td><td>Address label (e.g., Home, Office).</td></tr>
+<tr><td>streetAddress</td><td>String</td><td>No</td><td>Street address.</td></tr>
+<tr><td>barangay</td><td>String</td><td>No</td><td>Barangay.</td></tr>
+<tr><td>municipality</td><td>String</td><td>No</td><td>Municipality or city.</td></tr>
+<tr><td>province</td><td>String</td><td>No</td><td>Province.</td></tr>
+<tr><td>postalCode</td><td>String</td><td>No</td><td>Postal code.</td></tr>
+<tr><td>region</td><td>String</td><td>No</td><td>Region.</td></tr>
+<tr><td>country</td><td>String</td><td>No</td><td>Country (default: Philippines).</td></tr>
+<tr><td>isDefault</td><td>Boolean</td><td>No</td><td>Whether this is the default address.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+</table>
+
+<!-- ─────────────── D.3 ─────────────── -->
+<h2>D.3&nbsp;&nbsp;Driver Collection (<code>drivers</code>)</h2>
+<p class="no-indent">Stores delivery driver accounts and vehicle information.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:10%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>driverId</td><td>String</td><td>Yes</td><td>—</td><td>Unique ID in the format DRV-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>—</td><td>Given name.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>""</td><td>Middle name.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>—</td><td>Surname.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>—</td><td>Unique login username.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>—</td><td>Unique email, lowercased.</td></tr>
+<tr><td>phoneNumber</td><td>String</td><td>Yes</td><td>—</td><td>Unique phone number.</td></tr>
+<tr><td>password</td><td>String</td><td>Yes</td><td>—</td><td>Bcrypt-hashed password.</td></tr>
+<tr><td>available</td><td>Boolean</td><td>No</td><td>true</td><td>Whether the driver can be assigned orders.</td></tr>
+<tr><td>assignedOrdersCount</td><td>Number</td><td>No</td><td>0</td><td>Number of orders currently assigned.</td></tr>
+<tr><td>completedOrdersCount</td><td>Number</td><td>No</td><td>0</td><td>Number of orders completed in total.</td></tr>
+<tr><td>plateNumber</td><td>String</td><td>Yes</td><td>—</td><td>Unique vehicle plate number, uppercased.</td></tr>
+<tr><td>vehicleDescription</td><td>String</td><td>No</td><td>""</td><td>Description of the vehicle.</td></tr>
+<tr><td>lastLogin</td><td>Date</td><td>No</td><td>null</td><td>Last successful login timestamp.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Virtuals:</b> <code>fullName</code>, <code>displayName</code>, <code>isAvailableForAssignment</code>.</p>
+
+<!-- ─────────────── D.4 ─────────────── -->
+<h2>D.4&nbsp;&nbsp;Product Collection (<code>products</code>)</h2>
+<p class="no-indent">Stores product catalog information including sizes, pricing, bulk pricing tiers, and stock movement history.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:10%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>id</td><td>String</td><td>Yes</td><td>—</td><td>Unique ID in the format PRD-YYYY-XXX.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>—</td><td>Product name, uppercased.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>Yes</td><td>—</td><td>Plastic Cups, Paper Cups, Containers, Bags, Utensils, Straws, or Lids.</td></tr>
+<tr><td>subcategory</td><td>String</td><td>No</td><td>""</td><td>Subcategory (e.g., Lid type).</td></tr>
+<tr><td>description</td><td>String</td><td>No</td><td>""</td><td>Product description.</td></tr>
+<tr><td>image</td><td>String</td><td>Yes</td><td>—</td><td>Cloudinary URL of the product image.</td></tr>
+<tr><td>imagePublicId</td><td>String</td><td>No</td><td>null</td><td>Cloudinary public ID for cleanup.</td></tr>
+<tr><td>sizes</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Product sizes (see D.4.1).</td></tr>
+<tr><td>minOrder</td><td>Number</td><td>Yes</td><td>500</td><td>Minimum order quantity.</td></tr>
+<tr><td>featured</td><td>Boolean</td><td>No</td><td>false</td><td>Featured flag for catalog sorting.</td></tr>
+<tr><td>popular</td><td>Boolean</td><td>No</td><td>false</td><td>Popular flag for catalog sorting.</td></tr>
+<tr><td>popularity</td><td>Number</td><td>No</td><td>0</td><td>Sort key by popularity.</td></tr>
+<tr><td>revenue</td><td>Number</td><td>No</td><td>0</td><td>Cumulative revenue.</td></tr>
+<tr><td>isActive</td><td>Boolean</td><td>No</td><td>true</td><td>Soft-delete flag.</td></tr>
+<tr><td>stockMovements</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Stock audit trail (see D.4.2).</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<h4>D.4.1&nbsp;&nbsp;<code>sizes[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:12%">Default</th>
+  <th style="width:39%">Description</th>
+</tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>—</td><td>Size label (e.g., 12oz, 16oz).</td></tr>
+<tr><td>price</td><td>Number</td><td>Yes</td><td>—</td><td>Base unit price.</td></tr>
+<tr><td>stock</td><td>Number</td><td>No</td><td>0</td><td>Current stock on hand.</td></tr>
+<tr><td>rimDiameter</td><td>Number</td><td>No</td><td>null</td><td>Rim diameter in mm (98, 95, 90, 80).</td></tr>
+<tr><td>bulkPrices.500</td><td>Number</td><td>No</td><td>null</td><td>Total price for a 500-piece order.</td></tr>
+<tr><td>bulkPrices.1000</td><td>Number</td><td>No</td><td>null</td><td>Total price for a 1000-piece order.</td></tr>
+<tr><td>bulkPrices.2000</td><td>Number</td><td>No</td><td>null</td><td>Total price for a 2000-piece order.</td></tr>
+<tr><td>bulkPrices.5000</td><td>Number</td><td>No</td><td>null</td><td>Total price for a 5000-piece order.</td></tr>
+</table>
+
+<h4>D.4.2&nbsp;&nbsp;<code>stockMovements[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:48%">Description</th>
+</tr>
+<tr><td>sizeName</td><td>String</td><td>Yes</td><td>The size affected by the movement.</td></tr>
+<tr><td>type</td><td>String (enum)</td><td>Yes</td><td>in or out.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Yes</td><td>Quantity moved.</td></tr>
+<tr><td>previousStock</td><td>Number</td><td>Yes</td><td>Stock value before the movement.</td></tr>
+<tr><td>newStock</td><td>Number</td><td>Yes</td><td>Stock value after the movement.</td></tr>
+<tr><td>note</td><td>String</td><td>Yes</td><td>Reason for the adjustment (minimum 3 characters).</td></tr>
+<tr><td>imageUrl</td><td>String</td><td>No</td><td>Optional supporting image (Cloudinary URL).</td></tr>
+<tr><td>imagePublicId</td><td>String</td><td>No</td><td>Cloudinary public ID for cleanup.</td></tr>
+<tr><td>performedBy</td><td>String</td><td>No</td><td>Name of the administrator.</td></tr>
+<tr><td>performedById</td><td>String</td><td>No</td><td>Administrator ID.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Timestamp of the movement.</td></tr>
+</table>
+
+<!-- ─────────────── D.5 ─────────────── -->
+<h2>D.5&nbsp;&nbsp;Supply Collection (<code>supplies</code>)</h2>
+<p class="no-indent">Stores raw materials and supplies used in production.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:10%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>supplyId</td><td>String</td><td>Yes</td><td>—</td><td>Unique ID in the format SUP-YYYY-XXX.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>—</td><td>Supply name.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>Yes</td><td>—</td><td>inks, chemicals, packaging, raw_materials, maintenance, or other.</td></tr>
+<tr><td>description</td><td>String</td><td>No</td><td>""</td><td>Description of the supply.</td></tr>
+<tr><td>image</td><td>String</td><td>No</td><td>""</td><td>Cloudinary URL of the supply image.</td></tr>
+<tr><td>supplier</td><td>String</td><td>Yes</td><td>—</td><td>Name of the supplier.</td></tr>
+<tr><td>supplierContact</td><td>String</td><td>No</td><td>""</td><td>Supplier contact information.</td></tr>
+<tr><td>unit</td><td>String</td><td>No</td><td>piece</td><td>Unit of measure: piece, kg, liter, box, roll, set.</td></tr>
+<tr><td>minOrderQuantity</td><td>Number</td><td>No</td><td>1</td><td>Minimum restock quantity.</td></tr>
+<tr><td>unitCost</td><td>Number</td><td>No</td><td>0</td><td>Cost per unit.</td></tr>
+<tr><td>isActive</td><td>Boolean</td><td>No</td><td>true</td><td>Active status flag.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<!-- ─────────────── D.6 ─────────────── -->
+<h2>D.6&nbsp;&nbsp;InventoryItem Collection (<code>inventoryitems</code>)</h2>
+<p class="no-indent">Bridges products and supplies into a unified inventory with a shared stock model and audit trail.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:17%">Data Type</th>
+  <th style="width:9%">Required</th>
+  <th style="width:13%">Default</th>
+  <th style="width:41%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>itemId</td><td>String</td><td>Yes</td><td>—</td><td>Unique ID in the format INV-XXXX-XXXX.</td></tr>
+<tr><td>itemType</td><td>String (enum)</td><td>Yes</td><td>—</td><td>product or supply.</td></tr>
+<tr><td>itemRef</td><td>ObjectId</td><td>Yes</td><td>—</td><td>Reference to Product._id or Supply._id.</td></tr>
+<tr><td>stock</td><td>Number</td><td>Yes</td><td>0</td><td>Current stock on hand (cannot be negative).</td></tr>
+<tr><td>unit</td><td>String</td><td>No</td><td>piece</td><td>Unit of measure.</td></tr>
+<tr><td>threshold</td><td>Number</td><td>No</td><td>100</td><td>Stock threshold that triggers a low-stock alert.</td></tr>
+<tr><td>unitCost</td><td>Number</td><td>No</td><td>0</td><td>Cost per unit.</td></tr>
+<tr><td>lastRestocked</td><td>Date</td><td>No</td><td>now</td><td>Timestamp of last restock.</td></tr>
+<tr><td>notes</td><td>String</td><td>No</td><td>""</td><td>Additional notes.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>In Stock</td><td>In Stock, Low Stock, or Out of Stock.</td></tr>
+<tr><td>location</td><td>String</td><td>No</td><td>Warehouse A</td><td>Storage location.</td></tr>
+<tr><td>binLocation</td><td>String</td><td>No</td><td>""</td><td>Bin location (e.g., A-12).</td></tr>
+<tr><td>batchNumber</td><td>String</td><td>No</td><td>""</td><td>Optional batch number.</td></tr>
+<tr><td>stockMovements</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Same structure as D.4.2.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<!-- ─────────────── D.7 ─────────────── -->
+<h2>D.7&nbsp;&nbsp;Order Collection (<code>orders</code>) — Core Collection</h2>
+<p class="no-indent">The central collection of the system. Stores all order data including status, payment, delay history, and driver assignment.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:9%">Required</th>
+  <th style="width:11%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>orderId</td><td>String</td><td>Yes</td><td>—</td><td>ORD-YYYY-XXX-COMP or -PROV, unique.</td></tr>
+<tr><td>customerName</td><td>String</td><td>No</td><td>—</td><td>Snapshot of customer name at order time.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>No</td><td>—</td><td>Customer email at order time.</td></tr>
+<tr><td>customerPhone</td><td>String</td><td>No</td><td>—</td><td>Customer phone at order time.</td></tr>
+<tr><td>address</td><td>String</td><td>No</td><td>—</td><td>Delivery address.</td></tr>
+<tr><td>postalCode</td><td>String</td><td>No</td><td>—</td><td>Postal code.</td></tr>
+<tr><td>customerId</td><td>String</td><td>No</td><td>—</td><td>Ref to Customer.customerId.</td></tr>
+<tr><td>productId</td><td>String</td><td>No</td><td>—</td><td>Ref to Product.id (legacy single-item).</td></tr>
+<tr><td>productName</td><td>String</td><td>No</td><td>—</td><td>Snapshot of product name.</td></tr>
+<tr><td>size</td><td>String</td><td>No</td><td>—</td><td>Product size.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Yes</td><td>—</td><td>Total pieces ordered.</td></tr>
+<tr><td>designDetails</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Design metadata per item.</td></tr>
+<tr><td>hasDesign</td><td>Boolean</td><td>No</td><td>false</td><td>Whether the order has a design.</td></tr>
+<tr><td>items</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Line items (see D.7.1).</td></tr>
+<tr><td>amount</td><td>Number</td><td>No</td><td>0</td><td>Server-computed total.</td></tr>
+<tr><td>totalAmount</td><td>Number</td><td>No</td><td>0</td><td>Alias of amount.</td></tr>
+<tr><td>downpayment</td><td>Number</td><td>No</td><td>0</td><td>Legacy field.</td></tr>
+<tr><td>designFee</td><td>Number</td><td>No</td><td>500</td><td>Flat fee when hasDesign is true.</td></tr>
+<tr><td>shippingFee</td><td>Number</td><td>No</td><td>0</td><td>0 for Pick-up orders.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>Yes</td><td>Pending</td><td>Pending, Confirmed, Scheduled, In Production, Out for Delivery, Completed, or Cancelled.</td></tr>
+<tr><td>paymentStatus</td><td>String (enum)</td><td>No</td><td>Unpaid</td><td>Unpaid, Partial, or Paid.</td></tr>
+<tr><td>paymentMethod</td><td>String (enum)</td><td>No</td><td>cod</td><td>cod or bank_transfer.</td></tr>
+<tr><td>paymentDetails</td><td>Subdoc</td><td>No</td><td>—</td><td>bankName, referenceNumber, paidAt, proofOfPayment.</td></tr>
+<tr><td>partialPayments</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>amount, referenceNumber, date, updatedBy.</td></tr>
+<tr><td>negotiationStatus</td><td>String (enum)</td><td>No</td><td>none</td><td>none, in_progress, or finalized.</td></tr>
+<tr><td>pricingHistory</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>Immutable audit of admin price changes.</td></tr>
+<tr><td>acceptedQuote</td><td>Subdoc</td><td>No</td><td>—</td><td>Snapshot when customer accepts quote.</td></tr>
+<tr><td>activePaymentRequestMessageId</td><td>String</td><td>No</td><td>null</td><td>Ref to Message.</td></tr>
+<tr><td>isReceived</td><td>Boolean</td><td>No</td><td>false</td><td>Marked received flag.</td></tr>
+<tr><td>receivingMode</td><td>String (enum)</td><td>No</td><td>—</td><td>Pick-up or Delivery.</td></tr>
+<tr><td>deliveryMethod</td><td>String (enum)</td><td>No</td><td>—</td><td>Delivery or Pick-up.</td></tr>
+<tr><td>useCourier</td><td>Boolean</td><td>No</td><td>false</td><td>Whether external courier is used.</td></tr>
+<tr><td>courierName</td><td>String</td><td>No</td><td>""</td><td>Courier name if applicable.</td></tr>
+<tr><td>supplyType</td><td>String (enum)</td><td>No</td><td>—</td><td>Own Items or Company Cups.</td></tr>
+<tr><td>type</td><td>String (enum)</td><td>No</td><td>—</td><td>own-items or company-product.</td></tr>
+<tr><td>isProvided</td><td>Boolean</td><td>No</td><td>false</td><td>True = customer-supplied items.</td></tr>
+<tr><td>productionSchedule</td><td>Date</td><td>No</td><td>null</td><td>Set when moved to Scheduled.</td></tr>
+<tr><td>driverDetails</td><td>Subdoc</td><td>No</td><td>—</td><td>See D.7.4.</td></tr>
+<tr><td>itemPhotos</td><td>Array&lt;String&gt;</td><td>No</td><td>[]</td><td>Cloudinary URLs of the customer's own item.</td></tr>
+<tr><td>isCartOrder</td><td>Boolean</td><td>No</td><td>false</td><td>Whether it originated from cart checkout.</td></tr>
+<tr><td>source</td><td>String</td><td>No</td><td>—</td><td>Order source.</td></tr>
+<tr><td>orderedBy</td><td>String</td><td>No</td><td>—</td><td>Ref to Customer._id (stored as string).</td></tr>
+<tr><td>orderedById</td><td>String</td><td>No</td><td>—</td><td>Alias.</td></tr>
+<tr><td>expectedDelivery</td><td>Date</td><td>Yes</td><td>—</td><td>Expected delivery date.</td></tr>
+<tr><td>preferredDate</td><td>Date</td><td>No</td><td>—</td><td>Customer's preferred date.</td></tr>
+<tr><td>fromCustomerToCompanyDeliveryDate</td><td>Date</td><td>No</td><td>null</td><td>Own-cups drop-off date.</td></tr>
+<tr><td>dropOffStatus</td><td>String (enum)</td><td>No</td><td>Pending</td><td>Pending or Received.</td></tr>
+<tr><td>orderedAt</td><td>Date</td><td>No</td><td>now</td><td>Order date.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+<tr><td>notes</td><td>String</td><td>No</td><td>""</td><td>Order notes.</td></tr>
+<tr><td>statusHistory</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>See D.7.2.</td></tr>
+<tr><td>delayHistory</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>[]</td><td>See D.7.3.</td></tr>
+<tr><td>customer</td><td>Subdoc</td><td>No</td><td>—</td><td>name, company, email, phone, address.</td></tr>
+<tr><td>fulfillment</td><td>Subdoc</td><td>No</td><td>—</td><td>method, deliveryAddress, sameAsCustomer.</td></tr>
+<tr><td>proofOfDelivery</td><td>String</td><td>No</td><td>null</td><td>Cloudinary URL.</td></tr>
+<tr><td>updatedBy</td><td>String</td><td>No</td><td>—</td><td>Admin name.</td></tr>
+<tr><td>createdByAdmin</td><td>Boolean</td><td>No</td><td>false</td><td>Walk-in order flag.</td></tr>
+<tr><td>createdByAdminId</td><td>String</td><td>No</td><td>""</td><td>Admin ID of creator.</td></tr>
+<tr><td>createdByAdminName</td><td>String</td><td>No</td><td>""</td><td>Admin name of creator.</td></tr>
+</table>
+
+<h4>D.7.1&nbsp;&nbsp;<code>items[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>productId</td><td>String</td><td>Ref to Product (null for own-cups).</td></tr>
+<tr><td>name</td><td>String</td><td>Product name snapshot.</td></tr>
+<tr><td>category</td><td>String</td><td>Product category snapshot.</td></tr>
+<tr><td>size</td><td>String</td><td>Size snapshot.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Quantity ordered.</td></tr>
+<tr><td>designSource</td><td>String (enum)</td><td>upload, saved, or no-design.</td></tr>
+<tr><td>designImage</td><td>String</td><td>Cloudinary URL of the design image.</td></tr>
+<tr><td>printSize</td><td>String</td><td>Print size.</td></tr>
+<tr><td>printPlacement</td><td>String</td><td>Placement.</td></tr>
+<tr><td>designNotes</td><td>String</td><td>Notes.</td></tr>
+<tr><td>files</td><td>Array&lt;Subdoc&gt;</td><td>name, size, type, path.</td></tr>
+<tr><td>selectedTemplateId</td><td>String</td><td>Ref to Customer.templateDesigns.</td></tr>
+<tr><td>selectedTemplate</td><td>Subdoc</td><td>id, name, thumbnail, printSize, placement, notes.</td></tr>
+<tr><td>estimatedTotal</td><td>Number</td><td>quantity × unitPrice.</td></tr>
+<tr><td>image</td><td>String</td><td>Product image snapshot.</td></tr>
+<tr><td>itemPhotos</td><td>Array&lt;String&gt;</td><td>Customer's own-item photos.</td></tr>
+<tr><td>itemPhotoPublicIds</td><td>Array&lt;String&gt;</td><td>For Cloudinary cleanup.</td></tr>
+<tr><td>rimDiameter</td><td>Number</td><td>Rim diameter in mm.</td></tr>
+<tr><td>itemType</td><td>String (enum)</td><td>cup, lid, container, bag, utensil, straw, other.</td></tr>
+</table>
+
+<h4>D.7.2&nbsp;&nbsp;<code>statusHistory[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>status</td><td>String</td><td>Status label at that point in time.</td></tr>
+<tr><td>timestamp</td><td>Date</td><td>When the status was recorded.</td></tr>
+<tr><td>notes</td><td>String</td><td>Auto-generated or admin-supplied notes.</td></tr>
+<tr><td>productionSchedule</td><td>String</td><td>Production schedule value.</td></tr>
+<tr><td>updatedBy</td><td>String</td><td>Name of the person who made the change.</td></tr>
+<tr><td>driverDetails</td><td>Subdoc</td><td>Snapshot of driver at time of status change.</td></tr>
+</table>
+
+<h4>D.7.3&nbsp;&nbsp;<code>delayHistory[]</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>isDelayed</td><td>Boolean</td><td>Active flag.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>material_shortage, production_issue, logistics, weather, customer_request, payment, or other.</td></tr>
+<tr><td>reason</td><td>String</td><td>Customer-facing reason.</td></tr>
+<tr><td>notes</td><td>String</td><td>Admin-only notes.</td></tr>
+<tr><td>originalExpectedDelivery</td><td>Date</td><td>Preserved original ETA.</td></tr>
+<tr><td>newExpectedDelivery</td><td>Date</td><td>Revised ETA.</td></tr>
+<tr><td>reportedBy</td><td>String</td><td>Person who reported the delay.</td></tr>
+<tr><td>reportedByType</td><td>String (enum)</td><td>admin, driver, or system.</td></tr>
+<tr><td>reportedAt</td><td>Date</td><td>Timestamp of report.</td></tr>
+<tr><td>resolvedAt</td><td>Date</td><td>Timestamp of resolution.</td></tr>
+<tr><td>resolvedBy</td><td>String</td><td>Name of resolver.</td></tr>
+</table>
+
+<h4>D.7.4&nbsp;&nbsp;<code>driverDetails</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>driverId</td><td>String</td><td>Ref to Driver.driverId.</td></tr>
+<tr><td>driverName</td><td>String</td><td>Snapshot of driver name.</td></tr>
+<tr><td>driverPhone</td><td>String</td><td>Snapshot of driver phone.</td></tr>
+<tr><td>plateNumber</td><td>String</td><td>Vehicle plate number.</td></tr>
+<tr><td>truckDescription</td><td>String</td><td>Vehicle description.</td></tr>
+<tr><td>assignedAt</td><td>Date</td><td>When the driver was assigned.</td></tr>
+</table>
+
+<p class="no-indent"><b>Virtuals:</b> <code>isCurrentlyDelayed</code>, <code>currentDelay</code>.<br>
+<b>Indexes:</b> <code>orderedBy</code>, <code>status</code>, <code>paymentStatus</code>, <code>receivingMode</code>, <code>createdAt</code>, <code>orderedAt</code>, and the compound index <code>{status, orderedAt}</code>.</p>
+
+<!-- ─────────────── D.8 ─────────────── -->
+<h2>D.8&nbsp;&nbsp;Conversation Collection (<code>conversations</code>)</h2>
+<p class="no-indent">Stores chat conversation threads between customers and administrators. Each order can have its own dedicated conversation for negotiation.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:10%">Default</th>
+  <th style="width:43%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>—</td><td>MongoDB primary key.</td></tr>
+<tr><td>conversationId</td><td>String</td><td>Yes</td><td>—</td><td>CONV-XXXX, unique.</td></tr>
+<tr><td>customerId</td><td>String</td><td>Yes</td><td>—</td><td>Ref to Customer.customerId.</td></tr>
+<tr><td>customerName</td><td>String</td><td>Yes</td><td>—</td><td>Customer display name.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>Yes</td><td>—</td><td>Customer email.</td></tr>
+<tr><td>adminId</td><td>String</td><td>No</td><td>null</td><td>Assigned admin.</td></tr>
+<tr><td>adminName</td><td>String</td><td>No</td><td>""</td><td>Admin display name.</td></tr>
+<tr><td>subject</td><td>String</td><td>No</td><td>""</td><td>Conversation subject.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>open</td><td>open, in_progress, resolved, closed.</td></tr>
+<tr><td>customerUnreadCount</td><td>Number</td><td>No</td><td>0</td><td>Unread messages for customer.</td></tr>
+<tr><td>adminUnreadCount</td><td>Number</td><td>No</td><td>0</td><td>Unread messages for admin.</td></tr>
+<tr><td>lastMessage</td><td>String</td><td>No</td><td>""</td><td>Preview of the last message.</td></tr>
+<tr><td>lastMessageAt</td><td>Date</td><td>No</td><td>now</td><td>Timestamp of the last message.</td></tr>
+<tr><td>lastMessageBy</td><td>String (enum)</td><td>No</td><td>null</td><td>customer or admin.</td></tr>
+<tr><td>orderId</td><td>String</td><td>No</td><td>—</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>now</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>now</td><td>Modification timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>conversationId</code>, <code>customerId</code>, <code>customerEmail</code>, <code>status</code>, <code>orderId</code>, <code>lastMessageAt</code>, <code>{customerId, status}</code>, <code>{adminId, status}</code>.</p>
+
+<!-- ─────────────── D.9 ─────────────── -->
+<h2>D.9&nbsp;&nbsp;Message Collection (<code>messages</code>)</h2>
+<p class="no-indent">Stores all chat messages including text, quotes, payment requests, payment proofs, and delay notices.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:28%">Field</th>
+  <th style="width:15%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:47%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>messageId</td><td>String</td><td>Yes</td><td>MSG-XXXX, unique.</td></tr>
+<tr><td>conversationId</td><td>String</td><td>Yes</td><td>Ref to Conversation.conversationId.</td></tr>
+<tr><td>senderType</td><td>String (enum)</td><td>Yes</td><td>customer or admin.</td></tr>
+<tr><td>senderId</td><td>String</td><td>Yes</td><td>Sender's identifier.</td></tr>
+<tr><td>senderName</td><td>String</td><td>Yes</td><td>Sender's display name.</td></tr>
+<tr><td>content</td><td>String</td><td>Yes</td><td>Text body of the message.</td></tr>
+<tr><td>contentType</td><td>String (enum)</td><td>No</td><td>text, image, file, system, quote, payment-request, payment-proof, delay-notice.</td></tr>
+<tr><td>quoteData</td><td>Subdoc</td><td>No</td><td>Negotiation quote payload (see D.9.1).</td></tr>
+<tr><td>paymentRequestData</td><td>Subdoc</td><td>No</td><td>Payment request payload (see D.9.2).</td></tr>
+<tr><td>paymentProofData</td><td>Subdoc</td><td>No</td><td>Payment proof payload (see D.9.3).</td></tr>
+<tr><td>delayNoticeData</td><td>Subdoc</td><td>No</td><td>Delay notice payload (see D.9.4).</td></tr>
+<tr><td>attachments</td><td>Array&lt;Subdoc&gt;</td><td>No</td><td>name, size, type, path, url.</td></tr>
+<tr><td>replyToMessageId</td><td>String</td><td>No</td><td>Ref to the message being replied to.</td></tr>
+<tr><td>replyTo</td><td>Subdoc</td><td>No</td><td>messageId, content, sender.</td></tr>
+<tr><td>isRead</td><td>Boolean</td><td>No</td><td>Whether the recipient has read it.</td></tr>
+<tr><td>readAt</td><td>Date</td><td>No</td><td>Timestamp of read event.</td></tr>
+<tr><td>isDeleted</td><td>Boolean</td><td>No</td><td>Soft-delete flag.</td></tr>
+<tr><td>deletedFor</td><td>Array&lt;String&gt;</td><td>No</td><td>Users the message was deleted for.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+</table>
+
+<h4>D.9.1&nbsp;&nbsp;<code>quoteData</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>orderId</td><td>String</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>customerName</td><td>String</td><td>Customer name snapshot.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Quoted quantity.</td></tr>
+<tr><td>unitPrice</td><td>Number</td><td>Quoted unit price.</td></tr>
+<tr><td>designFee</td><td>Number</td><td>Design fee.</td></tr>
+<tr><td>shippingFee</td><td>Number</td><td>Shipping fee.</td></tr>
+<tr><td>deliveryMethod</td><td>String</td><td>Delivery or Pick-up.</td></tr>
+<tr><td>totalAmount</td><td>Number</td><td>Quoted total amount.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>pending, accepted, rejected, superseded.</td></tr>
+<tr><td>respondedAt</td><td>Date</td><td>Timestamp of the customer's response.</td></tr>
+<tr><td>respondedBy</td><td>String</td><td>Who responded.</td></tr>
+<tr><td>notes</td><td>String</td><td>Additional notes.</td></tr>
+</table>
+
+<h4>D.9.2&nbsp;&nbsp;<code>paymentRequestData</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>orderId</td><td>String</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>method</td><td>String (enum)</td><td>gcash or bank_transfer.</td></tr>
+<tr><td>accountName</td><td>String</td><td>Account holder name.</td></tr>
+<tr><td>accountNumber</td><td>String</td><td>Account number.</td></tr>
+<tr><td>bankName</td><td>String</td><td>Bank name (for bank_transfer only).</td></tr>
+<tr><td>amountDue</td><td>Number</td><td>Amount the customer must pay.</td></tr>
+<tr><td>notes</td><td>String</td><td>Additional notes.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>pending, proof-submitted, verified, rejected, superseded.</td></tr>
+<tr><td>statusUpdatedAt</td><td>Date</td><td>Timestamp of the last status change.</td></tr>
+<tr><td>statusUpdatedBy</td><td>String</td><td>Who updated the status.</td></tr>
+<tr><td>rejectionReason</td><td>String</td><td>Reason if rejected.</td></tr>
+</table>
+
+<h4>D.9.3&nbsp;&nbsp;<code>paymentProofData</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>paymentRequestMessageId</td><td>String</td><td>Ref to the payment-request message.</td></tr>
+<tr><td>orderId</td><td>String</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>method</td><td>String</td><td>gcash or bank_transfer.</td></tr>
+<tr><td>amountPaid</td><td>Number</td><td>Amount the customer declared paid.</td></tr>
+<tr><td>referenceNumber</td><td>String</td><td>Reference number from the transaction.</td></tr>
+<tr><td>proofImageUrl</td><td>String</td><td>Cloudinary URL of the proof image.</td></tr>
+<tr><td>note</td><td>String</td><td>Additional notes.</td></tr>
+<tr><td>submittedAt</td><td>Date</td><td>When the proof was submitted.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>pending-review, approved, rejected.</td></tr>
+<tr><td>reviewedAt</td><td>Date</td><td>When it was reviewed.</td></tr>
+<tr><td>reviewedBy</td><td>String</td><td>Reviewer name.</td></tr>
+<tr><td>rejectionReason</td><td>String</td><td>Reason if rejected.</td></tr>
+</table>
+
+<h4>D.9.4&nbsp;&nbsp;<code>delayNoticeData</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>orderId</td><td>String</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>category</td><td>String</td><td>Delay category.</td></tr>
+<tr><td>reason</td><td>String</td><td>Customer-facing reason.</td></tr>
+<tr><td>originalExpectedDelivery</td><td>Date</td><td>Original ETA.</td></tr>
+<tr><td>newExpectedDelivery</td><td>Date</td><td>New ETA.</td></tr>
+<tr><td>reportedAt</td><td>Date</td><td>When it was reported.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>{conversationId, createdAt: -1}</code>, <code>{conversationId, isRead}</code>, <code>{senderId, createdAt: -1}</code>.</p>
+
+<!-- ─────────────── D.10 ─────────────── -->
+<h2>D.10&nbsp;&nbsp;Feedback Collection (<code>feedbacks</code>)</h2>
+<p class="no-indent">Stores customer feedback and ratings after order completion.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:17%">Data Type</th>
+  <th style="width:10%">Required</th>
+  <th style="width:51%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>feedbackId</td><td>String</td><td>Yes</td><td>FDBK-XXXX, unique.</td></tr>
+<tr><td>orderId</td><td>String</td><td>Yes</td><td>Ref to Order.orderId.</td></tr>
+<tr><td>customerId</td><td>ObjectId</td><td>Yes</td><td>Ref to Customer._id.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>Yes</td><td>Denormalized email.</td></tr>
+<tr><td>customerName</td><td>String</td><td>Yes</td><td>Customer name.</td></tr>
+<tr><td>productId</td><td>String</td><td>No</td><td>Product identifier.</td></tr>
+<tr><td>productName</td><td>String</td><td>No</td><td>Product name.</td></tr>
+<tr><td>rating</td><td>Number</td><td>Yes</td><td>Overall rating 1–5 (whole number).</td></tr>
+<tr><td>detailedRatings</td><td>Subdoc</td><td>No</td><td>See D.10.1.</td></tr>
+<tr><td>title</td><td>String</td><td>No</td><td>Review title (max 100 chars).</td></tr>
+<tr><td>comment</td><td>String</td><td>Yes</td><td>Review body (max 2000 chars).</td></tr>
+<tr><td>pros</td><td>Array&lt;String&gt;</td><td>No</td><td>Positive points.</td></tr>
+<tr><td>cons</td><td>Array&lt;String&gt;</td><td>No</td><td>Negative points.</td></tr>
+<tr><td>wouldRecommend</td><td>Boolean</td><td>No</td><td>Recommend flag.</td></tr>
+<tr><td>wouldPurchaseAgain</td><td>Boolean</td><td>No</td><td>Repurchase intent.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>pending, approved, rejected, or featured.</td></tr>
+<tr><td>adminResponse</td><td>Subdoc</td><td>No</td><td>message, respondedAt, respondedBy.</td></tr>
+<tr><td>submittedAt</td><td>Date</td><td>Auto</td><td>Immutable submission timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+<tr><td>isPublic</td><td>Boolean</td><td>No</td><td>Public visibility flag.</td></tr>
+<tr><td>isVerified</td><td>Boolean</td><td>No</td><td>Verified flag.</td></tr>
+<tr><td>helpfulCount</td><td>Number</td><td>No</td><td>Number of users who found it helpful.</td></tr>
+</table>
+
+<h4>D.10.1&nbsp;&nbsp;<code>detailedRatings</code> Subdocument</h4>
+<table class="dd">
+<tr>
+  <th style="width:25%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:55%">Description</th>
+</tr>
+<tr><td>quality</td><td>Number</td><td>Quality rating (1–5 or null).</td></tr>
+<tr><td>design</td><td>Number</td><td>Design rating (1–5 or null).</td></tr>
+<tr><td>packaging</td><td>Number</td><td>Packaging rating (1–5 or null).</td></tr>
+<tr><td>delivery</td><td>Number</td><td>Delivery rating (1–5 or null).</td></tr>
+<tr><td>valueForMoney</td><td>Number</td><td>Value rating (1–5 or null).</td></tr>
+<tr><td>customerService</td><td>Number</td><td>Service rating (1–5 or null).</td></tr>
+</table>
+
+<p class="no-indent"><b>Virtuals:</b> <code>overallRating</code>.<br>
+<b>Statics:</b> <code>getAverageRating</code>, <code>getRatingDistribution</code>, <code>getRecentFeedback</code>.</p>
+
+<!-- ─────────────── D.11 ─────────────── -->
+<h2>D.11&nbsp;&nbsp;OTP Collection (<code>otps</code>)</h2>
+<p class="no-indent">Stores one-time passwords used for email verification and password reset flows.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>Target email, lowercased.</td></tr>
+<tr><td>hashedOtp</td><td>String</td><td>Yes</td><td>Bcrypt hash of the 6-digit code.</td></tr>
+<tr><td>expiresAt</td><td>Date</td><td>Yes</td><td>TTL index deletes the document at expiry.</td></tr>
+<tr><td>attempts</td><td>Number</td><td>No</td><td>Failed-attempt counter (max 3).</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>{expiresAt: 1}</code> with <code>expireAfterSeconds: 0</code> (MongoDB TTL index), <code>{email: 1, createdAt: -1}</code>.</p>
+
+<!-- ─────────────── D.12 ─────────────── -->
+<h2>D.12&nbsp;&nbsp;BlacklistToken Collection (<code>blacklisttokens</code>)</h2>
+<p class="no-indent">Stores invalidated JWT tokens from logout events so they cannot be reused before their natural expiry.</p>
+
+<table class="dd">
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>token</td><td>String</td><td>Yes</td><td>Logged-out JWT, unique.</td></tr>
+<tr><td>expiresAt</td><td>Date</td><td>Yes</td><td>Original token expiry.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>{expiresAt: 1}</code> with <code>expireAfterSeconds: 0</code> (MongoDB TTL index).</p>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- PAGE BREAK — Appendix E begins on a new page               -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<div class="page-break"></div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- APPENDIX E — RELEVANT SOURCE CODE                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<p class="cover-header">DALUBHASAANG POLITEKNIKO NG LUNGSOD NG BALIWAG</p>
+<p class="cover-subheader">INSTITUTE OF INFORMATION TECHNOLOGY AND INNOVATION</p>
+
+<h1>APPENDIX E<br>RELEVANT SOURCE CODE</h1>
+
+<p class="no-indent">This appendix presents the relevant source code excerpts from the Integrated Web-Based Ordering and Inventory System for ACAPS Trading. The source code is organized into seven (7) sections, each corresponding to a major subsystem of the application, to demonstrate how the five (5) objectives of the study were achieved.</p>
+
+<!-- ─────────────── E.1 ─────────────── -->
+<h2>E.1&nbsp;&nbsp;System Entry and Real-Time Infrastructure</h2>
+<p class="no-indent">This section presents the server bootstrap and the real-time abstraction layer that powers live order, inventory, and chat updates.</p>
+
+<h3>E.1.1&nbsp;&nbsp;server.js — Socket.IO Setup and Connection Handling</h3>
+
+<pre class="code-block">// server.js (excerpt — Socket.IO initialization)
+const express = require('express');
+const http = require('http');
+const socketIO = require('socket.io');
+
+const app = express();
+const server = http.createServer(app);
+
+// ─────────────────────────────────────────
+// SOCKET.IO SETUP
+// ─────────────────────────────────────────
+const io = socketIO(server, {
+  cors: {
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'https://acaps-inventory-system.vercel.app',
+      'https://capstone-backend-bp5a.onrender.com',
+      'https://capstone-acapsshop.vercel.app'
+    ],
+    credentials: true,
+    methods: ['GET', 'POST']
+  },
+  transports: ['websocket', 'polling'],
+});
+
+// Expose io globally so services can broadcast without a
+// circular require back to server.js.
+global.__io__ = io;
+
+// ─────────────────────────────────────────
+// SOCKET AUTHENTICATION AND ROOM STRATEGY
+// ─────────────────────────────────────────
+io.use(async (socket, next) =&gt; {
+  try {
+    const token = socket.handshake.auth.token;
+    if (!token) {
+      return next(new Error('Authentication required'));
+    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.customerId || decoded.adminId || decoded.id;
+    socket.userType = decoded.customerId ? 'customer' : 'admin';
+    socket.userInfo = {
+      name: decoded.firstName
+        ? `${decoded.firstName} ${decoded.lastName || ''}`
+        : decoded.email,
+      email: decoded.email,
+      ...decoded
+    };
+    next();
+  } catch (err) {
+    console.error('Socket auth error:', err.message);
+    next(new Error('Authentication failed'));
+  }
+});
+
+io.on('connection', (socket) =&gt; {
+  console.log(`User connected: ${socket.userId} (${socket.userType})`);
+  socketService.addOnlineUser(
+    socket.userId, socket.id, socket.userType, socket.userInfo
+  );
+  io.emit('users-online', socketService.getOnlineUsers());
+
+  // Personal room by userId (CUST-xxxx / ADM-xxxx)
+  socket.join(`user_${socket.userId}`);
+
+  // Personal room by Mongo _id — services reach this user via
+  // Order.orderedBy which stores the Mongo _id.
+  const mongoId = socket.userInfo?.id || socket.userInfo?._id;
+  if (mongoId) socket.join(`mongo_${mongoId}`);
+
+  // Shared room for every connected admin
+  if (socket.userType === 'admin') socket.join('admins');
+
+  // Shared room for every connected customer
+  if (socket.userType === 'customer') socket.join('customers');
+
+  socket.on('join-conversation', async (data) =&gt; {
+    const { conversationId } = data;
+    if (!conversationId) return;
+    socketService.joinConversation(
+      socket, conversationId, socket.userId, socket.userType
+    );
+    await socketService.markAsRead(
+      conversationId, socket.userId, socket.userType, socket
+    );
+  });
+
+  socket.on('send-message', async (data) =&gt; {
+    const { conversationId, content, attachments, replyToMessageId } = data;
+    if (!conversationId
+        || (!content &amp;&amp; (!attachments || attachments.length === 0))) {
+      return;
+    }
+    const senderName = socket.userInfo?.name
+      || (socket.userType === 'customer' ? 'Customer' : 'Support Team');
+    const message = await socketService.saveAndEmitMessage(
+      conversationId, socket.userId, senderName, socket.userType,
+      content, attachments, replyToMessageId, socket
+    );
+    if (message) socket.emit('message-sent', message);
+  });
+
+  socket.on('disconnect', () =&gt; {
+    console.log(`User disconnected: ${socket.userId}`);
+    socketService.removeOnlineUser(socket.userId);
+    io.emit('users-online', socketService.getOnlineUsers());
+  });
+});
+
+app.set('io', io);
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The server configures Socket.IO with an explicit CORS whitelist and a JWT-based handshake middleware. Every authenticated socket joins a personal room (<code>user_${userId}</code>) plus a Mongo-id room (<code>mongo_${mongoId}</code>) so that broadcasts triggered by database references (like <code>Order.orderedBy</code>) still reach the correct client. Shared rooms (<code>admins</code>, <code>customers</code>) allow fan-out events without tracking individual socket IDs.</p>
+
+<h3>E.1.2&nbsp;&nbsp;utils/realtime.js — Broadcast Abstraction</h3>
+
+<pre class="code-block">// utils/realtime.js
+//
+// Centralized helpers so services never touch the Socket.IO instance
+// directly. Broadcasts are grouped by audience (admins, customers,
+// individual users) and by topic (order, inventory, product).
+
+const emitToAdmins = (event, payload = {}) =&gt; {
+  try {
+    if (global.__io__) global.__io__.to('admins').emit(event, payload);
+  } catch (e) {
+    console.error(`realtime.emitToAdmins(${event}) failed:`, e.message);
+  }
+};
+
+const emitToUser = (userId, event, payload = {}) =&gt; {
+  try {
+    if (global.__io__ &amp;&amp; userId)
+      global.__io__.to(`user_${userId}`).emit(event, payload);
+  } catch (e) {
+    console.error(`realtime.emitToUser(${event}) failed:`, e.message);
+  }
+};
+
+const emitToMongoUser = (mongoId, event, payload = {}) =&gt; {
+  try {
+    if (global.__io__ &amp;&amp; mongoId) {
+      global.__io__.to(`mongo_${mongoId}`).emit(event, payload);
+    }
+  } catch (e) {
+    console.error(`realtime.emitToMongoUser(${event}) failed:`, e.message);
+  }
+};
+
+const emitToCustomers = (event, payload = {}) =&gt; {
+  try {
+    if (global.__io__) global.__io__.to('customers').emit(event, payload);
+  } catch (e) {
+    console.error(`realtime.emitToCustomers(${event}) failed:`, e.message);
+  }
+};
+
+const emitOrderChanged = (order, action = 'updated') =&gt; {
+  if (!order) return;
+  const payload = {
+    orderId: order.orderId,
+    action,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    timestamp: new Date().toISOString(),
+  };
+  emitToAdmins('order:changed', payload);
+  if (order.orderedBy)
+    emitToMongoUser(order.orderedBy, 'order:changed', payload);
+};
+
+const emitInventoryChanged = (payload = {}) =&gt; {
+  emitToAdmins('inventory:changed', {
+    ...payload,
+    timestamp: new Date().toISOString(),
+  });
+};
+
+const emitProductChanged = (product, action = 'updated') =&gt; {
+  if (!product) return;
+  const productId = product.id;
+  const timestamp = new Date().toISOString();
+
+  // Admins keep the legacy channel
+  emitToAdmins('inventory:changed', {
+    reason: `product-${action}`,
+    productId,
+    timestamp,
+  });
+
+  // Customers get the dedicated event
+  emitToCustomers('product:changed', {
+    action,
+    productId,
+    product: action === 'deleted' ? null : product,
+    timestamp,
+  });
+};
+
+module.exports = {
+  emitToAdmins,
+  emitToUser,
+  emitToMongoUser,
+  emitToConversation,
+  emitOrderChanged,
+  emitInventoryChanged,
+  emitToCustomers,
+  emitProductChanged,
+};
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The abstraction prevents services from directly touching the Socket.IO instance, avoiding circular imports back to <code>server.js</code>. It also centralizes the payload shape for each topic so all listeners (admin dashboards, customer detail pages, driver portals) receive identical field names.</p>
+
+<!-- ─────────────── E.2 ─────────────── -->
+<h2>E.2&nbsp;&nbsp;Authentication and Security</h2>
+<p class="no-indent">This section demonstrates the JWT-based authentication, role-based access control, and OTP flow that secure the system.</p>
+
+<h3>E.2.1&nbsp;&nbsp;middleware/authMiddleware.js — Token Verification</h3>
+
+<pre class="code-block">// middleware/authMiddleware.js (excerpt)
+const jwt = require('jsonwebtoken');
+const adminService = require('../services/AdminServices');
+const customerService = require('../services/CustomerServices');
+const driverService = require('../services/DriverServices');
+
+const verifyAdminToken = async (req, res, next) =&gt; {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    const response = await adminService.verifyToken(token);
+    if (!response.success) {
+      return res.status(401).json({
+        success: false,
+        message: response.message,
+      });
+    }
+    req.admin = response.data;
+    next();
+  } catch (error) {
+    console.error('Admin auth error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed'
+    });
+  }
+};
+
+const verifyCustomerToken = async (req, res, next) =&gt; {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    const response = await customerService.verifyToken(token);
+    if (!response.success) {
+      return res.status(401).json({
+        success: false,
+        message: response.message
+      });
+    }
+    req.customer = response.data;
+    next();
+  } catch (error) {
+    console.error('Customer auth error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed'
+    });
+  }
+};
+
+const verifyDriverToken = async (req, res, next) =&gt; {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.'
+      });
+    }
+    const response = await driverService.verifyToken(token);
+    if (!response.success) {
+      return res.status(401).json({
+        success: false,
+        message: response.message,
+      });
+    }
+    const driverData = response.data;
+
+    // Set BOTH req.driver and req.user for compatibility.
+    req.driver = driverData;
+    req.user = {
+      id: driverData._id || driverData.id,
+      driverId: driverData.driverId,
+      email: driverData.email,
+      username: driverData.username,
+      role: 'driver',
+      firstName: driverData.firstName,
+      lastName: driverData.lastName,
+      phoneNumber: driverData.phoneNumber,
+      plateNumber: driverData.plateNumber,
+      vehicleDescription: driverData.vehicleDescription,
+      available: driverData.available,
+      assignedOrdersCount: driverData.assignedOrdersCount || 0
+    };
+    next();
+  } catch (error) {
+    console.error('Driver auth error:', error);
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication failed'
+    });
+  }
+};
+
+// Role-based access control helper for admin-only routes
+const checkRole = (...roles) =&gt; {
+  return (req, res, next) =&gt; {
+    if (!req.admin) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admins only.'
+      });
+    }
+    if (!roles.includes(req.admin.role)) {
+      return res.status(403).json({
+        success: false,
+        message: `Access denied. Required role: ${roles.join(' or ')}`
+      });
+    }
+    next();
+  };
+};
+
+module.exports = {
+  verifyAdminToken,
+  verifyCustomerToken,
+  verifyDriverToken,
+  verifyAnyToken,
+  checkRole
+};
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Three separate token verifiers exist, one per user type, each resolving to a distinct request property (<code>req.admin</code>, <code>req.customer</code>, <code>req.user</code>). The <code>checkRole</code> helper enforces fine-grained access control on routes that require a specific administrator role (e.g., only Super Admin can delete another admin).</p>
+
+<h3>E.2.2&nbsp;&nbsp;services/AdminServices.js — Login with JWT</h3>
+
+<pre class="code-block">// services/AdminServices.js (excerpt — login method)
+async login(payload) {
+  try {
+    const { email, password } = payload;
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    if (!admin) {
+      return { success: false, message: "Invalid email or password" };
+    }
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+    if (!isPasswordValid) {
+      return { success: false, message: "Invalid email or password" };
+    }
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    const token = jwt.sign(
+      {
+        id: admin._id.toString(),
+        adminId: admin.adminId,
+        email: admin.email,
+        userName: admin.userName,
+        role: admin.role,
+      },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN },
+    );
+
+    const adminData = admin.toObject();
+    delete adminData.password;
+
+    return {
+      success: true,
+      message: "Login successful",
+      data: { admin: adminData, token },
+    };
+  } catch (error) {
+    console.error("Error logging in:", error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The login method uses bcrypt comparison and returns the same generic "Invalid email or password" message whether the account exists or not, preventing username enumeration. The JWT payload carries the role so downstream middleware can authorize without a database round trip.</p>
+
+<h3>E.2.3&nbsp;&nbsp;services/CustomerServices.js — Registration with OTP</h3>
+
+<pre class="code-block">// services/CustomerServices.js (excerpt — register method)
+async register(payload, otp) {
+  try {
+    if (!otp) {
+      return {
+        success: false,
+        message: "OTP is required. Please request an OTP first.",
+      };
+    }
+
+    const existingCustomer = await Customer.findOne({
+      $or: [{ email: payload.email.toLowerCase() }],
+    });
+    if (existingCustomer) {
+      return {
+        success: false,
+        message: "A customer with this email or username already exists",
+      };
+    }
+
+    // Verify OTP before creating the account
+    const otpVerification = await verifyOtp(payload.email, otp);
+    if (!otpVerification.success) {
+      return { success: false, message: otpVerification.message };
+    }
+
+    const customerData = {
+      customerId: await generateId("CUST"),
+      firstName: payload.firstName,
+      middleName: payload.middleName || "",
+      lastName: payload.lastName,
+      username: payload.username,
+      email: payload.email.toLowerCase(),
+      phone: payload.phone || "",
+      companyName: payload.companyName || null,
+      password: await bcrypt.hash(
+        payload.password,
+        await bcrypt.genSalt(10)
+      ),
+      templateDesigns: [],
+      provider: 'local'
+    };
+
+    const newCustomer = new Customer(customerData);
+    await newCustomer.save();
+
+    const savedCustomer = newCustomer.toObject();
+    delete savedCustomer.password;
+
+    return {
+      success: true,
+      message: "Customer registered successfully",
+      data: savedCustomer,
+    };
+  } catch (error) {
+    console.error("Error registering customer:", error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Registration requires OTP verification before the account is created. Passwords are bcrypt-hashed before storage, and the returned customer object always strips the password field to prevent accidental leakage.</p>
+
+<h3>E.2.4&nbsp;&nbsp;utils/otpUtils.js — OTP Generation and Verification</h3>
+
+<pre class="code-block">// utils/otpUtils.js (excerpt)
+const bcrypt = require('bcrypt');
+const Otp = require('../models/Otp.Model');
+
+const OTP_TTL_MINUTES = 10;
+const OTP_MAX_ATTEMPTS = 3;
+
+const generateOtp = (length = 6) =&gt; {
+  const digits = '0123456789';
+  let otp = '';
+  for (let i = 0; i &lt; length; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+};
+
+const storeOtp = async (email, otp) =&gt; {
+  const hashedOtp = await bcrypt.hash(otp, 10);
+  const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
+  await Otp.deleteMany({ email: email.toLowerCase() });
+  await Otp.create({
+    email: email.toLowerCase(),
+    hashedOtp,
+    expiresAt,
+    attempts: 0,
+  });
+};
+
+const verifyOtp = async (email, otp) =&gt; {
+  const normalizedEmail = email.toLowerCase();
+  const record = await Otp.findOne({ email: normalizedEmail });
+
+  if (!record) {
+    return {
+      success: false,
+      message: 'OTP not found or expired. Please request a new one.'
+    };
+  }
+  if (record.expiresAt &lt; new Date()) {
+    await Otp.deleteOne({ _id: record._id });
+    return {
+      success: false,
+      message: 'OTP has expired. Please request a new one.'
+    };
+  }
+  if (record.attempts &gt;= OTP_MAX_ATTEMPTS) {
+    await Otp.deleteOne({ _id: record._id });
+    return {
+      success: false,
+      message: 'Too many failed attempts. Please request a new OTP.'
+    };
+  }
+
+  const isValid = await bcrypt.compare(otp, record.hashedOtp);
+  if (!isValid) {
+    record.attempts += 1;
+    await record.save();
+    const remaining = OTP_MAX_ATTEMPTS - record.attempts;
+    return {
+      success: false,
+      message: `Invalid OTP. ${remaining} attempts remaining.`
+    };
+  }
+  return { success: true, message: 'OTP verified successfully' };
+};
+</pre>
+
+<p class="discussion"><b>Discussion:</b> OTP codes are bcrypt-hashed before storage, limited to three verification attempts, and expire after ten minutes. The MongoDB TTL index on <code>expiresAt</code> automatically removes stale documents, so no manual cleanup is required.</p>
+
+<!-- ─────────────── E.3 ─────────────── -->
+<h2>E.3&nbsp;&nbsp;Order Processing</h2>
+<p class="no-indent">This section presents the core order lifecycle logic — creating orders, updating status, negotiating prices, reporting delays, and confirming with downpayment.</p>
+
+<h3>E.3.1&nbsp;&nbsp;models/Order.Model.js — Schema Definition (excerpt)</h3>
+
+<pre class="code-block">// models/Order.Model.js (excerpt — key schema fields)
+const orderSchema = new mongoose.Schema({
+  orderId: { type: String, unique: true },
+  customerName: { type: String },
+  customerEmail: { type: String },
+  customerPhone: { type: String },
+  address: { type: String },
+  customerId: { type: String, ref: "Customer" },
+  quantity: { type: Number, required: true },
+  items: [orderItemSchema],
+  amount: { type: Number, default: 0 },
+  totalAmount: { type: Number, default: 0 },
+  designFee: { type: Number, default: 500, min: 0 },
+  shippingFee: { type: Number, default: 0 },
+
+  status: {
+    type: String,
+    enum: [
+      "Pending", "Confirmed", "Scheduled", "In Production",
+      "Out for Delivery", "Completed", "Cancelled",
+    ],
+    default: "Pending",
+  },
+
+  paymentStatus: {
+    type: String,
+    enum: ["Unpaid", "Partial", "Paid"],
+    default: "Unpaid",
+  },
+
+  receivingMode: { type: String, enum: ["Pick-up", "Delivery"] },
+  isProvided: { type: Boolean, default: false },
+  driverDetails: driverDetailsSchema,
+  statusHistory: [statusHistorySchema],
+  partialPayments: [partialPaymentSchema],
+  delayHistory: { type: [delayInfoSchema], default: [] },
+  proofOfDelivery: { type: String, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+// Virtual: current delay state (derived)
+orderSchema.virtual('isCurrentlyDelayed').get(function () {
+  const history = this.delayHistory || [];
+  const last = history[history.length - 1];
+  return !!(last &amp;&amp; last.isDelayed);
+});
+
+orderSchema.virtual('currentDelay').get(function () {
+  const history = this.delayHistory || [];
+  const last = history[history.length - 1];
+  return last &amp;&amp; last.isDelayed ? last : null;
+});
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The Order schema uses enums for status and payment status, ensuring database-level validation. Delay tracking is modeled as an append-only array (<code>delayHistory</code>) rather than a single flag, so the full history of delays is preserved even after resolution.</p>
+
+<h3>E.3.2&nbsp;&nbsp;services/OrderServices.js — updateOrderStatus</h3>
+
+<pre class="code-block">// services/OrderServices.js (excerpt)
+async updateOrderStatus(
+  orderId, newStatus, notes, productionSchedule = null,
+  driverId = null, user = null, options = {}
+) {
+  const { codCollected = false } = options;
+  try {
+    newStatus = normalizeIncomingStatus(newStatus);
+
+    if (!VALID_STATUSES.includes(newStatus)) {
+      return { success: false, message: "Invalid status" };
+    }
+
+    let order = await Order.findOne({ orderId });
+    if (!order) {
+      return { success: false, message: "Order not found" };
+    }
+
+    if (newStatus === 'Confirmed' &amp;&amp; order.paymentStatus === 'Unpaid') {
+      return {
+        success: false,
+        message: 'Cannot confirm an order before a downpayment is verified.',
+      };
+    }
+
+    // Guard: refuse to complete a Partial order without COD confirmation
+    if (newStatus === "Completed") {
+      const needsCodCollection = order.paymentStatus === "Partial";
+      if (needsCodCollection &amp;&amp; codCollected !== true) {
+        return {
+          success: false,
+          message: "This order still has an unpaid balance.",
+        };
+      }
+      const paymentResult = await this.updatePaymentStatus(
+        orderId, "Paid", order.totalAmount, user
+      );
+      // Replace local doc with the fresh one to avoid VersionError
+      if (paymentResult.success &amp;&amp; paymentResult.data) {
+        order = paymentResult.data;
+      }
+    }
+
+    if (order.status === "Completed" || order.status === "Cancelled") {
+      return {
+        success: false,
+        message: `Cannot change status of a ${order.status.toLowerCase()} order`,
+      };
+    }
+
+    if (!isValidTransition(order.status, newStatus)) {
+      return {
+        success: false,
+        message: `Cannot move order from "${order.status}" to "${newStatus}".`,
+      };
+    }
+
+    const oldStatus = order.status;
+
+    // Assign driver when moving to Out for Delivery (Delivery only)
+    if (newStatus === "Out for Delivery"
+        &amp;&amp; order.receivingMode === "Delivery") {
+      if (!driverId) {
+        return {
+          success: false,
+          message: "A driver must be assigned before Out for Delivery"
+        };
+      }
+      const driver = await Driver.findOne({ driverId });
+      if (!driver) return { success: false, message: "Driver not found" };
+      if (!driver.available)
+        return { success: false, message: "Driver is not available" };
+
+      order.driverDetails = {
+        driverId: driver.driverId,
+        driverName: driver.fullName
+          || `${driver.firstName} ${driver.lastName}`,
+        driverPhone: driver.phoneNumber,
+        plateNumber: driver.plateNumber,
+        truckDescription: driver.vehicleDescription || "",
+        assignedAt: new Date(),
+      };
+
+      await DriverService.incrementAssignedOrders(driverId);
+    }
+
+    if ((newStatus === "Completed" || newStatus === "Cancelled")
+        &amp;&amp; order.driverDetails?.driverId) {
+      await DriverService.decrementAssignedOrders(
+        order.driverDetails.driverId
+      );
+    }
+
+    order.status = newStatus;
+    order.statusHistory.push({
+      status: newStatus,
+      timestamp: new Date(),
+      notes: notes || '',
+      updatedBy: user
+        ? user.firstName
+          ? `${user.firstName} ${user.lastName}`
+          : user.email || user._id.toString()
+        : null,
+    });
+    order.updatedAt = new Date();
+    await order.save();
+
+    // Broadcast to admins + the customer in real time
+    emitOrderChanged(order, 'status');
+
+    return {
+      success: true,
+      message: `Order status updated from ${oldStatus} to ${newStatus}`,
+      data: order,
+    };
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Status transitions are validated against a defined state machine. Driver assignment is required before "Out for Delivery" for delivery orders, and driver counts are automatically incremented or decremented when orders are assigned or completed. The function replaces its local copy of the order after <code>updatePaymentStatus</code> mutates and saves it, preventing Mongoose VersionError conflicts. Every change is broadcast to admins and the ordering customer via <code>emitOrderChanged</code>.</p>
+
+<h3>E.3.3&nbsp;&nbsp;services/OrderServices.js — negotiateOrder</h3>
+
+<pre class="code-block">// services/OrderServices.js (excerpt — admin ↔ customer negotiation)
+async negotiateOrder(orderId, updates, admin) {
+  try {
+    let order = await Order.findOne({ orderId });
+    if (!order) return { success: false, message: "Order not found" };
+
+    // Only Pending + Unpaid orders can be negotiated
+    if (order.status !== "Pending") {
+      return {
+        success: false,
+        message: `Cannot negotiate an order with status "${order.status}".`,
+      };
+    }
+    if (order.paymentStatus !== "Unpaid") {
+      return {
+        success: false,
+        message: `Cannot negotiate an order with payment "${order.paymentStatus}".`,
+      };
+    }
+
+    const adminName = admin.firstName
+      ? `${admin.firstName} ${admin.lastName}`
+      : admin.email || "Admin";
+    const adminId = admin._id?.toString() || admin.adminId || "";
+    const historyEntries = [];
+
+    // Quantity change (with stock delta)
+    if (updates.quantity !== undefined &amp;&amp; updates.quantity !== null) {
+      const newQty = Number(updates.quantity);
+      if (newQty !== order.quantity) {
+        const oldQty = order.quantity;
+
+        if (!order.isProvided) {
+          const firstItem = order.items?.[0];
+          if (firstItem?.productId) {
+            const product = await Product.findOne({
+              id: firstItem.productId
+            });
+            const sizeObj = product.sizes.find(
+              (s) =&gt; s.name === firstItem.size
+            );
+            sizeObj.stock += oldQty;
+            if (sizeObj.stock &lt; newQty) {
+              sizeObj.stock -= oldQty;
+              return {
+                success: false,
+                message: `Insufficient stock for ${product.name}`,
+              };
+            }
+            sizeObj.stock -= newQty;
+            await product.save();
+          }
+        }
+        order.quantity = newQty;
+        order.items[0].quantity = newQty;
+        order.items[0].estimatedTotal = newQty * updates.unitPrice;
+        historyEntries.push({
+          field: "quantity",
+          oldValue: oldQty,
+          newValue: newQty,
+          updatedBy: adminName,
+          updatedById: adminId,
+          notes: updates.notes || "",
+        });
+      }
+    }
+
+    // Design fee update
+    if (updates.designFee !== undefined &amp;&amp; updates.designFee !== null) {
+      const newDesignFee = Number(updates.designFee);
+      if (newDesignFee !== order.designFee) {
+        historyEntries.push({
+          field: "designFee",
+          oldValue: order.designFee,
+          newValue: newDesignFee,
+          updatedBy: adminName,
+          updatedById: adminId,
+          notes: updates.notes || "",
+        });
+        order.designFee = newDesignFee;
+      }
+    }
+
+    // Delivery method and shipping fee
+    if (updates.deliveryMethod) {
+      order.receivingMode = updates.deliveryMethod;
+      if (updates.deliveryMethod === "Pick-up") {
+        order.shippingFee = 0;
+      }
+    }
+    if (updates.shippingFee !== undefined) {
+      order.shippingFee = Number(updates.shippingFee);
+    }
+
+    // Recompute totals
+    let productSubtotal = 0;
+    if (!order.isProvided &amp;&amp; order.items?.length) {
+      productSubtotal = order.items.reduce(
+        (sum, it) =&gt; sum + (it.estimatedTotal || 0), 0
+      );
+    }
+    const newAmount = productSubtotal
+      + (order.designFee || 0)
+      + (order.shippingFee || 0);
+    order.amount = newAmount;
+    order.totalAmount = newAmount;
+
+    // Persist and record history
+    if (historyEntries.length &gt; 0) {
+      order.negotiationStatus = "in_progress";
+      order.pricingHistory.push(...historyEntries);
+      order.updatedAt = new Date();
+      order.updatedBy = adminName;
+      await order.save();
+    }
+
+    const responseData = order.toObject();
+    responseData.productSubtotal = productSubtotal;
+
+    return {
+      success: true,
+      message: `Order updated with ${historyEntries.length} change(s)`,
+      data: responseData,
+      changes: historyEntries,
+    };
+  } catch (error) {
+    console.error("Error in negotiateOrder:", error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Every field change is captured in an immutable <code>pricingHistory</code> array containing the old value, new value, the admin who made the change, and optional notes. Stock is adjusted atomically — when quantity is decreased, the surplus is returned to inventory; when increased, the system first checks if sufficient stock exists before committing.</p>
+
+<h3>E.3.4&nbsp;&nbsp;services/OrderServices.js — confirmWithDownpayment</h3>
+
+<pre class="code-block">// services/OrderServices.js (excerpt — confirm after payment verification)
+async confirmWithDownpayment(orderId, payload, admin) {
+  try {
+    const {
+      amountPaid, method, referenceNumber, proofUrl,
+      isFullPayment = false, paymentRequestMessageId = null,
+    } = payload || {};
+
+    const order = await Order.findOne({ orderId });
+    if (!order) return { success: false, message: 'Order not found' };
+
+    const paidBefore = this._computeTotalPaid(order);
+
+    if (order.status !== 'Pending') {
+      return {
+        success: false,
+        message: `Cannot confirm — order status is "${order.status}"`
+      };
+    }
+    if (order.paymentStatus !== 'Unpaid') {
+      return {
+        success: false,
+        message: `Payment already recorded (${order.paymentStatus})`
+      };
+    }
+
+    const amount = Number(amountPaid);
+    if (!amount || amount &lt;= 0) {
+      return { success: false, message: 'amountPaid must be greater than 0' };
+    }
+
+    const total = order.amount || order.totalAmount || 0;
+    if (amount &gt; total) {
+      return {
+        success: false,
+        message: `amountPaid (₱${amount}) exceeds order total (₱${total})`
+      };
+    }
+
+    const adminName = admin?.firstName
+      ? `${admin.firstName} ${admin.lastName}`
+      : admin?.email || 'Admin';
+
+    // Record the payment
+    order.partialPayments = order.partialPayments || [];
+    order.partialPayments.push({
+      amount,
+      referenceNumber: referenceNumber || '',
+      date: new Date(),
+      updatedBy: adminName,
+    });
+
+    const totalPaid = order.partialPayments.reduce(
+      (s, p) =&gt; s + (p.amount || 0), 0
+    );
+    const fullyPaid = isFullPayment || totalPaid &gt;= total;
+    order.paymentStatus = fullyPaid ? 'Paid' : 'Partial';
+
+    order.status = 'Confirmed';
+    order.negotiationStatus = 'finalized';
+    order.updatedAt = new Date();
+    order.updatedBy = adminName;
+
+    order.statusHistory.push({
+      status: 'Confirmed',
+      timestamp: new Date(),
+      notes: `${fullyPaid ? 'Full payment' : 'Downpayment'} verified — `
+        + `₱${amount.toLocaleString()} via ${method || 'N/A'}`,
+      updatedBy: adminName,
+    });
+
+    order.activePaymentRequestMessageId = null;
+    await order.save();
+
+    emitOrderChanged(order, 'confirmed');
+
+    // Mark the linked payment-request message as verified
+    if (paymentRequestMessageId) {
+      await Message.updateOne(
+        { messageId: paymentRequestMessageId },
+        {
+          $set: {
+            'paymentRequestData.status': 'verified',
+            'paymentRequestData.statusUpdatedAt': new Date(),
+            'paymentRequestData.statusUpdatedBy': adminName,
+          },
+        }
+      );
+    }
+
+    // Update customer's totalSpent atomically
+    const paidAfter = this._computeTotalPaid(order);
+    const delta = paidAfter - paidBefore;
+    if (delta !== 0) {
+      await this._applyTotalSpentDelta(order, delta);
+    }
+
+    return {
+      success: true,
+      message: fullyPaid
+        ? 'Order confirmed — full payment recorded'
+        : 'Order confirmed — downpayment recorded',
+      data: order,
+    };
+  } catch (error) {
+    console.error('Error in confirmWithDownpayment:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> This method atomically records the payment, transitions the order to <code>Confirmed</code>, marks the linked payment-request chat message as <code>verified</code>, and updates the customer's lifetime spending. The <code>paidBefore</code> and <code>paidAfter</code> snapshots guarantee the <code>totalSpent</code> delta is accurate even if other payments land concurrently.</p>
+
+<!-- ─────────────── E.4 ─────────────── -->
+<h2>E.4&nbsp;&nbsp;Inventory and Stock Management</h2>
+<p class="no-indent">This section demonstrates how the system tracks stock across products, supplies, and per-size variants with a full audit trail.</p>
+
+<h3>E.4.1&nbsp;&nbsp;services/ProductServices.js — recordStockChange</h3>
+
+<pre class="code-block">// services/ProductServices.js (excerpt — stock movement with audit)
+async recordStockChange(productId, sizeName, {
+  type, quantity, note, imageUrl, imagePublicId, user
+} = {}) {
+  try {
+    if (!['in', 'out'].includes(type)) {
+      return { success: false, message: 'Invalid movement type' };
+    }
+    const trimmedNote = (note || '').trim();
+    if (trimmedNote.length &lt; 3) {
+      return {
+        success: false,
+        message: 'A reason is required for every stock adjustment '
+          + '(minimum 3 characters)',
+      };
+    }
+    const qty = Number(quantity);
+    if (!Number.isFinite(qty) || qty &lt; 1) {
+      return { success: false, message: 'Quantity must be at least 1' };
+    }
+
+    const product = await Product.findOne({ id: productId });
+    if (!product) return { success: false, message: 'Product not found' };
+
+    const size = product.sizes.find((s) =&gt; s.name === sizeName);
+    if (!size) {
+      return {
+        success: false,
+        message: `Size "${sizeName}" not found`
+      };
+    }
+
+    const previousStock = size.stock || 0;
+    const newStock = type === 'in'
+      ? previousStock + qty
+      : Math.max(0, previousStock - qty);
+
+    if (type === 'out' &amp;&amp; qty &gt; previousStock) {
+      return {
+        success: false,
+        message: `Cannot remove ${qty} — only ${previousStock} in stock`,
+      };
+    }
+
+    size.stock = newStock;
+
+    product.stockMovements.push({
+      sizeName,
+      type,
+      quantity: qty,
+      previousStock,
+      newStock,
+      note: trimmedNote,
+      imageUrl: imageUrl || '',
+      imagePublicId: imagePublicId || '',
+      performedBy: user
+        ? user.firstName
+          ? `${user.firstName} ${user.lastName || ''}`.trim()
+          : user.email || 'Admin'
+        : 'Admin',
+      performedById: user?.adminId || user?._id?.toString() || '',
+    });
+
+    product.updatedAt = new Date();
+    await product.save();
+
+    // Broadcast to both admins (inventory:changed) and
+    // customers (product:changed) — one call, two channels
+    emitProductChanged(product, 'updated');
+
+    return { success: true, message: 'Stock updated', data: product };
+  } catch (error) {
+    console.error('Error in ProductService.recordStockChange:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Every stock adjustment requires a reason of at least three characters and optionally an image attachment. Both are stored in the embedded <code>stockMovements</code> array, providing a permanent audit trail that shows who changed stock, when, why, and by how much.</p>
+
+<h3>E.4.2&nbsp;&nbsp;services/InventoryItemServices.js — Low-Stock Query</h3>
+
+<pre class="code-block">// services/InventoryItemServices.js (excerpt)
+async getLowStockItems() {
+  try {
+    const lowStockItems = [];
+
+    // Low-stock supplies — uses $expr to compare two fields on the
+    // SAME document: stock &lt;= threshold.
+    const supplies = await InventoryItem.find({
+      itemType: 'supply',
+      stock: { $gt: 0 },
+      $expr: { $lte: ['$stock', '$threshold'] },
+    }).populate('itemRef');
+
+    for (const item of supplies) {
+      const supply = await Supply.findById(item.itemRef?._id);
+      lowStockItems.push({
+        itemId: item.itemId,
+        itemType: 'supply',
+        itemRef: {
+          _id: item.itemRef?._id,
+          supplyId: item.itemRef?.supplyId || supply?.supplyId,
+          name: supply?.name || item.itemRef?.name || 'Unknown Supply',
+          category: item.itemRef?.category || supply?.category,
+          supplier: item.itemRef?.supplier || supply?.supplier,
+          unit: item.unit || supply?.unit,
+        },
+        stock: item.stock,
+        threshold: item.threshold || 100,
+        status: item.stock === 0 ? 'Out of Stock' : 'Low Stock',
+      });
+    }
+
+    // Low-stock product sizes (fixed 500-unit threshold)
+    const PRODUCT_LOW_STOCK_THRESHOLD = 500;
+    const products = await Product.find({});
+    for (const product of products) {
+      for (const size of product.sizes || []) {
+        const stock = size.stock || 0;
+        if (stock &gt; 0 &amp;&amp; stock &lt;= PRODUCT_LOW_STOCK_THRESHOLD) {
+          lowStockItems.push({
+            itemId: product.id,
+            itemType: 'product',
+            itemRef: {
+              _id: product._id,
+              id: product.id,
+              name: product.name,
+              category: product.category,
+              image: product.image,
+              sizeName: size.name,
+              sizeStock: stock,
+              sizePrice: size.price,
+            },
+            stock,
+            threshold: PRODUCT_LOW_STOCK_THRESHOLD,
+            status: 'Low Stock',
+          });
+        }
+      }
+    }
+
+    return { success: true, data: lowStockItems };
+  } catch (error) {
+    console.error('Error fetching low stock items:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Low-stock detection uses MongoDB's <code>$expr</code> operator to compare two fields on the same document (<code>stock</code> vs. <code>threshold</code>), which is only possible in an aggregation context. The query returns both product size variants and supply items, so a single call powers the entire low-stock dashboard widget.</p>
+
+<!-- ─────────────── E.5 ─────────────── -->
+<h2>E.5&nbsp;&nbsp;Chat, Negotiation, and Payment</h2>
+<p class="no-indent">This section presents the per-order conversation model, the quote negotiation flow, and the payment request/proof verification cycle.</p>
+
+<h3>E.5.1&nbsp;&nbsp;services/ChatServices.js — getOrCreateConversation</h3>
+
+<pre class="code-block">// services/ChatServices.js (excerpt)
+//
+// Per-order conversations: if an orderId is provided, we reuse an
+// existing thread for that specific order (in any status) or create
+// a brand-new one. This keeps each order's negotiation history
+// attached to the correct context.
+async getOrCreateConversation(customerId, customerName, customerEmail,
+  subject = '', orderId = null) {
+  try {
+    const existingCustomer = await Customer.findOne({ customerId });
+    let existingOrder = null;
+    if (orderId) {
+      existingOrder = await Order.findOne({ orderId }).lean();
+    }
+    const resolvedName = this._resolveCustomerName(
+      existingOrder, existingCustomer
+    );
+    const resolvedEmail = existingCustomer?.email || customerEmail || '';
+    let conversation = null;
+
+    if (orderId) {
+      conversation = await Conversation.findOne({ customerId, orderId });
+      if (!conversation) {
+        conversation = new Conversation({
+          conversationId: await generateId('CONV'),
+          customerId,
+          customerName: resolvedName || 'Customer',
+          customerEmail: resolvedEmail || '',
+          subject: subject || `Order ${orderId}`,
+          orderId,
+          status: 'open',
+          lastMessageAt: new Date(),
+        });
+        await conversation.save();
+      }
+    } else {
+      conversation = await Conversation.findOne({
+        customerId,
+        status: { $in: ['open', 'in_progress'] },
+        $or: [{ orderId: null }, { orderId: '' },
+              { orderId: { $exists: false } }],
+      }).sort({ lastMessageAt: -1 });
+      if (!conversation) {
+        conversation = new Conversation({
+          conversationId: await generateId('CONV'),
+          customerId,
+          customerName: resolvedName || 'Customer',
+          customerEmail: resolvedEmail || '',
+          subject: subject || 'General Inquiry',
+          orderId: null,
+          status: 'open',
+          lastMessageAt: new Date(),
+        });
+        await conversation.save();
+      }
+    }
+    return { success: true, data: conversation };
+  } catch (error) {
+    console.error('Error in getOrCreateConversation:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The per-order conversation model ensures that negotiation context (quotes, payment requests, delay notices) never bleeds between orders. When no <code>orderId</code> is supplied (general inquiries), the method reuses the most recent open conversation instead of creating a new one.</p>
+
+<h3>E.5.2&nbsp;&nbsp;services/ChatServices.js — sendPaymentProof (customer → admin)</h3>
+
+<pre class="code-block">// services/ChatServices.js (excerpt)
+async sendPaymentProof(conversationId, customer, payload) {
+  try {
+    const {
+      paymentRequestMessageId, referenceNumber, proofImageUrl, note
+    } = payload;
+
+    if (!paymentRequestMessageId) {
+      return {
+        success: false,
+        message: 'paymentRequestMessageId is required'
+      };
+    }
+    if (!proofImageUrl) {
+      return { success: false, message: 'proofImageUrl is required' };
+    }
+
+    const requestMsg = await Message.findOne({
+      messageId: paymentRequestMessageId
+    });
+    if (!requestMsg || requestMsg.contentType !== 'payment-request') {
+      return { success: false, message: 'Payment request not found' };
+    }
+    if (requestMsg.paymentRequestData.status !== 'pending') {
+      return {
+        success: false,
+        message: `This request is already "${requestMsg.paymentRequestData.status}"`
+      };
+    }
+
+    const orderId = requestMsg.paymentRequestData.orderId;
+    const order = await Order.findOne({ orderId });
+    if (!order) return { success: false, message: 'Order not found' };
+    if (order.status !== 'Pending') {
+      return {
+        success: false,
+        message: `Order is no longer Pending (status: ${order.status})`
+      };
+    }
+
+    const customerName = customer?.firstName
+      ? `${customer.firstName} ${customer.lastName}`
+      : customer?.email || 'Customer';
+
+    // Enforce: customer cannot alter the amountDue
+    const finalAmount = requestMsg.paymentRequestData.amountDue;
+
+    const proofMsg = new Message({
+      messageId: await generateId('MSG'),
+      conversationId,
+      senderType: 'customer',
+      senderId: customer?.customerId || 'CUST',
+      senderName: customerName,
+      content: `Payment proof submitted — ₱${finalAmount.toLocaleString()}`,
+      contentType: 'payment-proof',
+      paymentProofData: {
+        paymentRequestMessageId,
+        orderId,
+        method: requestMsg.paymentRequestData.method,
+        amountPaid: finalAmount,
+        referenceNumber: referenceNumber || '',
+        proofImageUrl,
+        note: note || '',
+        submittedAt: new Date(),
+        status: 'pending-review',
+      },
+      isDeleted: false,
+      createdAt: new Date(),
+    });
+    await proofMsg.save();
+
+    // Flip the linked request to "proof-submitted"
+    requestMsg.paymentRequestData.status = 'proof-submitted';
+    requestMsg.paymentRequestData.statusUpdatedAt = new Date();
+    requestMsg.paymentRequestData.statusUpdatedBy = customerName;
+    await requestMsg.save();
+
+    // Update conversation preview
+    const conversation = await Conversation.findOne({ conversationId });
+    if (conversation) {
+      conversation.lastMessage =
+        `📎 Payment proof — ₱${finalAmount.toLocaleString()}`;
+      conversation.lastMessageAt = new Date();
+      conversation.lastMessageBy = 'customer';
+      conversation.adminUnreadCount += 1;
+      conversation.customerUnreadCount = 0;
+      await conversation.save();
+    }
+
+    return {
+      success: true,
+      data: proofMsg,
+      requestMessage: requestMsg
+    };
+  } catch (error) {
+    console.error('Error in sendPaymentProof:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The customer cannot alter the <code>amountDue</code> when submitting proof — the system copies the amount from the linked payment-request message. This prevents underpayment attacks where a customer sends proof for a lower amount than required.</p>
+
+<!-- ─────────────── E.6 ─────────────── -->
+<h2>E.6&nbsp;&nbsp;Driver Portal</h2>
+<p class="no-indent">This section presents the driver-specific order endpoints, including proof of delivery upload, delay reporting, and completing delivery.</p>
+
+<h3>E.6.1&nbsp;&nbsp;controller/DriverController.js — updateOrderStatus (Driver)</h3>
+
+<pre class="code-block">// controller/DriverController.js (excerpt)
+updateOrderStatus = asyncTryCatch(async (req, res, next) =&gt; {
+  const { orderId } = req.params;
+  let { status, notes, codCollected } = req.body;
+  const { driverId } = req.user;
+
+  // Normalize codCollected (FormData sends strings)
+  const codCollectedBool =
+    codCollected === true
+      || codCollected === 'true'
+      || codCollected === '1';
+
+  if (status &amp;&amp; typeof status === 'object') status = status.toString();
+  if (!status) {
+    return res.status(400).json({
+      success: false,
+      message: 'Status is required'
+    });
+  }
+
+  // Driver can only mark as Completed
+  const normalizedStatus = status.toLowerCase().trim();
+  if (normalizedStatus !== 'completed') {
+    return res.status(403).json({
+      success: false,
+      message: 'You can only mark orders as completed'
+    });
+  }
+
+  // Verify the order belongs to this driver
+  const order = await Order.findOne({
+    _id: orderId,
+    'driverDetails.driverId': driverId
+  });
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'Order not found or not assigned to you'
+    });
+  }
+  if (order.status !== 'Out for Delivery') {
+    return res.status(400).json({
+      success: false,
+      message: 'You can only mark Out for Delivery orders as completed'
+    });
+  }
+
+  // Upload proof of delivery to Cloudinary
+  let proofImageUrl = null;
+  if (req.file) {
+    try {
+      const cloudinary = require('../config/cloudinary');
+      const fs = require('fs');
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'beverage/proofs',
+        transformation: [
+          { width: 800, height: 800, crop: 'limit', quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      });
+      proofImageUrl = result.secure_url;
+      fs.unlink(req.file.path, (err) =&gt; {
+        if (err) console.error('Error deleting temp file:', err);
+      });
+    } catch (uploadError) {
+      console.error('Cloudinary upload error:', uploadError);
+    }
+  }
+
+  const driver = await Driver.findOne({ driverId });
+  if (!driver) {
+    return res.status(404).json({
+      success: false,
+      message: 'Driver not found'
+    });
+  }
+
+  const user = {
+    _id: driver._id,
+    id: driver._id,
+    driverId: driver.driverId,
+    firstName: driver.firstName,
+    lastName: driver.lastName,
+    email: driver.email,
+    role: 'driver'
+  };
+
+  const response = await OrderService.updateOrderStatus(
+    order.orderId, 'Completed',
+    notes || 'Order marked as completed by driver',
+    null, driverId, user,
+    { codCollected: codCollectedBool }
+  );
+
+  if (!response.success) {
+    return res.status(400).json(response);
+  }
+
+  if (proofImageUrl) {
+    await Order.updateOne(
+      { orderId: order.orderId },
+      { $set: { proofOfDelivery: proofImageUrl } }
+    );
+  }
+
+  driver.completedOrdersCount += 1;
+  await driver.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Order marked as completed successfully',
+    data: { orderId: order.orderId, proofOfDelivery: proofImageUrl }
+  });
+});
+</pre>
+
+<p class="discussion"><b>Discussion:</b> Drivers are strictly limited to marking their own assigned orders as <code>Completed</code>. The <code>driverId</code> is checked against the order's <code>driverDetails.driverId</code> field, preventing cross-driver tampering. Proof of delivery images are uploaded directly to Cloudinary and only the resulting URL is stored in the database.</p>
+
+<h3>E.6.2&nbsp;&nbsp;services/OrderServices.js — reportDelay (Driver Path)</h3>
+
+<pre class="code-block">// services/OrderServices.js (excerpt — driver-reported delay)
+async reportDelay(orderId, payload, reporter, reporterType = 'admin') {
+  try {
+    const { category, reason, notes, newExpectedDelivery } = payload || {};
+
+    if (!reason || !String(reason).trim()) {
+      return { success: false, message: 'A delay reason is required' };
+    }
+
+    // Accept EITHER the human-readable orderId OR the MongoDB _id
+    const mongoose = require('mongoose');
+    const orderQuery = mongoose.isValidObjectId(orderId)
+      ? { $or: [{ orderId }, { _id: orderId }] }
+      : { orderId };
+
+    const order = await Order.findOne(orderQuery);
+    if (!order) return { success: false, message: 'Order not found' };
+
+    if (['Completed', 'Cancelled'].includes(order.status)) {
+      return {
+        success: false,
+        message: `Cannot mark a ${order.status.toLowerCase()} order as delayed`,
+      };
+    }
+
+    // ── Driver-specific guard rails ──
+    if (reporterType === 'driver') {
+      if (order.driverDetails?.driverId !== reporter?.driverId) {
+        return {
+          success: false,
+          message: 'You are not assigned to this order'
+        };
+      }
+      if (order.status !== 'Out for Delivery') {
+        return {
+          success: false,
+          message: 'You can only report delays while the order is Out for Delivery',
+        };
+      }
+      const DRIVER_CATEGORIES = [
+        'logistics', 'weather', 'vehicle_breakdown',
+        'customer_unavailable', 'other',
+      ];
+      if (!DRIVER_CATEGORIES.includes(category)) {
+        return {
+          success: false,
+          message: `Drivers cannot use category "${category}"`,
+        };
+      }
+    }
+
+    const reporterName = reporter?.firstName
+      ? `${reporter.firstName} ${reporter.lastName || ''}`.trim()
+      : reporter?.email || (reporterType === 'driver' ? 'Driver' : 'Admin');
+    const reporterId = reporter?._id?.toString()
+      || reporter?.adminId || reporter?.driverId || 'UNKNOWN';
+
+    const enrichedReason = reporterType === 'driver'
+      ? `${String(reason).trim()} (reported by driver ${reporterName})`
+      : String(reason).trim();
+
+    // Preserve the ORIGINAL ETA across multiple delay events
+    const existingOriginal = order.delayHistory?.find(
+      (d) =&gt; d.originalExpectedDelivery
+    )?.originalExpectedDelivery;
+    const originalETA = existingOriginal
+      || order.expectedDelivery || null;
+
+    // Resolve any currently-active delay before starting a new one
+    (order.delayHistory || []).forEach((d) =&gt; {
+      if (d.isDelayed) {
+        d.isDelayed = false;
+        d.resolvedAt = new Date();
+        d.resolvedBy = reporterName;
+      }
+    });
+
+    order.delayHistory.push({
+      isDelayed: true,
+      category: category || 'other',
+      reason: enrichedReason,
+      notes: notes || '',
+      originalExpectedDelivery: originalETA,
+      newExpectedDelivery: newExpectedDelivery
+        ? new Date(newExpectedDelivery)
+        : null,
+      reportedBy: reporterName,
+      reportedByType: reporterType,
+      reportedAt: new Date(),
+    });
+
+    if (newExpectedDelivery) {
+      order.expectedDelivery = new Date(newExpectedDelivery);
+    }
+
+    order.statusHistory.push({
+      status: order.status,
+      timestamp: new Date(),
+      notes: `Order delayed — ${enrichedReason}`,
+      updatedBy: reporterName,
+    });
+
+    order.updatedAt = new Date();
+    order.updatedBy = reporterName;
+    await order.save();
+
+    emitOrderChanged(order, 'delayed');
+    await this._pushDelayNoticeToChat(order, reporterName, reporterId);
+
+    return {
+      success: true,
+      message: 'Delay reported and customer notified',
+      data: order,
+    };
+  } catch (error) {
+    console.error('Error in reportDelay:', error);
+    throw error;
+  }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The <code>reportDelay</code> method accepts either the human-readable <code>orderId</code> or the MongoDB <code>_id</code>, allowing both admin and driver endpoints to reuse the same logic. Driver-specific guard rails restrict drivers to logistics-related categories only, preventing them from reporting administrative delay reasons like <code>payment</code>. The original ETA is preserved across multiple delay events for accurate tracking.</p>
+
+<!-- ─────────────── E.7 ─────────────── -->
+<h2>E.7&nbsp;&nbsp;Frontend Implementation (Selected Files)</h2>
+<p class="no-indent">This section presents representative frontend code showing how the driver portal and API client layer are structured.</p>
+
+<h3>E.7.1&nbsp;&nbsp;Frontend — Rider Login (composables/useAuth.js)</h3>
+
+<pre class="code-block">// src/composables/useAuth.js (excerpt — driver login flow)
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { apiService } from '../api/api'
+
+export function useAuth() {
+  const router = useRouter()
+
+  const getToken = () =&gt;
+    localStorage.getItem('driverToken') || localStorage.getItem('token')
+
+  const isAuthenticated = ref(!!getToken())
+  const user = ref({ /* default shape */ })
+
+  const login = async (email, password) =&gt; {
+    try {
+      const response = await apiService.login(email, password)
+      const data = response.data
+
+      if (!data.success) {
+        throw new Error(data.message || 'Login failed')
+      }
+
+      const token = data.token || data.data?.token || null
+      if (!token) {
+        throw new Error('No token received from server')
+      }
+
+      const userData = data.data || data.user || {}
+      localStorage.setItem('driverToken', token)
+      localStorage.setItem('token', token)
+      localStorage.setItem('driverUser', JSON.stringify(userData))
+
+      user.value = { ...user.value, ...userData }
+      isAuthenticated.value = true
+
+      return { success: true, data }
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
+    }
+  }
+
+  const logout = () =&gt; {
+    localStorage.removeItem('driverToken')
+    localStorage.removeItem('token')
+    localStorage.removeItem('driverUser')
+    isAuthenticated.value = false
+    router.push('/')
+  }
+
+  return { isAuthenticated, user, login, logout, getToken }
+}
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The driver portal stores its authentication token and user data in <code>localStorage</code> using a distinct <code>driverToken</code> key. This prevents conflicts when the same browser is used to access both the customer and driver portals simultaneously.</p>
+
+<h3>E.7.2&nbsp;&nbsp;Frontend — Axios Instance (src/api/api.js)</h3>
+
+<pre class="code-block">// src/api/api.js (excerpt — rider axios instance)
+import axios from 'axios'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+  || 'http://localhost:3001/api/v1'
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 30000,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  }
+})
+
+// Request interceptor — attach token to every request
+api.interceptors.request.use(
+  (config) =&gt; {
+    const token = localStorage.getItem('driverToken')
+      || localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) =&gt; Promise.reject(error)
+)
+
+// Response interceptor — auto-logout on 401
+api.interceptors.response.use(
+  (response) =&gt; response,
+  (error) =&gt; {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('driverToken')
+      localStorage.removeItem('token')
+      localStorage.removeItem('driverUser')
+      if (!window.location.pathname.includes('/')) {
+        window.location.href = '/'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
+// Helper methods for common API calls
+export const apiService = {
+  login: (email, password) =&gt;
+    api.post('/drivers/login', { email, password }),
+  getProfile: () =&gt; api.get('/drivers/profile'),
+  updateProfile: (data) =&gt; api.put('/drivers/profile', data),
+  changePassword: (currentPassword, newPassword) =&gt;
+    api.post('/drivers/change-password', { currentPassword, newPassword }),
+  toggleAvailability: (driverId) =&gt;
+    api.patch(`/drivers/${driverId}/toggle-availability`),
+
+  getAssignedOrders: () =&gt; api.get('/drivers/orders/assigned'),
+  getOrderHistory: () =&gt; api.get('/drivers/orders/history'),
+
+  reportDelay: (orderId, payload) =&gt;
+    api.patch(`/drivers/orders/${orderId}/delay`, {
+      category: payload.category || 'other',
+      reason: payload.reason,
+      notes: payload.notes || '',
+      newExpectedDelivery: payload.newExpectedDelivery || null,
+    }),
+
+  updateOrderStatus: (orderId, data) =&gt; {
+    if (data instanceof FormData) {
+      return api.patch(`/drivers/orders/${orderId}/status`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+    }
+    return api.patch(`/drivers/orders/${orderId}/status`, data)
+  }
+}
+
+export default api
+</pre>
+
+<p class="discussion"><b>Discussion:</b> The Axios instance centralizes authentication by automatically attaching the driver's token to every request and clearing the session on any 401 response. The <code>updateOrderStatus</code> helper detects whether the caller is sending a <code>FormData</code> object (with a proof-of-delivery image) or a plain JSON payload, and sets the correct <code>Content-Type</code> header accordingly.</p>
+
+<p style="text-align:center; margin-top:36pt; font-weight:bold;">
+— END OF APPENDIX E —
+</p>
+
+</div>
+
+</body>
+</html>

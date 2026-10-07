@@ -1,0 +1,551 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+      xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="UTF-8">
+<title>Appendix D — Data Dictionary</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml>
+<![endif]-->
+<style>
+@page { size: 8.5in 11in; margin: 1in 1.25in; }
+body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.5; color: #000; }
+h1 { font-size: 16pt; font-weight: bold; text-align: center; text-transform: uppercase; margin: 0 0 24pt 0; }
+h2 { font-size: 14pt; font-weight: bold; margin: 24pt 0 12pt 0; }
+h3 { font-size: 12pt; font-weight: bold; margin: 18pt 0 8pt 0; }
+h4 { font-size: 12pt; font-weight: bold; font-style: italic; margin: 14pt 0 6pt 0; }
+p  { margin: 0 0 10pt 0; text-align: justify; }
+p.no-indent { text-indent: 0; }
+p.center { text-align: center; font-weight: bold; text-indent: 0; }
+
+/* BOOKTABS-STYLE TABLE — header has top+bottom border, last row has bottom border, no vertical lines */
+table { border-collapse: collapse; width: 100%; font-family: "Times New Roman", serif; font-size: 10pt; margin: 10pt 0 16pt 0; }
+table th {
+  border-top: 2px solid #000;
+  border-bottom: 1px solid #000;
+  border-left: none; border-right: none;
+  padding: 5pt 6pt;
+  text-align: left;
+  font-weight: bold;
+  background-color: transparent;
+  vertical-align: bottom;
+}
+table td { border: none; padding: 5pt 6pt; text-align: left; vertical-align: top; }
+table tr:last-child td { border-bottom: 2px solid #000; }
+code { font-family: Consolas, "Courier New", monospace; font-size: 10pt; }
+</style>
+</head>
+<body>
+
+<p class="center">DALUBHASAANG POLITEKNIKO NG LUNGSOD NG BALIWAG</p>
+<p class="center">INSTITUTE OF INFORMATION TECHNOLOGY AND INNOVATION</p>
+
+<h1>Appendix D<br>Data Dictionary</h1>
+
+<p class="no-indent">This appendix presents the data dictionary of the Integrated Web-Based Ordering and Inventory System for ACAPS Trading. The system uses MongoDB, a NoSQL database, which stores data in flexible documents organized into ten (10) main collections. Each collection is described below with its fields, data types, requirements, and descriptions.</p>
+
+<!-- ═══════════════ D.1 ═══════════════ -->
+<h2>D.1&nbsp;&nbsp;Admin Collection (<code>admins</code>)</h2>
+<p class="no-indent">Stores administrator accounts for the Superior Admin, Sales Department, and Production Department roles.</p>
+
+<table>
+<tr>
+  <th style="width:20%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key automatically generated for each document.</td></tr>
+<tr><td>adminId</td><td>String</td><td>Yes</td><td>Human-readable unique identifier in the format ADM-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>Given name of the administrator.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>Middle name of the administrator.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>Surname of the administrator.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>Unique username used for login.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>Unique email address, stored in lowercase.</td></tr>
+<tr><td>password</td><td>String</td><td>Yes</td><td>Bcrypt-hashed password (10 salt rounds). Plain text is never stored.</td></tr>
+<tr><td>role</td><td>String (enum)</td><td>Yes</td><td>Administrator role: Sales, Production, or Super Admin.</td></tr>
+<tr><td>lastLogin</td><td>Date</td><td>No</td><td>Timestamp of the most recent successful login. null if never logged in.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Immutable creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Timestamp of the last modification.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>adminId</code> (unique), <code>email</code> (unique), <code>username</code>.</p>
+
+<!-- ═══════════════ D.2 ═══════════════ -->
+<h2>D.2&nbsp;&nbsp;Customer Collection (<code>customers</code>)</h2>
+<p class="no-indent">Stores all customer account information, saved addresses, saved design templates, and lifetime spending totals.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>customerId</td><td>String</td><td>Yes</td><td>Unique human-readable ID in the format CUST-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>Given name.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>Middle name.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>Surname.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>Unique login username.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>Unique email address, lowercased.</td></tr>
+<tr><td>phone</td><td>String</td><td>No</td><td>Contact phone number.</td></tr>
+<tr><td>companyName</td><td>String</td><td>No</td><td>Optional business or company name.</td></tr>
+<tr><td>password</td><td>String</td><td>No</td><td>Bcrypt hash. null for OAuth-only accounts.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>Account status: Active or Offline.</td></tr>
+<tr><td>templateDesigns</td><td>Array of Subdocs</td><td>No</td><td>Saved design templates (see D.2.1).</td></tr>
+<tr><td>addresses</td><td>Array of Subdocs</td><td>No</td><td>Saved delivery addresses (see D.2.2).</td></tr>
+<tr><td>orders</td><td>Array of ObjectId</td><td>No</td><td>References to the customer's orders.</td></tr>
+<tr><td>totalSpent</td><td>Number</td><td>No</td><td>Cumulative amount paid. Updated atomically using $inc.</td></tr>
+<tr><td>provider</td><td>String (enum)</td><td>No</td><td>Authentication provider: local, google, or facebook.</td></tr>
+<tr><td>providerId</td><td>String</td><td>No</td><td>The provider's user ID for OAuth accounts.</td></tr>
+<tr><td>profileImage</td><td>String</td><td>No</td><td>Cloudinary URL of the profile image.</td></tr>
+<tr><td>isEmailVerified</td><td>Boolean</td><td>No</td><td>Flag set to true after OTP verification.</td></tr>
+<tr><td>marketingComs</td><td>Boolean</td><td>No</td><td>Opt-in flag for marketing communications.</td></tr>
+<tr><td>dataSharing</td><td>Boolean</td><td>No</td><td>Data sharing consent.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<h3>D.2.1&nbsp;&nbsp;<code>templateDesigns[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:48%">Description</th>
+</tr>
+<tr><td>templateId</td><td>String</td><td>Yes</td><td>TPL-XXXX unique identifier.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>Display name of the template.</td></tr>
+<tr><td>imagePath</td><td>String</td><td>Yes</td><td>Cloudinary URL of the template image.</td></tr>
+<tr><td>printSize</td><td>String</td><td>No</td><td>Print size (e.g., 3x3 inches).</td></tr>
+<tr><td>placement</td><td>String</td><td>No</td><td>Placement (Front, Back, Wrap, etc.).</td></tr>
+<tr><td>notes</td><td>String</td><td>No</td><td>Additional design notes.</td></tr>
+</table>
+
+<h3>D.2.2&nbsp;&nbsp;<code>addresses[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:48%">Description</th>
+</tr>
+<tr><td>label</td><td>String</td><td>No</td><td>Address label (e.g., Home, Office).</td></tr>
+<tr><td>streetAddress</td><td>String</td><td>No</td><td>Street address.</td></tr>
+<tr><td>barangay</td><td>String</td><td>No</td><td>Barangay.</td></tr>
+<tr><td>municipality</td><td>String</td><td>No</td><td>Municipality or city.</td></tr>
+<tr><td>province</td><td>String</td><td>No</td><td>Province.</td></tr>
+<tr><td>postalCode</td><td>String</td><td>No</td><td>Postal code.</td></tr>
+<tr><td>region</td><td>String</td><td>No</td><td>Region.</td></tr>
+<tr><td>country</td><td>String</td><td>No</td><td>Country (default: Philippines).</td></tr>
+</table>
+
+<!-- ═══════════════ D.3 ═══════════════ -->
+<h2>D.3&nbsp;&nbsp;Driver Collection (<code>drivers</code>)</h2>
+<p class="no-indent">Stores delivery driver accounts and vehicle information.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>driverId</td><td>String</td><td>Yes</td><td>Unique ID in the format DRV-XXXX.</td></tr>
+<tr><td>firstName</td><td>String</td><td>Yes</td><td>Given name.</td></tr>
+<tr><td>middleName</td><td>String</td><td>No</td><td>Middle name.</td></tr>
+<tr><td>lastName</td><td>String</td><td>Yes</td><td>Surname.</td></tr>
+<tr><td>username</td><td>String</td><td>Yes</td><td>Unique login username.</td></tr>
+<tr><td>email</td><td>String</td><td>Yes</td><td>Unique email, lowercased.</td></tr>
+<tr><td>phoneNumber</td><td>String</td><td>Yes</td><td>Unique phone number.</td></tr>
+<tr><td>password</td><td>String</td><td>Yes</td><td>Bcrypt-hashed password.</td></tr>
+<tr><td>available</td><td>Boolean</td><td>No</td><td>Whether the driver can be assigned orders.</td></tr>
+<tr><td>assignedOrdersCount</td><td>Number</td><td>No</td><td>Number of orders currently assigned.</td></tr>
+<tr><td>completedOrdersCount</td><td>Number</td><td>No</td><td>Number of orders completed in total.</td></tr>
+<tr><td>plateNumber</td><td>String</td><td>Yes</td><td>Unique vehicle plate number, uppercased.</td></tr>
+<tr><td>vehicleDescription</td><td>String</td><td>No</td><td>Description of the vehicle.</td></tr>
+<tr><td>lastLogin</td><td>Date</td><td>No</td><td>Last successful login timestamp.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Virtuals:</b> <code>fullName</code>, <code>displayName</code>, <code>isAvailableForAssignment</code>.</p>
+
+<!-- ═══════════════ D.4 ═══════════════ -->
+<h2>D.4&nbsp;&nbsp;Product Collection (<code>products</code>)</h2>
+<p class="no-indent">Stores product catalog information including sizes, pricing, bulk pricing tiers, and stock movement history.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>id</td><td>String</td><td>Yes</td><td>Unique product ID in the format PRD-YYYY-XXX.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>Product name, uppercased.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>Yes</td><td>Plastic Cups, Paper Cups, Containers, Bags, Utensils, Straws, or Lids.</td></tr>
+<tr><td>subcategory</td><td>String</td><td>No</td><td>Subcategory (e.g., Lid type).</td></tr>
+<tr><td>description</td><td>String</td><td>No</td><td>Product description.</td></tr>
+<tr><td>image</td><td>String</td><td>Yes</td><td>Cloudinary URL of the product image.</td></tr>
+<tr><td>imagePublicId</td><td>String</td><td>No</td><td>Cloudinary public ID for cleanup.</td></tr>
+<tr><td>sizes</td><td>Array of Subdocs</td><td>No</td><td>Product sizes (see D.4.1).</td></tr>
+<tr><td>minOrder</td><td>Number</td><td>Yes</td><td>Minimum order quantity.</td></tr>
+<tr><td>featured</td><td>Boolean</td><td>No</td><td>Featured flag for catalog sorting.</td></tr>
+<tr><td>popular</td><td>Boolean</td><td>No</td><td>Popular flag for catalog sorting.</td></tr>
+<tr><td>popularity</td><td>Number</td><td>No</td><td>Sort key by popularity.</td></tr>
+<tr><td>revenue</td><td>Number</td><td>No</td><td>Cumulative revenue.</td></tr>
+<tr><td>isActive</td><td>Boolean</td><td>No</td><td>Soft-delete flag.</td></tr>
+<tr><td>stockMovements</td><td>Array of Subdocs</td><td>No</td><td>Stock audit trail (see D.4.2).</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<h3>D.4.1&nbsp;&nbsp;<code>sizes[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:48%">Description</th>
+</tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>Size label (e.g., 12oz, 16oz).</td></tr>
+<tr><td>price</td><td>Number</td><td>Yes</td><td>Base unit price.</td></tr>
+<tr><td>stock</td><td>Number</td><td>No</td><td>Current stock on hand.</td></tr>
+<tr><td>rimDiameter</td><td>Number</td><td>No</td><td>Rim diameter in millimeters (98, 95, 90, 80).</td></tr>
+</table>
+
+<h3>D.4.2&nbsp;&nbsp;<code>stockMovements[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:48%">Description</th>
+</tr>
+<tr><td>sizeName</td><td>String</td><td>Yes</td><td>The size affected by the movement.</td></tr>
+<tr><td>type</td><td>String (enum)</td><td>Yes</td><td>in or out.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Yes</td><td>Quantity moved.</td></tr>
+<tr><td>previousStock</td><td>Number</td><td>Yes</td><td>Stock value before the movement.</td></tr>
+<tr><td>newStock</td><td>Number</td><td>Yes</td><td>Stock value after the movement.</td></tr>
+<tr><td>note</td><td>String</td><td>Yes</td><td>Reason for the adjustment (minimum 3 characters).</td></tr>
+<tr><td>imageUrl</td><td>String</td><td>No</td><td>Optional supporting image (Cloudinary URL).</td></tr>
+<tr><td>imagePublicId</td><td>String</td><td>No</td><td>Cloudinary public ID for cleanup.</td></tr>
+<tr><td>performedBy</td><td>String</td><td>No</td><td>Name of the administrator.</td></tr>
+<tr><td>performedById</td><td>String</td><td>No</td><td>Administrator ID.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Timestamp of the movement.</td></tr>
+</table>
+
+<!-- ═══════════════ D.5 ═══════════════ -->
+<h2>D.5&nbsp;&nbsp;Supply Collection (<code>supplies</code>)</h2>
+<p class="no-indent">Stores raw materials and supplies used in production.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>supplyId</td><td>String</td><td>Yes</td><td>Unique ID in the format SUP-YYYY-XXX.</td></tr>
+<tr><td>name</td><td>String</td><td>Yes</td><td>Supply name.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>Yes</td><td>inks, chemicals, packaging, raw_materials, maintenance, or other.</td></tr>
+<tr><td>description</td><td>String</td><td>No</td><td>Description of the supply.</td></tr>
+<tr><td>image</td><td>String</td><td>No</td><td>Cloudinary URL of the supply image.</td></tr>
+<tr><td>supplier</td><td>String</td><td>Yes</td><td>Name of the supplier.</td></tr>
+<tr><td>supplierContact</td><td>String</td><td>No</td><td>Supplier contact information.</td></tr>
+<tr><td>unit</td><td>String</td><td>No</td><td>Unit of measure: piece, kg, liter, box, roll, set.</td></tr>
+<tr><td>unitCost</td><td>Number</td><td>No</td><td>Cost per unit.</td></tr>
+<tr><td>isActive</td><td>Boolean</td><td>No</td><td>Active status flag.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<!-- ═══════════════ D.6 ═══════════════ -->
+<h2>D.6&nbsp;&nbsp;InventoryItem Collection (<code>inventoryitems</code>)</h2>
+<p class="no-indent">Bridges products and supplies into a unified inventory with a shared stock model and audit trail.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>itemId</td><td>String</td><td>Yes</td><td>Unique ID in the format INV-XXXX-XXXX.</td></tr>
+<tr><td>itemType</td><td>String (enum)</td><td>Yes</td><td>product or supply.</td></tr>
+<tr><td>itemRef</td><td>ObjectId</td><td>Yes</td><td>Reference to Product._id or Supply._id.</td></tr>
+<tr><td>stock</td><td>Number</td><td>Yes</td><td>Current stock on hand (cannot be negative).</td></tr>
+<tr><td>threshold</td><td>Number</td><td>No</td><td>Stock threshold that triggers a low-stock alert.</td></tr>
+<tr><td>unitCost</td><td>Number</td><td>No</td><td>Cost per unit.</td></tr>
+<tr><td>lastRestocked</td><td>Date</td><td>No</td><td>Timestamp of last restock.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>In Stock, Low Stock, or Out of Stock.</td></tr>
+<tr><td>stockMovements</td><td>Array of Subdocs</td><td>No</td><td>Same structure as D.4.2.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<!-- ═══════════════ D.7 ═══════════════ -->
+<h2>D.7&nbsp;&nbsp;Order Collection (<code>orders</code>) — Core Collection</h2>
+<p class="no-indent">The central collection of the system. Stores all order data including status, payment, delay history, and driver assignment.</p>
+
+<table>
+<tr>
+  <th style="width:26%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:11%">Required</th>
+  <th style="width:47%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>orderId</td><td>String</td><td>Yes</td><td>Unique order ID in the format ORD-YYYY-XXX-COMP or ORD-YYYY-XXX-PROV.</td></tr>
+<tr><td>customerName</td><td>String</td><td>No</td><td>Snapshot of customer name at order time.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>No</td><td>Customer email at order time.</td></tr>
+<tr><td>customerPhone</td><td>String</td><td>No</td><td>Customer phone at order time.</td></tr>
+<tr><td>address</td><td>String</td><td>No</td><td>Delivery address.</td></tr>
+<tr><td>postalCode</td><td>String</td><td>No</td><td>Postal code.</td></tr>
+<tr><td>customerId</td><td>String</td><td>No</td><td>Reference to Customer.customerId.</td></tr>
+<tr><td>productId</td><td>String</td><td>No</td><td>Reference to Product.id (legacy single-item orders).</td></tr>
+<tr><td>productName</td><td>String</td><td>No</td><td>Snapshot of product name.</td></tr>
+<tr><td>size</td><td>String</td><td>No</td><td>Product size.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Yes</td><td>Total pieces ordered.</td></tr>
+<tr><td>designDetails</td><td>Array of Subdocs</td><td>No</td><td>Design metadata per item.</td></tr>
+<tr><td>hasDesign</td><td>Boolean</td><td>No</td><td>Whether the order has a design.</td></tr>
+<tr><td>items</td><td>Array of Subdocs</td><td>No</td><td>Line items (see D.7.1).</td></tr>
+<tr><td>amount</td><td>Number</td><td>No</td><td>Server-computed total order amount.</td></tr>
+<tr><td>totalAmount</td><td>Number</td><td>No</td><td>Alias of amount.</td></tr>
+<tr><td>designFee</td><td>Number</td><td>No</td><td>Flat design and printing fee when hasDesign is true.</td></tr>
+<tr><td>shippingFee</td><td>Number</td><td>No</td><td>Delivery shipping fee. Zero for Pick-up orders.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>Yes</td><td>Pending, Confirmed, Scheduled, In Production, Out for Delivery, Completed, or Cancelled.</td></tr>
+<tr><td>paymentStatus</td><td>String (enum)</td><td>No</td><td>Unpaid, Partial, or Paid.</td></tr>
+<tr><td>paymentMethod</td><td>String (enum)</td><td>No</td><td>cod or bank_transfer.</td></tr>
+<tr><td>paymentDetails</td><td>Subdoc</td><td>No</td><td>Contains bankName, referenceNumber, paidAt, and proofOfPayment.</td></tr>
+<tr><td>partialPayments</td><td>Array of Subdocs</td><td>No</td><td>Each entry contains amount, referenceNumber, date, and updatedBy.</td></tr>
+<tr><td>negotiationStatus</td><td>String (enum)</td><td>No</td><td>none, in_progress, or finalized.</td></tr>
+<tr><td>pricingHistory</td><td>Array of Subdocs</td><td>No</td><td>Immutable audit trail of admin price changes.</td></tr>
+<tr><td>acceptedQuote</td><td>Subdoc</td><td>No</td><td>Snapshot of the quote when the customer accepts it.</td></tr>
+<tr><td>activePaymentRequestMessageId</td><td>String</td><td>No</td><td>Reference to the currently active payment-request Message.</td></tr>
+<tr><td>isReceived</td><td>Boolean</td><td>No</td><td>Flag indicating the customer marked the order as received.</td></tr>
+<tr><td>receivingMode</td><td>String (enum)</td><td>No</td><td>Pick-up or Delivery.</td></tr>
+<tr><td>deliveryMethod</td><td>String (enum)</td><td>No</td><td>Delivery or Pick-up.</td></tr>
+<tr><td>useCourier</td><td>Boolean</td><td>No</td><td>Whether an external courier service is used.</td></tr>
+<tr><td>courierName</td><td>String</td><td>No</td><td>Name of the courier if applicable.</td></tr>
+<tr><td>supplyType</td><td>String (enum)</td><td>No</td><td>Own Items or Company Cups.</td></tr>
+<tr><td>type</td><td>String (enum)</td><td>No</td><td>own-items or company-product.</td></tr>
+<tr><td>isProvided</td><td>Boolean</td><td>No</td><td>True when items are supplied by the customer.</td></tr>
+<tr><td>productionSchedule</td><td>Date</td><td>No</td><td>Production schedule set when the order moves to Scheduled.</td></tr>
+<tr><td>driverDetails</td><td>Subdoc</td><td>No</td><td>Assigned driver snapshot (see D.7.4).</td></tr>
+<tr><td>itemPhotos</td><td>Array of String</td><td>No</td><td>Cloudinary URLs of the customer's own items.</td></tr>
+<tr><td>isCartOrder</td><td>Boolean</td><td>No</td><td>Whether the order originated from cart checkout.</td></tr>
+<tr><td>source</td><td>String</td><td>No</td><td>Order source.</td></tr>
+<tr><td>orderedBy</td><td>String</td><td>No</td><td>Reference to Customer._id (stored as string).</td></tr>
+<tr><td>orderedById</td><td>String</td><td>No</td><td>Alias for orderedBy.</td></tr>
+<tr><td>expectedDelivery</td><td>Date</td><td>Yes</td><td>Expected delivery date.</td></tr>
+<tr><td>preferredDate</td><td>Date</td><td>No</td><td>Customer's preferred delivery date.</td></tr>
+<tr><td>fromCustomerToCompanyDeliveryDate</td><td>Date</td><td>No</td><td>Own-cups drop-off date.</td></tr>
+<tr><td>dropOffStatus</td><td>String (enum)</td><td>No</td><td>Pending or Received.</td></tr>
+<tr><td>orderedAt</td><td>Date</td><td>No</td><td>Order placement timestamp.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+<tr><td>notes</td><td>String</td><td>No</td><td>Order notes.</td></tr>
+<tr><td>statusHistory</td><td>Array of Subdocs</td><td>No</td><td>See D.7.2.</td></tr>
+<tr><td>delayHistory</td><td>Array of Subdocs</td><td>No</td><td>See D.7.3.</td></tr>
+<tr><td>customer</td><td>Subdoc</td><td>No</td><td>Contains name, company, email, phone, and address.</td></tr>
+<tr><td>fulfillment</td><td>Subdoc</td><td>No</td><td>Contains method, deliveryAddress, and sameAsCustomer.</td></tr>
+<tr><td>proofOfDelivery</td><td>String</td><td>No</td><td>Cloudinary URL of the delivery proof image.</td></tr>
+<tr><td>updatedBy</td><td>String</td><td>No</td><td>Name of the admin who last updated the order.</td></tr>
+<tr><td>createdByAdmin</td><td>Boolean</td><td>No</td><td>Walk-in order flag (created by an admin).</td></tr>
+<tr><td>createdByAdminId</td><td>String</td><td>No</td><td>Admin ID of the walk-in order creator.</td></tr>
+<tr><td>createdByAdminName</td><td>String</td><td>No</td><td>Admin name of the walk-in order creator.</td></tr>
+</table>
+
+<h3>D.7.1&nbsp;&nbsp;<code>items[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:24%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:56%">Description</th>
+</tr>
+<tr><td>productId</td><td>String</td><td>Reference to Product (null for own-cups orders).</td></tr>
+<tr><td>name</td><td>String</td><td>Product name snapshot.</td></tr>
+<tr><td>category</td><td>String</td><td>Product category snapshot.</td></tr>
+<tr><td>size</td><td>String</td><td>Size snapshot.</td></tr>
+<tr><td>quantity</td><td>Number</td><td>Quantity ordered.</td></tr>
+<tr><td>designSource</td><td>String (enum)</td><td>upload, saved, or no-design.</td></tr>
+<tr><td>designImage</td><td>String</td><td>Cloudinary URL of the design image.</td></tr>
+<tr><td>printSize</td><td>String</td><td>Print size.</td></tr>
+<tr><td>printPlacement</td><td>String</td><td>Placement.</td></tr>
+<tr><td>designNotes</td><td>String</td><td>Design notes.</td></tr>
+<tr><td>files</td><td>Array of Subdocs</td><td>Each entry contains name, size, type, and path.</td></tr>
+<tr><td>selectedTemplateId</td><td>String</td><td>Reference to Customer.templateDesigns.</td></tr>
+<tr><td>selectedTemplate</td><td>Subdoc</td><td>Contains id, name, thumbnail, printSize, placement, and notes.</td></tr>
+<tr><td>estimatedTotal</td><td>Number</td><td>Quantity multiplied by unit price.</td></tr>
+<tr><td>image</td><td>String</td><td>Product image snapshot.</td></tr>
+<tr><td>itemPhotos</td><td>Array of String</td><td>Customer's own-item photos.</td></tr>
+<tr><td>itemPhotoPublicIds</td><td>Array of String</td><td>Cloudinary public IDs for cleanup.</td></tr>
+<tr><td>rimDiameter</td><td>Number</td><td>Rim diameter in millimeters.</td></tr>
+<tr><td>itemType</td><td>String (enum)</td><td>cup, lid, container, bag, utensil, straw, or other.</td></tr>
+</table>
+
+<h3>D.7.2&nbsp;&nbsp;<code>statusHistory[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:24%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:56%">Description</th>
+</tr>
+<tr><td>status</td><td>String</td><td>Status label at that point in time.</td></tr>
+<tr><td>timestamp</td><td>Date</td><td>When the status was recorded.</td></tr>
+<tr><td>notes</td><td>String</td><td>Auto-generated or admin-supplied notes.</td></tr>
+<tr><td>productionSchedule</td><td>String</td><td>Production schedule value at that point.</td></tr>
+<tr><td>updatedBy</td><td>String</td><td>Name of the person who made the change.</td></tr>
+<tr><td>driverDetails</td><td>Subdoc</td><td>Snapshot of driver at time of status change.</td></tr>
+</table>
+
+<h3>D.7.3&nbsp;&nbsp;<code>delayHistory[]</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:24%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:56%">Description</th>
+</tr>
+<tr><td>isDelayed</td><td>Boolean</td><td>Active delay flag. True when the order is currently delayed.</td></tr>
+<tr><td>category</td><td>String (enum)</td><td>material_shortage, production_issue, logistics, weather, customer_request, payment, or other.</td></tr>
+<tr><td>reason</td><td>String</td><td>Customer-facing reason for the delay.</td></tr>
+<tr><td>notes</td><td>String</td><td>Admin-only notes about the delay.</td></tr>
+<tr><td>originalExpectedDelivery</td><td>Date</td><td>Preserved original ETA before the delay.</td></tr>
+<tr><td>newExpectedDelivery</td><td>Date</td><td>Revised ETA after the delay.</td></tr>
+<tr><td>reportedBy</td><td>String</td><td>Name of the person who reported the delay.</td></tr>
+<tr><td>reportedByType</td><td>String (enum)</td><td>admin, driver, or system.</td></tr>
+<tr><td>reportedAt</td><td>Date</td><td>Timestamp of the delay report.</td></tr>
+<tr><td>resolvedAt</td><td>Date</td><td>Timestamp when the delay was resolved.</td></tr>
+<tr><td>resolvedBy</td><td>String</td><td>Name of the resolver.</td></tr>
+</table>
+
+<h3>D.7.4&nbsp;&nbsp;<code>driverDetails</code> Subdocument</h3>
+<table>
+<tr>
+  <th style="width:24%">Field</th>
+  <th style="width:20%">Data Type</th>
+  <th style="width:56%">Description</th>
+</tr>
+<tr><td>driverId</td><td>String</td><td>Reference to Driver.driverId.</td></tr>
+<tr><td>driverName</td><td>String</td><td>Snapshot of driver name.</td></tr>
+<tr><td>driverPhone</td><td>String</td><td>Snapshot of driver phone number.</td></tr>
+<tr><td>plateNumber</td><td>String</td><td>Vehicle plate number.</td></tr>
+<tr><td>truckDescription</td><td>String</td><td>Vehicle description.</td></tr>
+<tr><td>assignedAt</td><td>Date</td><td>Timestamp when the driver was assigned.</td></tr>
+</table>
+
+<p class="no-indent"><b>Virtuals:</b> <code>isCurrentlyDelayed</code>, <code>currentDelay</code>.<br>
+<b>Indexes:</b> <code>orderedBy</code>, <code>status</code>, <code>paymentStatus</code>, <code>receivingMode</code>, <code>createdAt</code>, <code>orderedAt</code>, and the compound index <code>{status, orderedAt}</code>.</p>
+
+<!-- ═══════════════ D.8 ═══════════════ -->
+<h2>D.8&nbsp;&nbsp;Conversation Collection (<code>conversations</code>)</h2>
+<p class="no-indent">Stores chat conversation threads between customers and administrators. Each order has its own dedicated conversation for negotiation.</p>
+
+<table>
+<tr>
+  <th style="width:24%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:11%">Required</th>
+  <th style="width:47%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>conversationId</td><td>String</td><td>Yes</td><td>Unique ID in the format CONV-XXXX.</td></tr>
+<tr><td>customerId</td><td>String</td><td>Yes</td><td>Reference to Customer.customerId.</td></tr>
+<tr><td>customerName</td><td>String</td><td>Yes</td><td>Customer display name.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>Yes</td><td>Customer email.</td></tr>
+<tr><td>adminId</td><td>String</td><td>No</td><td>Assigned admin ID.</td></tr>
+<tr><td>adminName</td><td>String</td><td>No</td><td>Admin display name.</td></tr>
+<tr><td>subject</td><td>String</td><td>No</td><td>Conversation subject.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>open, in_progress, resolved, or closed.</td></tr>
+<tr><td>customerUnreadCount</td><td>Number</td><td>No</td><td>Number of unread messages for the customer.</td></tr>
+<tr><td>adminUnreadCount</td><td>Number</td><td>No</td><td>Number of unread messages for the admin.</td></tr>
+<tr><td>lastMessage</td><td>String</td><td>No</td><td>Preview of the last message.</td></tr>
+<tr><td>lastMessageAt</td><td>Date</td><td>No</td><td>Timestamp of the last message.</td></tr>
+<tr><td>lastMessageBy</td><td>String (enum)</td><td>No</td><td>customer or admin.</td></tr>
+<tr><td>orderId</td><td>String</td><td>No</td><td>Reference to Order.orderId.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+</table>
+
+<p class="no-indent"><b>Indexes:</b> <code>conversationId</code>, <code>customerId</code>, <code>customerEmail</code>, <code>status</code>, <code>orderId</code>, <code>lastMessageAt</code>, <code>{customerId, status}</code>, <code>{adminId, status}</code>.</p>
+
+<!-- ═══════════════ D.9 ═══════════════ -->
+<h2>D.9&nbsp;&nbsp;Message Collection (<code>messages</code>)</h2>
+<p class="no-indent">Stores all chat messages including text, quotes, payment requests, payment proofs, and delay notices.</p>
+
+<table>
+<tr>
+  <th style="width:26%">Field</th>
+  <th style="width:18%">Data Type</th>
+  <th style="width:11%">Required</th>
+  <th style="width:45%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>messageId</td><td>String</td><td>Yes</td><td>Unique ID in the format MSG-XXXX.</td></tr>
+<tr><td>conversationId</td><td>String</td><td>Yes</td><td>Reference to Conversation.conversationId.</td></tr>
+<tr><td>senderType</td><td>String (enum)</td><td>Yes</td><td>customer or admin.</td></tr>
+<tr><td>senderId</td><td>String</td><td>Yes</td><td>Sender's identifier.</td></tr>
+<tr><td>senderName</td><td>String</td><td>Yes</td><td>Sender's display name.</td></tr>
+<tr><td>content</td><td>String</td><td>Yes</td><td>Text body of the message.</td></tr>
+<tr><td>contentType</td><td>String (enum)</td><td>No</td><td>text, image, file, system, quote, payment-request, payment-proof, or delay-notice.</td></tr>
+<tr><td>quoteData</td><td>Subdoc</td><td>No</td><td>Negotiation quote payload.</td></tr>
+<tr><td>paymentRequestData</td><td>Subdoc</td><td>No</td><td>Payment request payload.</td></tr>
+<tr><td>paymentProofData</td><td>Subdoc</td><td>No</td><td>Payment proof payload.</td></tr>
+<tr><td>delayNoticeData</td><td>Subdoc</td><td>No</td><td>Delay notice payload.</td></tr>
+<tr><td>attachments</td><td>Array of Subdocs</td><td>No</td><td>Each entry contains name, size, type, path, and url.</td></tr>
+<tr><td>replyToMessageId</td><td>String</td><td>No</td><td>Reference to the message being replied to.</td></tr>
+<tr><td>replyTo</td><td>Subdoc</td><td>No</td><td>Contains messageId, content, and sender.</td></tr>
+<tr><td>isRead</td><td>Boolean</td><td>No</td><td>Whether the recipient has read the message.</td></tr>
+<tr><td>readAt</td><td>Date</td><td>No</td><td>Timestamp of the read event.</td></tr>
+<tr><td>isDeleted</td><td>Boolean</td><td>No</td><td>Soft-delete flag.</td></tr>
+<tr><td>deletedFor</td><td>Array of String</td><td>No</td><td>Users the message was deleted for.</td></tr>
+<tr><td>createdAt</td><td>Date</td><td>Auto</td><td>Creation timestamp.</td></tr>
+</table>
+
+<!-- ═══════════════ D.10 ═══════════════ -->
+<h2>D.10&nbsp;&nbsp;Feedback Collection (<code>feedbacks</code>)</h2>
+<p class="no-indent">Stores customer feedback and ratings after order completion.</p>
+
+<table>
+<tr>
+  <th style="width:22%">Field</th>
+  <th style="width:16%">Data Type</th>
+  <th style="width:12%">Required</th>
+  <th style="width:50%">Description</th>
+</tr>
+<tr><td>_id</td><td>ObjectId</td><td>Auto</td><td>MongoDB primary key.</td></tr>
+<tr><td>feedbackId</td><td>String</td><td>Yes</td><td>Unique ID in the format FDBK-XXXX.</td></tr>
+<tr><td>orderId</td><td>String</td><td>Yes</td><td>Reference to Order.orderId.</td></tr>
+<tr><td>customerId</td><td>ObjectId</td><td>Yes</td><td>Reference to Customer._id.</td></tr>
+<tr><td>customerEmail</td><td>String</td><td>Yes</td><td>Denormalized email for quick lookup.</td></tr>
+<tr><td>customerName</td><td>String</td><td>Yes</td><td>Customer name at time of feedback.</td></tr>
+<tr><td>productId</td><td>String</td><td>No</td><td>Product identifier.</td></tr>
+<tr><td>productName</td><td>String</td><td>No</td><td>Product name.</td></tr>
+<tr><td>rating</td><td>Number</td><td>Yes</td><td>Overall rating from 1 to 5 (whole number).</td></tr>
+<tr><td>detailedRatings</td><td>Subdoc</td><td>No</td><td>Per-dimension ratings (quality, design, packaging, delivery, value, service).</td></tr>
+<tr><td>title</td><td>String</td><td>No</td><td>Review title (maximum 100 characters).</td></tr>
+<tr><td>comment</td><td>String</td><td>Yes</td><td>Review body (maximum 2000 characters).</td></tr>
+<tr><td>pros</td><td>Array of String</td><td>No</td><td>List of positive points.</td></tr>
+<tr><td>cons</td><td>Array of String</td><td>No</td><td>List of negative points.</td></tr>
+<tr><td>wouldRecommend</td><td>Boolean</td><td>No</td><td>Whether the customer would recommend the product.</td></tr>
+<tr><td>wouldPurchaseAgain</td><td>Boolean</td><td>No</td><td>Whether the customer intends to purchase again.</td></tr>
+<tr><td>status</td><td>String (enum)</td><td>No</td><td>pending, approved, rejected, or featured.</td></tr>
+<tr><td>adminResponse</td><td>Subdoc</td><td>No</td><td>Contains message, respondedAt, and respondedBy.</td></tr>
+<tr><td>submittedAt</td><td>Date</td><td>Auto</td><td>Immutable submission timestamp.</td></tr>
+<tr><td>updatedAt</td><td>Date</td><td>Auto</td><td>Modification timestamp.</td></tr>
+<tr><td>isPublic</td><td>Boolean</td><td>No</td><td>Public visibility flag.</td></tr>
+<tr><td>isVerified</td><td>Boolean</td><td>No</td><td>Verified flag.</td></tr>
+<tr><td>helpfulCount</td><td>Number</td><td>No</td><td>Number of users who found the review helpful.</td></tr>
+</table>
+
+<p style="text-align:center; margin-top:36pt; font-weight:bold;">— END OF APPENDIX D —</p>
+
+</body>
+</html>

@@ -63,6 +63,31 @@ export default {
       console.log('🔔 [App.vue] new-message listener attached')
     }
 
+    // ✅ NEW — Attach order + product realtime listeners on every
+    // connect. Previously these lived inside onMounted, which meant
+    // that logging in WITHOUT a page refresh left them unattached.
+    let catalogListenersAttached = false
+    const attachCatalogListeners = () => {
+      if (catalogListenersAttached) return
+      catalogListenersAttached = true
+
+      socket.onOrderChanged((data) => {
+        console.log('📡 [customer] realtime order:changed', data)
+        window.dispatchEvent(
+          new CustomEvent('realtime:order-changed', { detail: data }),
+        )
+      })
+
+      socket.onProductChanged((data) => {
+        console.log('📦 [customer] realtime product:changed', data)
+        window.dispatchEvent(
+          new CustomEvent('realtime:product-changed', { detail: data }),
+        )
+      })
+
+      console.log('📦 [App.vue] order + product listeners attached')
+    }
+
     // ── Connect the shared customer socket if a token exists ─────
     const tryConnect = () => {
       const token = localStorage.getItem('customerToken') || localStorage.getItem('token')
@@ -81,30 +106,16 @@ export default {
 
       socket.connect(token, userId, 'customer')
 
-      // ✅ CRITICAL — attach the listener AFTER connect(), so it binds
+      // ✅ CRITICAL — attach listeners AFTER connect(), so they bind
       // to the freshly-created socket instance. Attaching before connect
       // (when socketInstance was null) silently no-ops.
       attachMessageListener()
+      attachCatalogListeners()   // ← ADD THIS LINE
     }
 
     // ── Lifecycle ────────────────────────────────────────────────
     onMounted(() => {
-      tryConnect()
-
-      // Existing order-changed bridge
-      socket.onOrderChanged((data) => {
-        console.log('📡 [customer] realtime order:changed', data)
-        window.dispatchEvent(
-          new CustomEvent('realtime:order-changed', { detail: data }),
-        )
-      })
-
-      socket.onProductChanged((data) => {
-        console.log('📦 [customer] realtime product:changed', data)
-        window.dispatchEvent(
-          new CustomEvent('realtime:product-changed', { detail: data }),
-        )
-      });
+      tryConnect()   // ← now also attaches the order + product listeners
 
       document.addEventListener('visibilitychange', handleVisibilityChange)
     })
