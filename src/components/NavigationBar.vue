@@ -79,12 +79,12 @@
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
               <span class="text-sm font-medium">Messages</span>
-              <span
-                v-if="unreadCount > 0"
-                class="ml-1 min-w-[20px] h-5 flex items-center justify-center text-xs font-semibold rounded-full bg-red-500 text-white"
-              >
-                {{ unreadCount > 99 ? '99+' : unreadCount }}
-              </span>
+<span
+  v-if="displayedUnreadCount > 0"
+  class="ml-1 min-w-[20px] h-5 flex items-center justify-center text-xs font-semibold rounded-full bg-red-500 text-white"
+>
+  {{ displayedUnreadCount > 99 ? '99+' : displayedUnreadCount }}
+</span>
             </router-link>
 
             <router-link
@@ -295,12 +295,12 @@
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                     </svg>
                     <span class="text-sm">Messages</span>
-                    <span
-                      v-if="unreadCount > 0"
-                      class="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold rounded-full bg-red-500 text-white"
-                    >
-                      {{ unreadCount > 99 ? '99+' : unreadCount }}
-                    </span>
+<span
+  v-if="displayedUnreadCount > 0"
+  class="ml-auto min-w-[20px] h-5 px-1.5 flex items-center justify-center text-[10px] font-bold rounded-full bg-red-500 text-white"
+>
+  {{ displayedUnreadCount > 99 ? '99+' : displayedUnreadCount }}
+</span>
                   </router-link>
 
                   <router-link
@@ -441,9 +441,13 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth.js'
+import { chatApi } from '@/api'
 
 const props = defineProps({
   notifCount: { type: Number, default: 0 },
+  // Kept for backwards compatibility. If a parent passes a positive
+  // number, we'll use it as a fallback — but the navbar owns its own
+  // realtime-tracked count internally.
   unreadCount: { type: Number, default: 0 }
 })
 
@@ -459,6 +463,18 @@ const userMenuRef = ref(null)
 
 const tokenVersion = ref(0)
 
+// ─────────────────────────────────────────
+// UNREAD MESSAGE BADGE
+// ─────────────────────────────────────────
+const internalUnreadCount = ref(0)
+
+// Prefer the realtime-tracked internal count. If it's still 0 but the
+// parent passed a positive number, fall back to that.
+const displayedUnreadCount = computed(() => {
+  if (internalUnreadCount.value > 0) return internalUnreadCount.value
+  return props.unreadCount || 0
+})
+
 const isAuthenticated = computed(() => {
   tokenVersion.value
   const token = localStorage.getItem('customerToken')
@@ -468,6 +484,51 @@ const isAuthenticated = computed(() => {
 
 function syncAuth() {
   tokenVersion.value++
+  // Re-fetch on auth state change (login → fetch, logout → reset)
+  if (isAuthenticated.value) {
+    loadUnreadCount()
+  } else {
+    internalUnreadCount.value = 0
+  }
+}
+
+// ✅ Fetch the current unread count from the backend
+async function loadUnreadCount() {
+  if (!isAuthenticated.value) {
+    internalUnreadCount.value = 0
+    return
+  }
+  try {
+    const res = await chatApi.getUnreadCount()
+    if (res.success && res.data) {
+      internalUnreadCount.value = res.data.total || 0
+    }
+  } catch (err) {
+    console.error('[Navbar] failed to load unread count:', err)
+  }
+}
+
+// ✅ Realtime handler — App.vue dispatches this whenever an admin
+// message arrives. Bump optimistically, then re-sync with the server.
+function handleNewMessage(e) {
+  const detail = e.detail || {}
+  console.log('🔔 [Navbar] new-message event received', detail)
+
+  // If the customer is currently viewing that exact conversation,
+  // don't bump — MessagesPage already zeroes the count.
+  if (window.__activeConversationId === detail.conversationId) {
+    loadUnreadCount()
+    return
+  }
+
+  internalUnreadCount.value += 1   // optimistic
+  loadUnreadCount()                // confirm with server
+}
+
+// ✅ When a conversation is opened, MessagesPage dispatches this
+// so the badge drops back down.
+function handleMessagesRead() {
+  loadUnreadCount()
 }
 
 function isActive(path) {
@@ -501,12 +562,21 @@ onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   window.addEventListener('storage', syncAuth)
   window.addEventListener('authChanged', syncAuth)
+
+  // ✅ Realtime wiring
+  window.addEventListener('customer:new-message-received', handleNewMessage)
+  window.addEventListener('customer:messages-read', handleMessagesRead)
+
+  // ✅ Initial fetch (only if already logged in)
+  loadUnreadCount()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   window.removeEventListener('storage', syncAuth)
   window.removeEventListener('authChanged', syncAuth)
+  window.removeEventListener('customer:new-message-received', handleNewMessage)
+  window.removeEventListener('customer:messages-read', handleMessagesRead)
   document.body.style.overflow = ''
 })
 </script>

@@ -33,24 +33,34 @@ export default {
     // ── Global new-message handler ────────────────────────────────
     // Runs from App.vue so the notification fires on EVERY page,
     // not just when MessagesPage is mounted.
-    function handleGlobalNewMessage(message) {
-      if (!message) return
-      if (message.senderType !== 'admin') return
+function handleGlobalNewMessage(message) {
+  if (!message) return
+  if (message.senderType !== 'admin') return
 
-      // Suppress the toast if the customer is currently looking at
-      // that exact conversation. MessagesPage mirrors its active
-      // conversation id onto window.__activeConversationId.
-      if (window.__activeConversationId === message.conversationId) return
-
-      notify({
+  // ✅ Always notify the navbar so it can refresh its badge — even if
+  // the customer is currently looking at that conversation (the count
+  // still needs re-syncing to 0 on read).
+  window.dispatchEvent(
+    new CustomEvent('customer:new-message-received', {
+      detail: {
         conversationId: message.conversationId,
-        senderName: 'ACAPSHOP Support',
-        content: message.content || '',
-        attachments: Array.isArray(message.attachments) ? message.attachments.length : 0,
+        senderName: message.senderName || 'ACAPSHOP Support',
         createdAt: message.createdAt || new Date().toISOString(),
-      })
-    }
+      },
+    }),
+  )
 
+  // Suppress the popup toast if the customer is looking at that chat
+  if (window.__activeConversationId === message.conversationId) return
+
+  notify({
+    conversationId: message.conversationId,
+    senderName: 'ACAPSHOP Support',
+    content: message.content || '',
+    attachments: Array.isArray(message.attachments) ? message.attachments.length : 0,
+    createdAt: message.createdAt || new Date().toISOString(),
+  })
+}
 
     // Guard so App.vue attaches its global handler exactly ONCE per
     // app lifetime. Never call socket.off() here — that would remove

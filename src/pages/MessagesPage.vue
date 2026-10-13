@@ -1655,7 +1655,7 @@ async function selectConversationFromList(conv) {
       saveSelectedOrderId(conv.orderId)
     }
   }
-
+  window.dispatchEvent(new CustomEvent('customer:messages-read'))
   await scrollToBottom()
 }
 
